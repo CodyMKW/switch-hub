@@ -56,7 +56,6 @@ All three save their own separate local data, so renaming a game or saving a fri
 
 ## Credits
 
-- Game name database from [RenanGreca/Switch-Screenshots](https://github.com/RenanGreca/Switch-Screenshots)
 - Switch presence data from [nxapi](https://github.com/samuelthomas2774/nxapi)
 - P2P connections via [PeerJS](https://peerjs.com/)
 
