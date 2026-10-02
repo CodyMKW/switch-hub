@@ -2289,8 +2289,11 @@
             try {
                 const dirHandle = await window.showDirectoryPicker({ mode: 'read' });
                 cleanupUrls();
+                // Note: .hidden and .flex are both !important, so leaving the
+                // 'flex' class on when re-adding 'hidden' let .flex win the
+                // tie (it's declared later in the stylesheet) and kept this
+                // box stuck on screen. Only ever have one of the two at a time.
                 loadingState.classList.remove('hidden');
-                loadingState.classList.add('flex');
                 document.getElementById('welcome-view').classList.add('hidden');
                 document.getElementById('gallery-view').classList.remove('hidden');
                 mediaGrid.innerHTML = '';
@@ -2306,6 +2309,7 @@
                 }
                 allMediaFiles.sort((a, b) => b.timestamp - a.timestamp);
 
+                loadingCount.textContent = `Found: ${allMediaFiles.length} files`;
                 statCount.textContent = allMediaFiles.length;
                 statStatus.textContent = 'Loaded';
                 statStatus.style.color = 'var(--cody-green)';
@@ -2324,6 +2328,8 @@
                 loadingState.classList.add('hidden');
             }
         });
+
+        document.getElementById('btn-welcome-load').addEventListener('click', () => btnSelectFolder.click());
 
         // ============================================================
         // GALLERY: media tiles, unsupported-video handling
