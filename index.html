@@ -972,7 +972,7 @@
         async function refreshGameDatabase(statusEl) {
             if (statusEl) statusEl.textContent = 'Checking for updates…';
             try {
-                const res = await fetch('https://raw.githubusercontent.com/RenanGreca/Switch-Screenshots/master/game_ids.json', { cache: 'no-store' });
+                const res = await fetch('https://raw.githubusercontent.com/CodyMKW/switch-hub/master/game_ids.json', { cache: 'no-store' });
                 if (!res.ok) throw new Error('Request failed: ' + res.status);
                 const fresh = await res.json();
                 liveGameDb = fresh;
