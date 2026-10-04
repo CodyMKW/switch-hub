@@ -1340,10 +1340,6 @@
             lastPongAt = Date.now();
             const ping = () => {
                 if (!(activeConnection && activeConnection.open)) return;
-                if (Date.now() - lastPongAt > PING_TIMEOUT_MS) {
-                    try { activeConnection.close(); } catch (e) {} // triggers the normal 'close' cleanup below
-                    return;
-                }
                 pingStartTime = performance.now();
                 sendToConn({ type: 'ping' });
             };
