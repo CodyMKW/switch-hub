@@ -2,6 +2,14 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.0.3] - 2026-10-03
+
+### Fixed
+
+* **Chat could still be used after disconnecting.** The message box, attachment button, and emoji button now disable themselves when there isn't an active connection, preventing messages from being sent while offline.
+* **Disconnect notifications could be unreliable.** Improved connection cleanup so the chat properly updates when a friend disconnects.
+* **Switching tabs could cause false disconnects.** Removed the heartbeat timeout that could incorrectly close an otherwise working connection when the browser delayed background-tab timers.
+
 ## [1.0.2] - 2026-10-02
 
 ### Fixed
