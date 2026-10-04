@@ -352,6 +352,8 @@
         .btn-composer.send { background: var(--switch-cyan); color: #04222b; }
         .btn-composer.send:hover { background: #33d1ee; }
         .btn-composer.send:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-composer:disabled { opacity: 0.4; cursor: not-allowed; }
+        .composer-input:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-composer svg { width: 1.2rem; height: 1.2rem; }
     </style>
 </head>
@@ -1049,6 +1051,7 @@
             currentSource = 'remote';
             switchView(activeView === 'chat' ? 'chat' : 'gallery');
             renderFriendList();
+            updateComposerAvailability();
 
             if (connectedFriendId !== friendId) connectToFriend(friend);
         }
@@ -1077,6 +1080,7 @@
                 markVisibleMessagesSeen();
                 document.getElementById('chat-tab-badge').classList.add('hidden');
                 renderFriendList();
+                updateComposerAvailability();
             }
             updateTopBar();
         }
@@ -1321,16 +1325,30 @@
             return { type: 'hello', profile: { name: myProfile.name, avatar: myProfile.avatar, status: myProfile.status, nsaId: myProfile.nsaId || null } };
         }
 
+        // WebRTC doesn't reliably tell you when the other side just vanishes
+        // (closed tab, lost network, etc.) - the browser's own connection-state
+        // detection can take a long time, or never fire cleanly at all. Riding
+        // on the existing ping/pong heartbeat: if too many pings go unanswered,
+        // we treat the connection as dead ourselves instead of waiting on the
+        // browser (or a page refresh) to notice.
+        let lastPongAt = 0;
+        const PING_INTERVAL_MS = 5000;
+        const PING_TIMEOUT_MS = 13000; // ~2-3 missed pings
+
         function startPingLoop() {
             if (pingIntervalId) clearInterval(pingIntervalId);
+            lastPongAt = Date.now();
             const ping = () => {
-                if (activeConnection && activeConnection.open) {
-                    pingStartTime = performance.now();
-                    sendToConn({ type: 'ping' });
+                if (!(activeConnection && activeConnection.open)) return;
+                if (Date.now() - lastPongAt > PING_TIMEOUT_MS) {
+                    try { activeConnection.close(); } catch (e) {} // triggers the normal 'close' cleanup below
+                    return;
                 }
+                pingStartTime = performance.now();
+                sendToConn({ type: 'ping' });
             };
             ping();
-            pingIntervalId = setInterval(ping, 5000);
+            pingIntervalId = setInterval(ping, PING_INTERVAL_MS);
         }
 
         function wireConnection(conn, friend) {
@@ -1338,6 +1356,7 @@
             startPingLoop();
             renderFriendList();
             updateTopBar();
+            updateComposerAvailability();
             markVisibleMessagesSeen();
             if (allMediaFiles.length > 0) syncGallery(conn);
 
@@ -1357,9 +1376,12 @@
                 document.getElementById('btn-star-media').style.display = 'none';
                 document.getElementById('peer-activity-box').classList.add('hidden');
                 document.getElementById('btn-jump-peer-viewing').style.display = 'none';
-                showToast(`${friend.name} disconnected`);
+                peerTyping = false;
+                showToast(`${friend.name} went offline`);
                 renderFriendList();
                 updateTopBar();
+                updateComposerAvailability();
+                if (activeFriendId === friend.id && activeView === 'chat') renderTypingIndicator();
                 if (activeFriendId === friend.id && activeView === 'gallery') renderView();
             });
 
@@ -1410,7 +1432,7 @@
                 showToast(`${friend.name} starred one of your screenshots! ⭐`, 'yellow');
             }
             else if (data.type === 'ping') { conn.send({ type: 'pong' }); }
-            else if (data.type === 'pong') { pingLastRtt = Math.round(performance.now() - pingStartTime); updateTopBar(); }
+            else if (data.type === 'pong') { lastPongAt = Date.now(); pingLastRtt = Math.round(performance.now() - pingStartTime); updateTopBar(); }
             else if (data.type === 'msg') { handleChatMsg(data, friend); }
             else if (data.type === 'ack_delivered') {
                 const thread = ensureThread(friend.id);
@@ -1812,8 +1834,22 @@
         }
 
         function updateSendButtonState() {
-            btnSend.disabled = composerInput.value.trim().length === 0 && !pendingAttachment;
+            const connected = !!(activeConnection && activeConnection.open);
+            btnSend.disabled = !connected || (composerInput.value.trim().length === 0 && !pendingAttachment);
         }
+
+        // Disables the whole composer while there's no live connection, so
+        // there's no way to type something that looks sent but never goes
+        // anywhere. Call this any time the connection state changes.
+        function updateComposerAvailability() {
+            const connected = !!(activeConnection && activeConnection.open);
+            composerInput.disabled = !connected;
+            composerInput.placeholder = connected ? "Message... (**bold**, *italic*, `code`)" : 'Not connected...';
+            document.getElementById('btn-attach').disabled = !connected;
+            document.getElementById('btn-emoji').disabled = !connected;
+            updateSendButtonState();
+        }
+
         composerInput.addEventListener('input', () => {
             updateSendButtonState();
             composerInput.style.height = 'auto';
@@ -1831,6 +1867,11 @@
 
         function sendMessage() {
             if (!activeFriendId) return;
+            if (!(activeConnection && activeConnection.open)) {
+                showToast("You're not connected right now — that can't send.", 'yellow');
+                updateComposerAvailability();
+                return;
+            }
             const text = composerInput.value.trim();
             if (pendingAttachment) {
                 const file = pendingAttachment.file;
