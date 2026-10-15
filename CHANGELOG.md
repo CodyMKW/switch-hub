@@ -2,6 +2,16 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.0.4] - 2026-10-15
+
+### Added
+- **USB-loaded folders now load properly.** USB exports arrange screenshots in a folder per game (like "Mario Kart World") with no title ID in the filenames, which used to dump everything into "UNSORTED". When a file has no ID, Switch Hub now uses the name of the folder it sits in as the game name. Container folders like `Album`, `Nintendo` and year/month/day folders are skipped. These games group, search, spoiler-hide, and rename like any other. SD card loading is unchanged.
+- **You now get told when new games are added to the game database.** A toast lists the new games (for example "3 new games added to the database: X, Y, Z and 2 more"). If any of your unnamed screenshots are now identified, it says how many.
+
+### Changed
+- The game database now checks for updates on load and every 30 minutes while the app is open (refreshing if the last check was over 6 hours ago), instead of once a day.
+- The Refresh Game Database button now tells you when you're already up to date or can't reach the database.
+
 ## [1.0.3] - 2026-10-03
 
 ### Fixed
