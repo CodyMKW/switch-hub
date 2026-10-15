@@ -847,7 +847,7 @@
         // ============================================================
         // TOASTS & SOUND
         // ============================================================
-        function showToast(message, kind) {
+        function showToast(message, kind, durationMs) {
             let container = document.getElementById('toast-container');
             if (!container) {
                 container = document.createElement('div');
@@ -858,8 +858,10 @@
             const toast = document.createElement('div');
             toast.className = 'toast' + (kind ? ' toast-' + kind : '');
             toast.textContent = message;
+            const life = durationMs || 3600;
+            if (life !== 3600) toast.style.animation = `toastIn 0.25s ease, toastOut 0.3s ease ${(life - 400) / 1000}s forwards`;
             container.appendChild(toast);
-            setTimeout(() => toast.remove(), 3600);
+            setTimeout(() => toast.remove(), life);
         }
 
         let audioCtx = null;
@@ -964,33 +966,77 @@
         function autoGameName(hash) {
             return liveGameDb[hash] || BUILTIN_GAME_DB[hash] || null;
         }
+        // USB-loaded files have no title-ID; their game is the folder name,
+        // stored as "USB-<folder name>" in place of a hash.
+        const FOLDER_HASH_PREFIX = 'USB-';
+        function folderGameName(hash) {
+            return hash.startsWith(FOLDER_HASH_PREFIX) ? hash.slice(FOLDER_HASH_PREFIX.length) : null;
+        }
         function gameKey(hash) {
-            return hashToGameMap[hash] || autoGameName(hash) || hash;
+            return hashToGameMap[hash] || autoGameName(hash) || folderGameName(hash) || hash;
         }
         function isGameSpoiled(hash) {
             const key = gameKey(hash);
             return !!(spoilerGamesMap[key] || spoilerGamesMap[hash]);
         }
-        async function refreshGameDatabase(statusEl) {
+        // Summarises games that appeared in a refreshed database, e.g.
+        // "3 new games added: Foo, Bar, Baz".
+        function describeNewGames(newIds, fresh) {
+            const names = [...new Set(newIds.map(id => fresh[id]).filter(Boolean))];
+            const shown = names.slice(0, 3).join(', ');
+            const extra = names.length > 3 ? ` and ${names.length - 3} more` : '';
+            return `${names.length} new game${names.length === 1 ? '' : 's'} added to the database: ${shown}${extra}`;
+        }
+
+        // manual = true when the user pressed the Refresh button (always report
+        // the outcome); false for the background check (only speak up on news).
+        async function refreshGameDatabase(statusEl, manual) {
             if (statusEl) statusEl.textContent = 'Checking for updates…';
             try {
                 const res = await fetch('https://raw.githubusercontent.com/CodyMKW/switch-hub/master/game_ids.json', { cache: 'no-store' });
                 if (!res.ok) throw new Error('Request failed: ' + res.status);
                 const fresh = await res.json();
+
+                // Anything we didn't already know about (bundled list + last fetch).
+                const newIds = Object.keys(fresh).filter(id => !(id in BUILTIN_GAME_DB) && !(id in liveGameDb));
+                // Which of the user's loaded screenshots were unnamed until now?
+                const wasUnnamed = new Set(allMediaFiles
+                    .filter(m => !hashToGameMap[m.hash] && !autoGameName(m.hash) && !folderGameName(m.hash))
+                    .map(m => m.hash));
+
                 liveGameDb = fresh;
                 localStorage.setItem('switch_gallery_live_db', JSON.stringify(fresh));
                 localStorage.setItem('switch_gallery_live_db_ts', String(Date.now()));
-                if (statusEl) statusEl.textContent = `Updated — ${Object.keys(fresh).length} games known.`;
+
+                const nowNamed = [...wasUnnamed].filter(h => fresh[h]);
+                if (statusEl) statusEl.textContent = newIds.length > 0
+                    ? `Updated — ${newIds.length} new, ${Object.keys(fresh).length} games known.`
+                    : `Up to date — ${Object.keys(fresh).length} games known.`;
+
+                if (newIds.length > 0) {
+                    let msg = describeNewGames(newIds, fresh);
+                    if (nowNamed.length > 0) msg += ` — ${nowNamed.length} of your unnamed game${nowNamed.length === 1 ? ' is' : 's are'} now identified!`;
+                    showToast('🎮 ' + msg, 'purple', 8000);
+                } else if (manual) {
+                    showToast('Game database is already up to date.');
+                }
                 if (activeView === 'gallery') renderView();
             } catch (e) {
                 console.warn('Game database refresh failed', e);
                 if (statusEl) statusEl.textContent = "Couldn't reach the community database (offline?). Using the built-in list.";
+                if (manual) showToast("Couldn't reach the game database. Using the built-in list.", 'yellow');
             }
         }
-        (function maybeAutoRefreshGameDb() {
+        // Check on load if it's been a while, and keep checking while the app stays open.
+        const DB_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
+        function maybeAutoRefreshGameDb() {
             const lastFetch = parseInt(localStorage.getItem('switch_gallery_live_db_ts') || '0', 10);
-            if (Date.now() - lastFetch > 24 * 60 * 60 * 1000) refreshGameDatabase(null);
-        })();
+            if (Date.now() - lastFetch > DB_CHECK_INTERVAL_MS) refreshGameDatabase(null, false);
+        }
+        window.addEventListener('load', () => {
+            maybeAutoRefreshGameDb();
+            setInterval(maybeAutoRefreshGameDb, 30 * 60 * 1000);
+        });
 
         // ============================================================
         // FRIENDS LIST
@@ -2336,7 +2382,17 @@
             btnSelectFolder.style.opacity = '0.5';
         }
 
-        function parseFileName(file) {
+        // Folder names that are just containers, not a game (SD card layout
+        // is Nintendo/Album/YYYY/MM/DD, USB export is <Game Title>/files).
+        const CONTAINER_FOLDER_RE = /^(album|nintendo|screenshots?|videos?|captures?|\d{1,4})$/i;
+        function gameFolderFromTrail(trail) {
+            for (let i = trail.length - 1; i >= 0; i--) {
+                if (!CONTAINER_FOLDER_RE.test(trail[i].trim())) return trail[i].trim();
+            }
+            return null;
+        }
+
+        function parseFileName(file, trail) {
             const name = file.name;
             const ext = name.split('.').pop().toLowerCase();
             const hashMatch = name.match(/-([A-Fa-f0-9]{16}(?:[A-Fa-f0-9]{16})?)(?:\s*[\s(_-]*\d+\)?)?\.(jpg|mp4)$/i);
@@ -2345,8 +2401,15 @@
             if (hashMatch) {
                 hash = hashMatch[1].trim().toUpperCase();
             } else {
-                const stem = name.replace(/\.[^.]+$/, '').replace(/^\d{8,}[-_]?/, '').replace(/\s*\(\d+\)\s*$/, '').trim().toUpperCase();
-                hash = `UNSORTED-${stem || name.toUpperCase()}`;
+                // USB-style export: no title-ID in the filename, but the file
+                // sits inside a folder named after the game.
+                const folder = gameFolderFromTrail(trail || []);
+                if (folder) {
+                    hash = `${FOLDER_HASH_PREFIX}${folder}`;
+                } else {
+                    const stem = name.replace(/\.[^.]+$/, '').replace(/^\d{8,}[-_]?/, '').replace(/\s*\(\d+\)\s*$/, '').trim().toUpperCase();
+                    hash = `UNSORTED-${stem || name.toUpperCase()}`;
+                }
             }
             let dateStr = 'Unknown Date';
             if (dateMatch) {
@@ -2359,13 +2422,16 @@
             return { file, url: URL.createObjectURL(blobForUrl), type: ext === 'mp4' ? 'video' : 'image', dateStr, hash, timestamp: file.lastModified, isRemote: false };
         }
 
-        async function* getFilesRecursively(entry) {
+        // Yields { file, trail } where trail is the list of folder names
+        // from the picked folder down to the file's parent.
+        async function* getFilesRecursively(entry, trail = []) {
             if (entry.kind === 'file') {
                 const file = await entry.getFile();
                 const ext = file.name.split('.').pop().toLowerCase();
-                if (ext === 'jpg' || ext === 'mp4') yield file;
+                if (ext === 'jpg' || ext === 'mp4') yield { file, trail };
             } else if (entry.kind === 'directory') {
-                for await (const handle of entry.values()) yield* getFilesRecursively(handle);
+                const nextTrail = [...trail, entry.name];
+                for await (const handle of entry.values()) yield* getFilesRecursively(handle, nextTrail);
             }
         }
 
@@ -2391,8 +2457,8 @@
                 statStatus.textContent = 'Scanning...';
 
                 let count = 0;
-                for await (const file of getFilesRecursively(dirHandle)) {
-                    allMediaFiles.push(parseFileName(file));
+                for await (const { file, trail } of getFilesRecursively(dirHandle)) {
+                    allMediaFiles.push(parseFileName(file, trail));
                     count++;
                     if (count % 50 === 0) { loadingCount.textContent = `Found: ${count} files`; statCount.textContent = count; }
                 }
@@ -2737,7 +2803,7 @@
         function openRenameModal(hash) {
             currentEditingHash = hash;
             renameHashDisplay.value = hash;
-            renameInput.value = hashToGameMap[hash] || autoGameName(hash) || '';
+            renameInput.value = hashToGameMap[hash] || autoGameName(hash) || folderGameName(hash) || '';
             renameModal.classList.remove('hidden');
             requestAnimationFrame(() => {
                 renameModal.classList.remove('opacity-0');
@@ -3021,7 +3087,7 @@
         });
 
         document.getElementById('btn-refresh-game-db').addEventListener('click', () => {
-            refreshGameDatabase(document.getElementById('game-db-status'));
+            refreshGameDatabase(document.getElementById('game-db-status'), true);
         });
 
         document.getElementById('btn-export-names').addEventListener('click', () => {
