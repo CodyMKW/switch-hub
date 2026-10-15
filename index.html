@@ -963,8 +963,18 @@
         // ============================================================
         // GAME NAME RESOLUTION
         // ============================================================
+        // Turns whatever ID string a file produced into the plain 32-char ID
+        // the database uses: drops the "UNSORTED-" prefix and any stray
+        // trailing letters (e.g. "...DCL" -> "...DC"). Also fixes hashes sent
+        // by a friend still running an older version.
+        function normalizeGameId(hash) {
+            const id = hash.replace(/^UNSORTED-/, '');
+            const m = id.match(/^([A-F0-9]{32})[A-Z]{0,2}$/i);
+            return m ? m[1].toUpperCase() : id;
+        }
         function autoGameName(hash) {
-            return liveGameDb[hash] || BUILTIN_GAME_DB[hash] || null;
+            const id = normalizeGameId(hash);
+            return liveGameDb[id] || BUILTIN_GAME_DB[id] || null;
         }
         // USB-loaded files have no title-ID; their game is the folder name,
         // stored as "USB-<folder name>" in place of a hash.
@@ -973,7 +983,7 @@
             return hash.startsWith(FOLDER_HASH_PREFIX) ? hash.slice(FOLDER_HASH_PREFIX.length) : null;
         }
         function gameKey(hash) {
-            return hashToGameMap[hash] || autoGameName(hash) || folderGameName(hash) || hash;
+            return hashToGameMap[hash] || autoGameName(hash) || folderGameName(hash) || hash.replace(/^UNSORTED-/, '');
         }
         function isGameSpoiled(hash) {
             const key = gameKey(hash);
@@ -1017,7 +1027,7 @@
                 localStorage.setItem('switch_gallery_live_db', JSON.stringify(fresh));
                 localStorage.setItem('switch_gallery_live_db_ts', String(Date.now()));
 
-                const nowNamed = [...wasUnnamed].filter(h => fresh[h]);
+                const nowNamed = [...wasUnnamed].filter(h => fresh[normalizeGameId(h)]);
                 if (statusEl) statusEl.textContent = newIds.length > 0
                     ? `Updated — ${newIds.length} new, ${Object.keys(fresh).length} games known.`
                     : `Up to date — ${Object.keys(fresh).length} games known.`;
@@ -2433,7 +2443,9 @@
         function parseFileName(file, trail) {
             const name = file.name;
             const ext = name.split('.').pop().toLowerCase();
-            const hashMatch = name.match(/-([A-Fa-f0-9]{16}(?:[A-Fa-f0-9]{16})?)(?:\s*[\s(_-]*\d+\)?)?\.(jpg|mp4)$/i);
+            // The ID may be followed by a stray letter (USB exports from some
+            // consoles tack on things like "L") or a "_c"-style suffix.
+            const hashMatch = name.match(/-([A-Fa-f0-9]{16}(?:[A-Fa-f0-9]{16})?)[A-Za-z]{0,2}(?:_[A-Za-z]{1,3})?(?:\s*[\s(_-]*\d+\)?)?\.(jpg|mp4)$/i);
             const dateMatch = name.match(/^(\d{4})(\d{2})(\d{2})/);
             let hash;
             if (hashMatch) {
@@ -2441,12 +2453,18 @@
             } else {
                 // USB-style export: no title-ID in the filename, but the file
                 // sits inside a folder named after the game.
+                const looseId = name.match(/([A-Fa-f0-9]{32})/);
                 const folder = gameFolderFromTrail(trail || []);
-                if (folder) {
+                if (looseId) {
+                    // A full title ID somewhere in the name, even if the
+                    // surrounding format is unusual.
+                    hash = looseId[1].toUpperCase();
+                } else if (folder) {
                     hash = `${FOLDER_HASH_PREFIX}${folder}`;
                 } else {
                     const stem = name.replace(/\.[^.]+$/, '').replace(/^\d{8,}[-_]?/, '').replace(/\s*\(\d+\)\s*$/, '').trim().toUpperCase();
-                    hash = `UNSORTED-${stem || name.toUpperCase()}`;
+                    // Junk stems like "C" (from "..._c.jpg") all go in one "Unsorted" group.
+                    hash = `UNSORTED-${stem.length > 3 ? stem : 'Unsorted'}`;
                 }
             }
             let dateStr = 'Unknown Date';
