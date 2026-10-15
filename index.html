@@ -995,7 +995,16 @@
             try {
                 const res = await fetch('https://raw.githubusercontent.com/CodyMKW/switch-hub/master/game_ids.json', { cache: 'no-store' });
                 if (!res.ok) throw new Error('Request failed: ' + res.status);
-                const fresh = await res.json();
+                // Parse leniently: a stray trailing comma in the hand-edited
+                // game_ids.json shouldn't be able to break the whole update.
+                const rawText = await res.text();
+                let fresh;
+                try {
+                    fresh = JSON.parse(rawText);
+                } catch (parseErr) {
+                    fresh = JSON.parse(rawText.replace(/,\s*([}\]])/g, '$1'));
+                    console.warn('game_ids.json has a trailing comma or similar; parsed leniently. Worth fixing in the repo.');
+                }
 
                 // Anything we didn't already know about (bundled list + last fetch).
                 const newIds = Object.keys(fresh).filter(id => !(id in BUILTIN_GAME_DB) && !(id in liveGameDb));
