@@ -2,6 +2,16 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.0.5] - 2026-10-15
+
+### Fixed
+- **A friend's gallery could show up empty after they loaded a big folder (like a USB export).** The sender built a thumbnail for every file before sending anything, and one unreadable file could stall the whole sync forever. Thumbnails now give up after 10 seconds, and files that can't be previewed show a "No preview" tile you can still click. The gallery also goes out in small batches instead of one giant message, so photos start appearing right away. Thumbnails are now made straight from the files instead of loading every full-size image into memory first.
+- **The game database update could fail completely over a stray comma.** A trailing comma in `game_ids.json` made the whole refresh fail with a JSON error. The update now retries leniently, so one typo in the list can't break it.
+- **USB-loaded screenshots with a stray letter after the game ID weren't getting named.** Some USB files are named like `...-2A1FB921003961F7A6B12A2A7A1629DCL.jpg`, an ID plus an extra letter, and those landed under "UNSORTED-" and never matched the database. IDs are now matched even with extra trailing letters or a `_c`-style suffix, and a full ID anywhere in a filename is picked up too. Names are looked up without the "UNSORTED-" prefix, so this also works for a friend still on an older version.
+
+### Changed
+- "UNSORTED-" no longer appears in game names. Files with no ID and no game folder show their own name, or "Unsorted" when there isn't a usable one.
+
 ## [1.0.4] - 2026-10-15
 
 ### Added
