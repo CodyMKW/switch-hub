@@ -1456,7 +1456,10 @@
                 updateTopBar();
             }
             else if (data.type === 'gallery_sync') {
-                remoteMediaFiles = data.files.map(f => ({ ...f, isRemote: true }));
+                const incoming = data.files.map(f => ({ ...f, isRemote: true }));
+                // reset === false means "more of the same sync"; a missing
+                // flag (older sender) or true means start fresh.
+                remoteMediaFiles = data.reset === false ? remoteMediaFiles.concat(incoming) : incoming;
                 if (activeFriendId === friend.id && activeView === 'gallery') renderView();
             }
             else if (data.type === 'file_request') { handleFileRequest(conn, data.originalIndex); }
@@ -1555,36 +1558,62 @@
             });
         }
 
+        // The gallery goes out in small batches instead of one giant message,
+        // so a big library (like a USB export with thousands of captures)
+        // starts showing up right away and can't choke the connection.
+        // A newer sync call cancels any older one still in progress.
+        const SYNC_BATCH_SIZE = 25;
+        let gallerySyncToken = 0;
         async function syncGallery(conn) {
             if (allMediaFiles.length === 0) return;
-            const allowedFiles = allMediaFiles.filter(m => !isGameSpoiled(m.hash));
-            const lightweightFiles = await Promise.all(allowedFiles.map(async (m) => {
-                const origIdx = allMediaFiles.indexOf(m);
-                let thumbDataUrl = '';
-                if (m.type === 'image') thumbDataUrl = await createThumbnail(m.file);
-                return { originalIndex: origIdx, type: m.type, dateStr: m.dateStr, hash: m.hash, timestamp: m.timestamp, thumb: thumbDataUrl };
-            }));
-            conn.send({ type: 'gallery_sync', files: lightweightFiles });
+            const token = ++gallerySyncToken;
+            const allowed = [];
+            allMediaFiles.forEach((m, i) => { if (!isGameSpoiled(m.hash)) allowed.push({ m, i }); });
+            if (allowed.length === 0) {
+                conn.send({ type: 'gallery_sync', files: [], reset: true, total: 0 });
+                return;
+            }
+            for (let start = 0; start < allowed.length; start += SYNC_BATCH_SIZE) {
+                if (token !== gallerySyncToken || !conn.open) return;
+                const files = await Promise.all(allowed.slice(start, start + SYNC_BATCH_SIZE).map(async ({ m, i }) => {
+                    const thumb = m.type === 'image' ? await createThumbnail(m.file) : '';
+                    return { originalIndex: i, type: m.type, dateStr: m.dateStr, hash: m.hash, timestamp: m.timestamp, thumb };
+                }));
+                if (token !== gallerySyncToken || !conn.open) return;
+                await waitForBufferedAmountLow(conn);
+                conn.send({ type: 'gallery_sync', files, reset: start === 0, total: allowed.length });
+            }
         }
 
         function createThumbnail(file) {
+            // Always resolves (with '' on failure or after 10s) so one
+            // unreadable file can never stall the whole gallery sync.
             return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
+                const url = URL.createObjectURL(file);
+                const img = new Image();
+                let done = false;
+                const finish = (value) => {
+                    if (done) return;
+                    done = true;
+                    clearTimeout(timer);
+                    URL.revokeObjectURL(url);
+                    resolve(value);
+                };
+                const timer = setTimeout(() => finish(''), 10000);
+                img.onload = () => {
+                    try {
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
                         const maxW = 320;
                         const scale = maxW / img.width;
                         canvas.width = maxW;
-                        canvas.height = img.height * scale;
+                        canvas.height = Math.max(1, Math.round(img.height * scale));
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.5));
-                    };
-                    img.src = e.target.result;
+                        finish(canvas.toDataURL('image/jpeg', 0.5));
+                    } catch (e) { finish(''); }
                 };
-                reader.readAsDataURL(file);
+                img.onerror = () => finish('');
+                img.src = url;
             });
         }
 
@@ -2543,7 +2572,9 @@
                             <span style="font-size: 0.875rem; letter-spacing: 0.05em;">Click to View</span>
                         </div>`;
                 } else {
-                    container.innerHTML = `<img src="${media.thumb}" loading="lazy" alt="Screenshot" />`;
+                    container.innerHTML = media.thumb
+                        ? `<img src="${media.thumb}" loading="lazy" alt="Screenshot" />`
+                        : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#111;color:var(--switch-muted);font-size:0.7rem;text-align:center;padding:0.5rem;">🖼️<br>No preview<br>Click to view</div>`;
                 }
             } else {
                 if (media.type === 'video') {
@@ -2614,7 +2645,7 @@
             if (sourceList.length === 0) {
                 if (currentSource === 'remote') {
                     const friend = getActiveFriend();
-                    mediaGrid.innerHTML = `<div style="color: var(--switch-muted); padding: 2rem; text-align: center; grid-column: 1/-1;">No media available from ${friend ? friend.name : 'this friend'} yet.</div>`;
+                    mediaGrid.innerHTML = `<div style="color: var(--switch-muted); padding: 2rem; text-align: center; grid-column: 1/-1;">No media from ${friend ? friend.name : 'this friend'} yet. If they just loaded their folder, give it a moment to sync.</div>`;
                     mediaGrid.classList.remove('hidden');
                 }
                 return;
