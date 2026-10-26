@@ -494,15 +494,18 @@
                     <p id="loading-count" style="font-size: 0.75rem; color: var(--switch-muted); margin-top: 0.5rem;">Found: 0 files</p>
                 </div>
                 <div id="media-grid" class="flex-col hidden" style="gap: 2rem;"></div>
-                <div id="pagination-controls" class="hidden" style="justify-content: center; align-items: center; gap: 1rem; margin-top: 2rem; padding-bottom: 1rem;">
-                    <button id="btn-page-prev" class="btn-load" style="width: auto; padding: 0.5rem 1.5rem;">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:1.1rem;height:1.1rem;margin-right: 0.25rem;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> Prev
-                    </button>
-                    <span id="page-info" style="color: var(--switch-muted); font-weight: 600; font-size: 0.875rem;">Page 1 of 1</span>
-                    <button id="btn-page-next" class="btn-load" style="width: auto; padding: 0.5rem 1.5rem;">
-                        Next <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:1.1rem;height:1.1rem;margin-left: 0.25rem;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                    </button>
-                </div>
+<div id="pagination-controls" class="hidden" style="justify-content: center; align-items: center; gap: 1rem; margin-top: 2rem; padding-bottom: 1rem;">
+    <button id="btn-page-prev" class="btn-load" style="width: auto; padding: 0.5rem 1.5rem;">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:1.1rem;height:1.1rem;margin-right: 0.25rem;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> Prev
+    </button>
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span id="page-info" style="color: var(--switch-muted); font-weight: 600; font-size: 0.875rem;">Page 1 of 1</span>
+        <input type="number" id="jump-page-input" min="1" placeholder="Jump" class="search-input" style="width: 60px; text-align: center;" title="Type page number and press Enter">
+    </div>
+    <button id="btn-page-next" class="btn-load" style="width: auto; padding: 0.5rem 1.5rem;">
+        Next <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:1.1rem;height:1.1rem;margin-left: 0.25rem;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+    </button>
+</div>
             </div>
         </div>
 
@@ -2788,11 +2791,32 @@
             mediaGrid.classList.remove('hidden');
             if (totalPages > 1) {
                 document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages} (${totalItems} items)`;
+                const jumpEl = document.getElementById('jump-page-input');
+                if (jumpEl) jumpEl.max = totalPages;
                 document.getElementById('btn-page-prev').disabled = currentPage === 1;
                 document.getElementById('btn-page-next').disabled = currentPage === totalPages;
                 paginationControls.classList.remove('hidden');
                 paginationControls.classList.add('flex');
             }
+
+// Jump to page input listener
+        const jumpInput = document.getElementById('jump-page-input');
+        if (jumpInput) {
+            jumpInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const totalPages = Math.ceil(currentSortedList.length / ITEMS_PER_PAGE);
+                    let targetPage = parseInt(jumpInput.value, 10);
+                    if (!isNaN(targetPage)) {
+                        if (targetPage < 1) targetPage = 1;
+                        if (targetPage > totalPages) targetPage = totalPages;
+                        currentPage = targetPage;
+                        renderView();
+                        document.getElementById('gallery-container').scrollTo(0, 0);
+                    }
+                    jumpInput.value = '';
+                }
+            });
+        }
         }
 
         document.getElementById('btn-page-prev').addEventListener('click', () => {
