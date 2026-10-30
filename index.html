@@ -3255,7 +3255,7 @@
         const DISCORD_WORKER_URL  = 'https://switch-hub.codymkw.workers.dev/';
         const DH_ACTIVITY_NAME    = 'Switch Hub';   // shown as "Playing Switch Hub"
         const DH_ACTIVITY_TYPE    = 0;              // 0 = Playing, 3 = Watching
-        const DH_ART_KEY          = 'switch-hub-icon';             // optional: key of an image uploaded in the Discord app > Rich Presence > Art Assets
+        const DH_ART_KEY          = 'switch_hub';             // optional: key of an image uploaded in the Discord app > Rich Presence > Art Assets
 
         const _dc = { variant: (v => v === null ? 1 : Math.min(3, Number(v) || 0))(localStorage.getItem('hub_dc_variant')), ws: null, hb: null, seq: null, ready: false, closing: false, retry: 0, activity: null, game: null, sig: null, subject: null, start: 0, coverFor: null, coverPath: null, rt: null };
 
