@@ -670,6 +670,25 @@
             </div>
 
             <div class="input-group" style="margin-top: 1.25rem;">
+                <label class="input-label cyan">Discord Presence</label>
+                <p style="color: var(--switch-muted); font-size: 0.75rem; margin-bottom: 0.6rem; line-height: 1.4;">Shows which screenshot or video you're looking at and whose gallery it's in, on your Discord profile while Switch Hub is open. Spoilered games are shown as "a Switch game".</p>
+                <div style="display:flex; align-items:center; gap: 0.6rem; margin-bottom: 0.9rem;">
+                    <button id="btn-dh-connect" class="btn-save" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Connect Discord</button>
+                    <button id="btn-dh-disconnect" class="btn-cancel hidden" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">Disconnect</button>
+                    <span id="dh-status" style="color: var(--switch-muted); font-size: 0.75rem;">Not connected</span>
+                </div>
+                <div class="toggle-row" style="margin-bottom: 0.6rem;">
+                    <label>Show my activity on Discord</label>
+                    <input type="checkbox" id="setting-dh-on" checked>
+                </div>
+                <div class="toggle-row" style="margin-bottom: 0.3rem;">
+                    <label>Show friends' names</label>
+                    <input type="checkbox" id="setting-dh-names">
+                </div>
+                <p style="color: var(--switch-muted); font-size: 0.72rem; line-height: 1.4;">Off: Discord says "a friend's gallery" instead of their name.</p>
+            </div>
+
+            <div class="input-group" style="margin-top: 1.25rem;">
                 <label class="input-label red">Spoilered Games (Hidden from Peers)</label>
                 <div id="settings-spoiler-list" style="max-height: 120px; overflow-y: auto; background: var(--switch-dark); border: 1px solid rgba(77, 77, 77, 0.2); border-radius: 0.25rem; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem;"></div>
             </div>
@@ -1715,6 +1734,7 @@
         // GALLERY: viewing-activity presence, jump-to-viewing, auto-follow
         // ============================================================
         function sendPresence() {
+            dhSchedule();
             if (!(activeConnection && activeConnection.open)) return;
             let viewing = null;
             if (!lightbox.classList.contains('hidden') && activeMediaList[currentLightboxIndex]) {
@@ -3225,6 +3245,288 @@
         });
 
         // ============================================================
+        // DISCORD PRESENCE (what you're looking at + whose gallery)
+        //  * Needs its own Discord application with the scope sdk.social_layer_presence,
+        //    plus a copy of the ndsweb-helper Worker that uses THAT application's
+        //    client ID / secret (the Worker does the token exchange).
+        //  * Fill in the two values below.
+        // ============================================================
+        const DISCORD_APP_ID      = '1565522897882316900';
+        const DISCORD_WORKER_URL  = 'https://switch-hub.codymkw.workers.dev/';
+        const DH_ACTIVITY_NAME    = 'Switch Hub';   // shown as "Playing Switch Hub"
+        const DH_ACTIVITY_TYPE    = 0;              // 0 = Playing, 3 = Watching
+        const DH_ART_KEY          = '';             // optional: key of an image uploaded in the Discord app > Rich Presence > Art Assets
+
+        const _dc = { variant: (v => v === null ? 1 : Math.min(3, Number(v) || 0))(localStorage.getItem('hub_dc_variant')), ws: null, hb: null, seq: null, ready: false, closing: false, retry: 0, activity: null, game: null, sig: null, subject: null, start: 0, coverFor: null, coverPath: null, rt: null };
+
+        const dcConfigured = () => !/^YOUR_/.test(DISCORD_APP_ID) && !/YOUR-WORKER/.test(DISCORD_WORKER_URL);
+        const dcEnabled    = () => localStorage.getItem('hub_dc_on') !== '0';
+        function dcTokens() { try { return JSON.parse(localStorage.getItem('hub_dc_tokens') || 'null'); } catch (e) { return null; } }
+        function dcSaveTokens(j, old) {
+            localStorage.setItem('hub_dc_tokens', JSON.stringify({
+                access_token:  j.access_token,
+                refresh_token: j.refresh_token || (old && old.refresh_token) || null,
+                expires_at:    Date.now() + (Number(j.expires_in) || 3600) * 1000
+            }));
+        }
+        function dcClearTokens() { localStorage.removeItem('hub_dc_tokens'); localStorage.removeItem('hub_dc_bearer'); }
+
+        async function dcWorker(path, body) {
+            const r = await fetch(DISCORD_WORKER_URL.replace(/\/$/, '') + path, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+            });
+            const j = await r.json().catch(() => ({}));
+            if (!r.ok) throw new Error((j.error || ('HTTP ' + r.status)) + (j.status ? ' [Discord ' + j.status + ']' : '') + (j.detail ? ': ' + j.detail : ''));
+            return j;
+        }
+
+        // ---- OAuth -----------------------------------------------------------------
+        function dcStartAuth() {
+            if (!dcConfigured()) { showToast('Set DISCORD_APP_ID and DISCORD_WORKER_URL near the top of the Discord section first.', 'yellow', 6000); return; }
+            const state = 'dc_' + Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, '0')).join('');
+            sessionStorage.setItem('hub_dc_state', state);
+            const url = 'https://discord.com/oauth2/authorize?' + new URLSearchParams({
+                client_id: DISCORD_APP_ID, response_type: 'code',
+                scope: 'openid sdk.social_layer_presence',
+                redirect_uri: location.origin + location.pathname,
+                state, prompt: 'consent'
+            });
+            location.href = url;
+        }
+
+        async function dcHandleRedirect() {
+            const u = new URL(location.href);
+            const state = u.searchParams.get('state');
+            if (!state || state.indexOf('dc_') !== 0) return;          // not a Discord redirect
+            const code = u.searchParams.get('code'), err = u.searchParams.get('yellow');
+            ['code', 'state', 'yellow', 'error_description'].forEach(k => u.searchParams.delete(k));
+            history.replaceState(null, '', u.pathname + u.search + u.hash);
+            openSettingsModal();
+            if (err) { showToast('Discord connection was cancelled.', 'purple'); return; }
+            if (!code || state !== sessionStorage.getItem('hub_dc_state')) { showToast('Discord login could not be verified. Try again.', 'yellow'); return; }
+            sessionStorage.removeItem('hub_dc_state');
+            try {
+                const j = await dcWorker('/token', { code, redirect_uri: location.origin + location.pathname });
+                dcSaveTokens(j);
+                showToast('Discord connected!', 'purple');
+            } catch (e) {
+                console.warn(e);
+                showToast('Discord login failed: ' + escapeHtml(e.message), 'yellow', 7000);
+            }
+            dcRenderStatus();
+        }
+
+        async function dcEnsureToken() {
+            const t = dcTokens();
+            if (!t) return null;
+            if (t.expires_at - 60000 > Date.now()) return t.access_token;
+            try {
+                const j = await dcWorker('/token', { refresh_token: t.refresh_token });
+                dcSaveTokens(j, t);
+                return j.access_token;
+            } catch (e) {
+                console.warn('Discord token refresh failed', e);
+                if (/invalid_grant/.test(e.message)) { dcClearTokens(); showToast('Discord session expired. Reconnect in Settings.', 'yellow', 6000); }
+                return null;
+            }
+        }
+
+        // ---- Gateway -----------------------------------------------------------------
+        function dcBeat() {
+            if (_dc.ws && _dc.ws.readyState === 1) _dc.ws.send(JSON.stringify({ op: 1, d: _dc.seq }));
+        }
+        function dcPresencePayload() {
+            return { since: null, activities: _dc.activity ? [_dc.activity] : [], status: 'online', afk: false };
+        }
+        function dcSendPresence() {
+            if (_dc.ws && _dc.ws.readyState === 1 && _dc.ready) _dc.ws.send(JSON.stringify({ op: 3, d: dcPresencePayload() }));
+        }
+
+        // The gateway answered our first IDENTIFY with close code 4000, so we cycle through
+        // a few payload shapes until one reaches READY (the working one is remembered).
+        //  0: bot-style (intents 0) + presence inside IDENTIFY
+        //  1: no intents, presence sent after READY instead
+        //  2: no intents, legacy "$"-prefixed properties, presence after READY
+        //  3: intents 0, presence after READY
+        function dcIdentifyPayload(token, v) {
+            const props = { os: 'browser', browser: 'SwitchHub', device: 'SwitchHub' };
+            const legacy = { $os: 'browser', $browser: 'SwitchHub', $device: 'SwitchHub' };
+            if (v === 1) return { token, properties: props, compress: false };
+            if (v === 2) return { token, properties: legacy, compress: false };
+            if (v === 3) return { token, intents: 0, properties: props };
+            return { token, intents: 0, properties: props, presence: dcPresencePayload() };
+        }
+
+        async function dcConnect() {
+            console.info('[Discord] connecting to gateway');
+            if (_dc.ws || !dcTokens()) return;
+            const tok = await dcEnsureToken();
+            if (!tok || _dc.ws) { dcRenderStatus(); return; }
+            _dc.closing = false; _dc.ready = false; _dc.seq = null;
+            const bearer = localStorage.getItem('hub_dc_bearer') === '1';
+            const ws = new WebSocket('wss://gateway.discord.gg/?v=10&encoding=json');
+            _dc.ws = ws;
+            dcRenderStatus();
+
+            ws.onmessage = ev => {
+                let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+                if (m.s != null) _dc.seq = m.s;
+                if (m.op === 10) {
+                    const iv = m.d.heartbeat_interval;
+                    clearInterval(_dc.hb);
+                    setTimeout(() => { if (_dc.ws === ws) { dcBeat(); _dc.hb = setInterval(dcBeat, iv); } }, iv * Math.random());
+                    console.info('[Discord] gateway hello, identifying', bearer ? '(Bearer prefix)' : '(raw token)', 'variant', _dc.variant);
+                    ws.send(JSON.stringify({ op: 2, d: dcIdentifyPayload(bearer ? 'Bearer ' + tok : tok, _dc.variant) }));
+                } else if (m.op === 1)  { dcBeat(); }
+                else if (m.op === 7 || m.op === 9) { ws.close(); }
+                else if (m.op === 0 && m.t === 'READY') { _dc.ready = true; _dc.retry = 0; localStorage.setItem('hub_dc_variant', String(_dc.variant)); console.info('[Discord] gateway READY, sending presence', _dc.activity); dcSendPresence(); dcRenderStatus(); }
+            };
+            ws.onclose = ev => {
+                console.info('[Discord] gateway closed', ev.code, ev.reason || '(no reason)');
+                clearInterval(_dc.hb);
+                const wasReady = _dc.ready;
+                if (_dc.ws === ws) { _dc.ws = null; _dc.ready = false; }
+                dcRenderStatus();
+                if (_dc.closing && _dc.activity) { _dc.closing = false; dcConnect(); return; }   // a new activity arrived while closing
+                if (_dc.closing || !_dc.activity) return;
+                if (ev.code === 4000 && !wasReady) {                       // gateway didn't like the IDENTIFY shape
+                    if (_dc.variant < 3) { _dc.variant++; console.info('[Discord] trying identify variant', _dc.variant); dcConnect(); }
+                    else { _dc.variant = 0; showToast('Discord gateway keeps closing the connection (code 4000). Check the console for [Discord] lines.', 'yellow', 8000); }
+                    return;
+                }
+                if (ev.code === 4004) {                                   // authentication failed
+                    if (!bearer) { localStorage.setItem('hub_dc_bearer', '1'); dcConnect(); }   // retry with the "Bearer " prefix
+                    else showToast('Discord rejected the login. Try disconnecting and connecting again.', 'yellow', 7000);
+                    return;
+                }
+                if (++_dc.retry <= 5) setTimeout(() => { if (!_dc.ws && _dc.activity && !_dc.closing) dcConnect(); }, 3000 * _dc.retry);
+            };
+            ws.onerror = () => {};
+        }
+
+        function discordStop() {
+            _dc.activity = null; _dc.game = null; _dc.sig = null; _dc.subject = null;
+            const ws = _dc.ws;
+            if (ws && ws.readyState === 1) {
+                if (_dc.ready) ws.send(JSON.stringify({ op: 3, d: dcPresencePayload() }));
+                _dc.closing = true;
+                setTimeout(() => {
+                    if (_dc.activity && _dc.ws === ws) { _dc.closing = false; dcSendPresence(); return; }   // something new to show
+                    try { ws.close(); } catch (e) {}
+                }, 300);
+            } else if (ws) { _dc.closing = true; try { ws.close(); } catch (e) {} }
+            dcRenderStatus();
+        }
+
+
+
+        // ---- what to show -------------------------------------------------------
+        const dhShowNames = () => localStorage.getItem('hub_dc_names') === '1';
+        function dhSchedule() { try { clearTimeout(_dc.rt); _dc.rt = setTimeout(dhRefresh, 700); } catch (e) { /* still starting */ } }
+
+        function dhGameLabel(hash) {
+            if (isGameSpoiled(hash)) return null;                              // spoilered games stay hidden
+            const key = String(gameKey(hash) || '');
+            if (!key || /^(unsorted|unknown)?$/i.test(key) || /^[A-F0-9]{16,32}$/i.test(key)) return 'a Switch game';
+            return key.slice(0, 100);
+        }
+
+        function dhDescribe() {
+            const names  = dhShowNames();
+            const friend = (connectedFriendId && friends.find(f => f.id === connectedFriendId)) || getActiveFriend();
+            const friendGallery = friend && names ? friend.name + "'s gallery" : "a friend's gallery";
+            const whose = remote => remote ? friendGallery : 'my gallery';
+            const gKey  = remote => remote ? 'gallery:' + (friend ? friend.id : 'friend') : 'gallery:me';
+            const art   = DH_ART_KEY ? { large_image: DH_ART_KEY } : {};
+
+            const m = !lightbox.classList.contains('hidden') ? activeMediaList[currentLightboxIndex] : null;
+            if (m) {
+                const remote = !!m.isRemote;
+                const game   = dhGameLabel(m.hash);
+                const kind   = m.type === 'video' ? 'Video' : 'Screenshot';
+                const pos    = activeMediaList.length > 1 ? ` ${currentLightboxIndex + 1} of ${activeMediaList.length}` : '';
+                const when   = m.timestamp ? new Date(m.timestamp).toLocaleDateString() : '';
+                return {
+                    key: gKey(remote),
+                    activity: {
+                        name: DH_ACTIVITY_NAME, type: DH_ACTIVITY_TYPE, application_id: DISCORD_APP_ID,
+                        details: game ? game : 'Looking at a ' + kind.toLowerCase(),
+                        state: `${kind}${pos} · in ${whose(remote)}`,
+                        assets: Object.assign({ large_text: (game || kind) + (when ? ' · captured ' + when : '') }, art)
+                    }
+                };
+            }
+            if (activeView === 'chat') {
+                if (!friend) return null;
+                return { key: 'chat', activity: { name: DH_ACTIVITY_NAME, type: DH_ACTIVITY_TYPE, application_id: DISCORD_APP_ID, details: 'Chatting', state: names ? 'with ' + friend.name : 'with a friend', assets: Object.assign({ large_text: DH_ACTIVITY_NAME }, art) } };
+            }
+            const remote = currentSource === 'remote';
+            const count  = (remote ? remoteMediaFiles : allMediaFiles).length;
+            if (!count) return null;
+            return {
+                key: gKey(remote),
+                activity: { name: DH_ACTIVITY_NAME, type: DH_ACTIVITY_TYPE, application_id: DISCORD_APP_ID, details: 'Browsing ' + whose(remote), state: count + (count === 1 ? ' item' : ' items'), assets: Object.assign({ large_text: DH_ACTIVITY_NAME }, art) }
+            };
+        }
+
+        function dhRefresh() {
+            clearTimeout(_dc.rt);
+            if (!dcConfigured() || !dcTokens() || !dcEnabled()) return;
+            const d = dhDescribe();
+            if (!d) { if (_dc.activity) discordStop(); return; }
+            if (_dc.subject !== d.key) { _dc.subject = d.key; _dc.start = Date.now(); }   // timer restarts when the gallery changes
+            d.activity.timestamps = { start: _dc.start };
+            const sig = JSON.stringify(d.activity);
+            _dc.activity = d.activity;
+            if (sig !== _dc.sig) {
+                _dc.sig = sig;
+                if (_dc.ready) dcSendPresence(); else dcConnect();
+            }
+            dcRenderStatus();
+        }
+
+        function dcRenderStatus() {
+            const el = document.getElementById('dh-status');
+            if (!el) return;
+            const t = dcTokens();
+            let text = 'Not connected';
+            if (!dcConfigured())                    text = 'Not set up yet (see the Discord section in the page code)';
+            else if (t && _dc.ready && _dc.activity) text = 'Showing your activity';
+            else if (t && _dc.ws)                   text = 'Connecting…';
+            else if (t)                             text = dcEnabled() ? 'Connected' : 'Connected (hidden)';
+            el.textContent = text;
+            document.getElementById('btn-dh-connect').classList.toggle('hidden', !!t);
+            document.getElementById('btn-dh-disconnect').classList.toggle('hidden', !t);
+            document.getElementById('setting-dh-on').checked    = dcEnabled();
+            document.getElementById('setting-dh-names').checked = dhShowNames();
+        }
+
+        function dhInit() {
+            document.getElementById('btn-dh-connect').addEventListener('click', dcStartAuth);
+            document.getElementById('btn-dh-disconnect').addEventListener('click', async () => {
+                const t = dcTokens();
+                discordStop();
+                if (t) { try { await dcWorker('/revoke', { token: t.refresh_token || t.access_token }); } catch (e) { /* best effort */ } }
+                dcClearTokens();
+                dcRenderStatus();
+                showToast('Discord disconnected.', 'purple');
+            });
+            document.getElementById('setting-dh-on').addEventListener('change', e => {
+                localStorage.setItem('hub_dc_on', e.target.checked ? '1' : '0');
+                if (!e.target.checked) discordStop(); else dhRefresh();
+                dcRenderStatus();
+            });
+            document.getElementById('setting-dh-names').addEventListener('change', e => {
+                localStorage.setItem('hub_dc_names', e.target.checked ? '1' : '0');
+                dhSchedule();
+            });
+            dcRenderStatus();
+            dcHandleRedirect();
+            setInterval(dhSchedule, 3000);      // catches view / gallery / friend changes that don't send presence
+            dhSchedule();
+        }
+
+        // ============================================================
         // INIT
         // ============================================================
         renderMyProfileCard();
@@ -3234,6 +3536,7 @@
         showWelcomeOrLocal();
         applyGridSize(myProfile.gridSize || 'comfortable');
         initPeer();
+        dhInit();
         refreshAllPresence();
         setInterval(refreshAllPresence, 60000);
     </script>
