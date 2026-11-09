@@ -2,6 +2,30 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.1.0] - 2026-11-09
+
+### Added
+- **Reply to a message.** Hover a message and hit ↩️ to quote it. The quote shows above your reply, and clicking it jumps to (and briefly highlights) the original.
+- **Pinned messages.** Pin or unpin any message with 📌. Pins sync to both of you, and a bar above the chat shows them (click it to cycle through if there's more than one).
+- **Captions on screenshots.** Open one of your screenshots and click the caption pill to write a note. A connected friend sees it live, and a 💬 badge appears on the thumbnail.
+- **Reactions that stick on screenshots.** Reacting to a friend's screenshot used to be a floating emoji that vanished. It's now also saved on their side as a badge on the thumbnail and shown under the screenshot in their lightbox (with a button to clear it).
+- **Albums.** Make named albums in the sidebar, filter the gallery to one, rename or delete them. Deleting an album never touches your screenshots.
+- **Select mode.** Pick multiple screenshots, then add them to an album, send them to a friend one by one (with progress), add them to the session album, or download them as a zip with a folder per game. The zip is built in the browser without a library.
+- **Duplicate finder.** Finds identical files (same size, then a fingerprint of the start, middle and end of each file) and can hide the extras for the session. Nothing is ever deleted.
+- **Stats & Year in Review.** Totals, photos vs clips, top games, busiest day and month, longest streak, a day-by-day calendar heatmap, and a per-year recap.
+- **Watch together.** Invite a friend, they accept, and their screen follows yours (screenshots, arrow keys and slideshow). Pass the remote back and forth, and end it from the banner at the top.
+- **Shared session album.** Either of you can add screenshots to a pile that both of you see while connected. Spoiler-marked games can't be added.
+- **Voice and video calls**, with mute and camera toggles. The call rings through the existing connection and only starts once the other person accepts, and an uninvited call is rejected.
+- **Clip trim and GIF export.** The ✂️ button on a local clip opens a trimmer. Export the selection as a WebM, or as a GIF (up to 15 seconds, 240/320/480px, 8/10/15 fps). Both are made in your browser.
+- **Installable app.** Added a web app manifest, icons and a service worker, plus an "Install as an app" button when your browser supports it. The app shell now opens offline.
+
+### Fixed
+- **Closing the lightbox told your friend you were still looking at that screenshot.** The "what they're viewing" update went out before the lightbox had finished closing, so your friend's panel kept showing the old screenshot (and "Jump to what they're viewing" kept offering it). It now reports "not viewing" immediately.
+- **Offline, the app tried to use a connection library that hadn't loaded.** It now says it can't connect to friends right now and carries on with your local gallery.
+
+### Changed
+- The connected-friend panel (jump to viewing, watch together, calls, session album) now appears as soon as you connect, rather than after the first thing your friend does.
+
 ## [1.0.5] - 2026-10-15
 
 ### Fixed
