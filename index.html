@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Switch Hub</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#18181c">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -268,6 +272,78 @@
         .favorite-badge:hover { transform: scale(1.2); }
 
         .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.95); z-index: 50; display: flex; flex-direction: column; backdrop-filter: blur(8px); transition: opacity 0.3s; }
+        .media-item.selected { outline: 3px solid var(--switch-cyan); outline-offset: -3px; }
+        .select-check { position: absolute; top: 0.5rem; left: 0.5rem; width: 1.5rem; height: 1.5rem; border-radius: 9999px; border: 2px solid white; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; color: #04222b; font-weight: 900; font-size: 0.85rem; z-index: 4; pointer-events: none; }
+        .media-item.selected .select-check { background: var(--switch-cyan); border-color: var(--switch-cyan); }
+        .select-bar { position: fixed; left: 50%; bottom: 1.25rem; transform: translateX(-50%); z-index: 40; display: none; align-items: center; gap: 0.5rem; flex-wrap: wrap; justify-content: center; max-width: 94vw; background: var(--switch-darker); border: 1px solid var(--switch-cyan); border-radius: 0.9rem; padding: 0.6rem 0.9rem; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+        .select-bar.active { display: flex; }
+        .select-bar .select-count { font-weight: 700; color: white; margin-right: 0.4rem; font-size: 0.85rem; }
+        .select-bar button { padding: 0.4rem 0.8rem; border-radius: 0.4rem; border: 1px solid rgba(77,77,77,0.5); background: var(--switch-light); color: white; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+        .select-bar button:hover { border-color: var(--switch-cyan); }
+        .select-bar button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .album-row { display: flex; align-items: center; gap: 0.25rem; }
+        .album-row .nav-item { flex: 1; text-align: left; }
+        .album-row .album-mini { background: none; border: none; color: var(--switch-muted); cursor: pointer; font-size: 0.8rem; padding: 0.2rem; }
+        .album-row .album-mini:hover { color: white; }
+        .stats-tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+        .stats-tabs button { padding: 0.3rem 0.8rem; border-radius: 9999px; border: 1px solid rgba(77,77,77,0.5); background: var(--switch-light); color: white; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
+        .stats-tabs button.active { background: var(--switch-cyan); color: #04222b; border-color: var(--switch-cyan); }
+        .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.6rem; margin-bottom: 1.1rem; }
+        .stat-card { background: rgba(255,255,255,0.05); border-radius: 0.7rem; padding: 0.7rem 0.8rem; }
+        .stat-card .big { font-size: 1.5rem; font-weight: 800; color: var(--switch-cyan); line-height: 1.1; word-break: break-word; }
+        .stat-card.long .big { font-size: 0.95rem; line-height: 1.25; }
+        .stat-card .lbl { font-size: 0.7rem; color: var(--switch-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.2rem; }
+        .stats-h { font-size: 0.8rem; font-weight: 700; color: white; margin: 0.9rem 0 0.45rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .bar-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; font-size: 0.78rem; }
+        .bar-row .bar-name { width: 9.5rem; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: white; }
+        .bar-row .bar-track { flex: 1; height: 0.7rem; background: rgba(255,255,255,0.07); border-radius: 9999px; overflow: hidden; }
+        .bar-row .bar-fill { height: 100%; background: var(--switch-cyan); border-radius: 9999px; }
+        .bar-row .bar-n { width: 2.5rem; text-align: right; color: var(--switch-muted); }
+        .heat-wrap { overflow-x: auto; padding-bottom: 0.3rem; }
+        .heat-grid { display: grid; grid-template-rows: repeat(7, 11px); grid-auto-flow: column; grid-auto-columns: 11px; gap: 3px; width: max-content; }
+        .heat-cell { width: 11px; height: 11px; border-radius: 2px; background: rgba(255,255,255,0.06); }
+        .heat-cell.l1 { background: rgba(0,200,255,0.25); } .heat-cell.l2 { background: rgba(0,200,255,0.5); }
+        .heat-cell.l3 { background: rgba(0,200,255,0.75); } .heat-cell.l4 { background: rgba(0,200,255,1); }
+        .heat-cell.pad { background: transparent; }
+        .recap-hero { text-align: center; padding: 1.2rem 0.5rem; margin-bottom: 1rem; border-radius: 0.9rem; background: linear-gradient(135deg, rgba(0,200,255,0.18), rgba(168,85,247,0.22)); }
+        .recap-hero .year { font-size: 2.6rem; font-weight: 900; color: white; letter-spacing: 0.03em; }
+        .recap-hero .line { color: rgba(255,255,255,0.85); font-size: 0.95rem; margin-top: 0.3rem; }
+        .wt-banner { position: fixed; top: 0.75rem; left: 50%; transform: translateX(-50%); z-index: 80; display: none; align-items: center; gap: 0.6rem; background: rgba(168,85,247,0.92); color: white; border-radius: 9999px; padding: 0.4rem 0.5rem 0.4rem 1rem; font-size: 0.82rem; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.5); max-width: 94vw; }
+        .wt-banner.active { display: flex; }
+        .wt-banner button { padding: 0.25rem 0.7rem; border-radius: 9999px; border: 1px solid rgba(255,255,255,0.6); background: rgba(0,0,0,0.25); color: white; font-size: 0.75rem; font-weight: 700; cursor: pointer; }
+        .wt-banner button:hover { background: rgba(0,0,0,0.45); }
+        .side-btn-purple { border-color: #a855f7 !important; color: #a855f7 !important; }
+        .session-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 0.5rem; margin: 0.5rem 0 0.8rem; }
+        .session-tile { position: relative; aspect-ratio: 1; border-radius: 0.5rem; overflow: hidden; background: #111; cursor: pointer; border: 1px solid rgba(77,77,77,0.4); display: flex; align-items: center; justify-content: center; color: var(--switch-muted); font-size: 1.6rem; }
+        .session-tile img { width: 100%; height: 100%; object-fit: cover; }
+        .session-tile .who { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.65); color: white; font-size: 0.65rem; padding: 0.15rem 0.35rem; text-align: center; }
+        .call-overlay { position: fixed; right: 1rem; top: 4.5rem; width: min(360px, 92vw); z-index: 85; display: none; flex-direction: column; gap: 0.5rem; background: var(--switch-darker); border: 1px solid #a855f7; border-radius: 0.9rem; padding: 0.6rem; box-shadow: 0 12px 34px rgba(0,0,0,0.6); }
+        .call-overlay.active { display: flex; }
+        .call-stage { position: relative; aspect-ratio: 16 / 10; background: #000; border-radius: 0.6rem; overflow: hidden; }
+        .call-stage video#call-remote { width: 100%; height: 100%; object-fit: cover; }
+        .call-stage video#call-remote.no-video { opacity: 0; position: absolute; pointer-events: none; }
+        .call-audio-only { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 0.3rem; color: white; font-weight: 700; }
+        .call-audio-only .big { font-size: 2.4rem; }
+        .call-audio-only.active { display: flex; }
+        .call-local { position: absolute; right: 0.4rem; bottom: 0.4rem; width: 28%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 0.4rem; border: 2px solid rgba(255,255,255,0.5); background: #111; transform: scaleX(-1); }
+        .call-local.hidden-pip { display: none; }
+        .call-title { text-align: center; font-size: 0.78rem; color: var(--switch-muted); }
+        .call-controls { display: flex; justify-content: center; gap: 0.5rem; }
+        .call-controls button { padding: 0.4rem 0.8rem; border-radius: 9999px; border: 1px solid rgba(77,77,77,0.5); background: var(--switch-light); color: white; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+        .call-controls button.off { background: rgba(230,0,18,0.25); border-color: var(--switch-red); }
+        .call-controls button.hang { background: var(--switch-red); border-color: var(--switch-red); }
+        .call-controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+        .dupe-group { background: rgba(255,255,255,0.04); border-radius: 0.5rem; padding: 0.5rem 0.7rem; margin-bottom: 0.5rem; font-size: 0.78rem; color: var(--switch-muted); word-break: break-all; }
+        .dupe-group b { color: white; }
+        .react-badge { position: absolute; bottom: 0.5rem; left: 0.5rem; display: flex; align-items: center; gap: 0.2rem; background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); border-radius: 9999px; padding: 0.1rem 0.45rem; font-size: 0.8rem; z-index: 2; pointer-events: none; }
+        .lightbox-caption { position: absolute; left: 50%; bottom: 1rem; transform: translateX(-50%); max-width: min(90%, 40rem); display: none; flex-direction: column; align-items: center; gap: 0.35rem; z-index: 5; }
+        .lightbox-caption.active { display: flex; }
+        .lightbox-caption .cap-text { background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); color: white; padding: 0.4rem 0.9rem; border-radius: 9999px; font-size: 0.85rem; text-align: center; word-break: break-word; }
+        .lightbox-caption .cap-text.editable { cursor: text; border: 1px dashed rgba(255,255,255,0.3); }
+        .lightbox-caption .cap-text.placeholder { opacity: 0.6; }
+        .lightbox-caption input.cap-input { background: rgba(0,0,0,0.8); color: white; border: 1px solid var(--switch-cyan); border-radius: 9999px; padding: 0.4rem 0.9rem; font-size: 0.85rem; width: min(80vw, 30rem); outline: none; }
+        .lightbox-caption .cap-reacts { display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.6); border-radius: 9999px; padding: 0.2rem 0.7rem; font-size: 0.78rem; color: rgba(255,255,255,0.85); }
+        .lightbox-caption .cap-reacts button { background: none; border: none; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 0.75rem; }
         .lightbox-toolbar { height: 4rem; display: flex; justify-content: space-between; align-items: center; padding: 0 1.5rem; flex-shrink: 0; background: linear-gradient(to bottom, black, transparent); }
         .lightbox-info { font-size: 0.875rem; font-weight: 500; color: rgba(255, 255, 255, 0.7); letter-spacing: 0.025em; text-shadow: 0 4px 6px rgba(0,0,0,0.1); display: flex; align-items: center; }
         .btn-icon { color: white; background: rgba(255,255,255,0.1); border: none; border-radius: 9999px; padding: 0.5rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
@@ -314,6 +390,19 @@
         .msg-bubble.deleted { font-style: italic; opacity: 0.6; }
         .msg-bubble code { background: rgba(0,0,0,0.15); padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-family: monospace; font-size: 0.85em; }
         .msg-bubble a { color: inherit; text-decoration: underline; }
+        .reply-quote { display: block; border-left: 3px solid rgba(255,255,255,0.55); background: rgba(0,0,0,0.15); border-radius: 0.35rem; padding: 0.25rem 0.5rem; margin-bottom: 0.35rem; font-size: 0.78rem; opacity: 0.9; cursor: pointer; max-width: 22rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .reply-quote strong { display: block; font-size: 0.7rem; opacity: 0.8; }
+        .msg-row.mine .reply-quote { border-left-color: rgba(4,34,43,0.6); background: rgba(4,34,43,0.12); }
+        .msg-row.flash .msg-bubble { animation: msgFlash 1.2s ease; }
+        @keyframes msgFlash { 0%, 60% { box-shadow: 0 0 0 3px var(--switch-yellow, #ffd23f); } 100% { box-shadow: 0 0 0 0 transparent; } }
+        .pin-tag { font-size: 0.68rem; color: var(--switch-yellow, #ffd23f); margin-left: 0.4rem; }
+        .reply-preview-bar { display: flex; align-items: center; gap: 0.6rem; padding: 0.45rem 0.75rem; margin-bottom: 0.5rem; background: rgba(255,255,255,0.05); border-left: 3px solid var(--switch-cyan); border-radius: 0.5rem; font-size: 0.8rem; }
+        .reply-preview-bar .reply-preview-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--switch-muted); }
+        .reply-preview-bar .reply-preview-text b { color: white; }
+        .pinned-bar { display: none; align-items: center; gap: 0.6rem; padding: 0.45rem 1.5rem; background: rgba(255,210,63,0.08); border-bottom: 1px solid rgba(255,210,63,0.25); font-size: 0.8rem; cursor: pointer; flex-shrink: 0; }
+        .pinned-bar.active { display: flex; }
+        .pinned-bar .pinned-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .pinned-bar .pinned-count { color: var(--switch-muted); font-size: 0.72rem; }
         .msg-attachment-img { max-width: 260px; max-height: 260px; border-radius: 0.75rem; display: block; cursor: pointer; }
         .msg-attachment-file { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 0.85rem; border-radius: 0.75rem; background: rgba(255,255,255,0.08); font-size: 0.82rem; text-decoration: none; color: inherit; }
         .msg-attachment-progress { font-size: 0.78rem; opacity: 0.85; display: flex; align-items: center; gap: 0.5rem; }
@@ -412,6 +501,18 @@
         <div style="padding: 0 0.75rem; display: flex; flex-direction: column; gap: 0.4rem;" id="discover-buttons">
             <button id="btn-random" class="btn-discover">🎲 Random Screenshot</button>
             <button id="btn-on-this-day" class="btn-discover">📅 On This Day</button>
+            <button id="btn-install-app" class="btn-discover" style="display:none;">⬇️ Install as an app</button>
+        </div>
+
+        <div id="local-tools" style="display: none;">
+            <div class="nav-section-title">Albums</div>
+            <div id="albums-list" style="padding: 0 0.75rem; display: flex; flex-direction: column; gap: 0.25rem;"></div>
+            <div style="padding: 0.4rem 0.75rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                <button id="btn-new-album" class="btn-discover">➕ New Album</button>
+                <button id="btn-select-mode" class="btn-discover">☑️ Select</button>
+                <button id="btn-find-dupes" class="btn-discover">🧹 Find Duplicates</button>
+                <button id="btn-stats" class="btn-discover">📊 Stats &amp; Year in Review</button>
+            </div>
         </div>
 
         <div id="stats-container" class="stats-box hidden">
@@ -423,6 +524,12 @@
             <p id="peer-activity-text" style="color: var(--switch-muted); font-size: 0.8rem; line-height: 1.4;">Not connected.</p>
             <div id="peer-loading-bar-wrap" class="hidden" style="margin-top: 0.4rem; height: 4px; background: rgba(255,255,255,0.1); border-radius: 9999px; overflow: hidden;">
                 <div id="peer-loading-bar" style="height: 100%; width: 0%; background: #a855f7; transition: width 0.2s;"></div>
+            </div>
+            <button id="btn-watch-together" style="margin-top: 0.5rem; width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #a855f7; color: #a855f7; background: transparent; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">🎬 Watch together</button>
+            <button id="btn-session-album" style="margin-top: 0.4rem; width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #a855f7; color: #a855f7; background: transparent; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">🗂️ Session album (0)</button>
+            <div style="display: flex; gap: 0.4rem; margin-top: 0.4rem;">
+                <button id="btn-voice-call" style="flex: 1; padding: 0.35rem 0.4rem; border: 1px solid #a855f7; color: #a855f7; background: transparent; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">📞 Voice</button>
+                <button id="btn-video-call" style="flex: 1; padding: 0.35rem 0.4rem; border: 1px solid #a855f7; color: #a855f7; background: transparent; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">📹 Video</button>
             </div>
             <button id="btn-jump-peer-viewing" style="display:none; margin-top: 0.5rem; width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #a855f7; color: #a855f7; background: rgba(168,85,247,0.08); border-radius: 0.25rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.03em; cursor: pointer;">▶ Jump to what they're viewing</button>
             <label style="display: flex; align-items: center; gap: 0.4rem; margin-top: 0.6rem; font-size: 0.7rem; color: var(--switch-muted); cursor: pointer;">
@@ -511,6 +618,11 @@
 
         <!-- ================= CHAT VIEW ================= -->
         <div id="chat-view" class="hidden" style="flex: 1; min-height: 0; display: flex; flex-direction: column;">
+            <div class="pinned-bar" id="pinned-bar" title="Click to jump to the pinned message, click again for the next one">
+                <span>📌</span>
+                <span class="pinned-text" id="pinned-text"></span>
+                <span class="pinned-count" id="pinned-count"></span>
+            </div>
             <div class="messages-area" id="messages-area"></div>
             <div class="composer-area">
                 <div class="composer-row">
@@ -543,6 +655,8 @@
                 <button id="btn-slideshow" class="btn-icon" title="Start Slideshow">▶</button>
                 <button id="btn-download-media" class="btn-icon" title="Download">⬇</button>
                 <button id="btn-send-to-chat" class="btn-icon" title="Send to Chat" style="color: var(--switch-cyan);">💬</button>
+                <button id="btn-add-session" class="btn-icon" title="Add to the shared session album" style="display:none;">🗂️</button>
+                <button id="btn-clip-tools" class="btn-icon" title="Trim this clip or make a GIF" style="display:none;">✂️</button>
                 <button id="btn-star-media" class="btn-icon btn-star-media" style="display:none;" title="Star this for your peer">⭐</button>
                 <button id="btn-close-lightbox" class="btn-icon">
                     <svg style="width: 1.5rem; height: 1.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -552,8 +666,40 @@
         <div class="lightbox-content">
             <button id="btn-prev" class="nav-arrow arrow-left"><svg style="width: 2rem; height: 2rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg></button>
             <div id="lightbox-media-container" class="lightbox-media-wrapper"></div>
+            <div id="lightbox-caption" class="lightbox-caption"></div>
             <button id="btn-next" class="nav-arrow arrow-right"><svg style="width: 2rem; height: 2rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg></button>
         </div>
+    </div>
+
+    <div id="call-overlay" class="call-overlay">
+        <div class="call-stage">
+            <video id="call-remote" autoplay playsinline></video>
+            <div id="call-audio-only" class="call-audio-only"><div class="big" id="call-audio-avatar">🎧</div><div id="call-audio-name"></div></div>
+            <video id="call-local" class="call-local hidden-pip" autoplay playsinline muted></video>
+        </div>
+        <div class="call-title" id="call-title"></div>
+        <div class="call-controls">
+            <button id="call-mute" title="Mute or unmute your microphone">🎤 Mute</button>
+            <button id="call-cam" title="Turn your camera on or off">📷 Camera</button>
+            <button id="call-hang" class="hang">📞 Hang up</button>
+        </div>
+    </div>
+
+    <div id="wt-banner" class="wt-banner">
+        <span id="wt-text"></span>
+        <button id="wt-pass"></button>
+        <button id="wt-end">End</button>
+    </div>
+
+    <div id="select-bar" class="select-bar">
+        <span class="select-count" id="select-count">0 selected</span>
+        <button id="sel-all">Select all</button>
+        <button id="sel-album">📁 Add to album</button>
+        <button id="sel-unalbum">Remove from album</button>
+        <button id="sel-send">💬 Send to chat</button>
+        <button id="sel-session">🗂️ Add to session</button>
+        <button id="sel-zip">📦 Download zip</button>
+        <button id="sel-cancel">Done</button>
     </div>
 
     <!-- Rename Game Modal -->
@@ -763,11 +909,18 @@
         let currentSource = 'local'; // 'local' or 'remote'
         let currentSort = 'all';
         let currentLightboxIndex = 0;
+        let lightboxOpenFlag = false; // true from the moment it opens until the moment close starts (the fade-out takes 300ms)
         let activeMediaList = [];
         let hashToGameMap = {};
         let spoilerGamesMap = {};
         let receivedStars = {};
         let favorites = {};
+        let albums = {};           // id -> { name, keys: ["hash|timestamp", ...] } (my screenshots only)
+        let currentAlbumId = null; // album currently filtering the local gallery
+        let selectMode = false;
+        const selectedKeys = new Set();
+        let captions = {};         // "hash|timestamp" -> caption text on MY screenshots
+        let mediaReactions = {};   // "hash|timestamp" -> [{ emoji, from }] friends left on MY screenshots
         let searchQuery = '';
         let typeFilter = 'all';
         let favoritesOnly = false;
@@ -789,6 +942,8 @@
         let pendingAttachment = null;
         let searchFilterActive = false;
         let searchFilterQuery = '';
+        let replyingTo = null;   // { friendId, id, who, snippet } while composing a reply
+        let pinCycleIndex = 0;   // which pinned message the pinned bar jumps to next
 
         // --- P2P (shared) ---
         let peer = null;
@@ -837,6 +992,15 @@
                 const savedFavorites = localStorage.getItem('switch_gallery_favorites');
                 if (savedFavorites) favorites = JSON.parse(savedFavorites);
 
+                const savedAlbums = localStorage.getItem('switch_hub_albums');
+                if (savedAlbums) albums = JSON.parse(savedAlbums);
+
+                const savedCaptions = localStorage.getItem('switch_hub_captions');
+                if (savedCaptions) captions = JSON.parse(savedCaptions);
+
+                const savedMediaReactions = localStorage.getItem('switch_hub_media_reactions');
+                if (savedMediaReactions) mediaReactions = JSON.parse(savedMediaReactions);
+
                 const cachedDb = localStorage.getItem('switch_gallery_live_db');
                 if (cachedDb) liveGameDb = JSON.parse(cachedDb);
             } catch (e) {
@@ -863,6 +1027,10 @@
         function saveSpoilerMap() { localStorage.setItem('switch_gallery_spoilers', JSON.stringify(spoilerGamesMap)); }
         function saveReceivedStars() { localStorage.setItem('switch_gallery_received_stars', JSON.stringify(receivedStars)); }
         function saveFavorites() { localStorage.setItem('switch_gallery_favorites', JSON.stringify(favorites)); }
+        function saveAlbums() { localStorage.setItem('switch_hub_albums', JSON.stringify(albums)); }
+        function saveCaptions() { localStorage.setItem('switch_hub_captions', JSON.stringify(captions)); }
+        function saveMediaReactions() { localStorage.setItem('switch_hub_media_reactions', JSON.stringify(mediaReactions)); }
+        function mediaKey(m) { return `${m.hash}|${m.timestamp}`; }
 
         loadState();
 
@@ -1263,6 +1431,11 @@
 
         function initPeer(useTemporaryId) {
             if (peer) return;
+            if (typeof Peer === 'undefined') {
+                // PeerJS didn't load (usually: offline). Everything local still works.
+                showToast("Can't connect to friends right now (offline?). Your local gallery still works.", 'yellow', 5000);
+                return;
+            }
             const savedPeerId = useTemporaryId ? null : localStorage.getItem('switch_hub_peer_id');
             peer = savedPeerId ? new Peer(savedPeerId) : new Peer();
 
@@ -1294,6 +1467,8 @@
                 const start = () => wireConnection(conn, friend);
                 if (conn.open) start(); else conn.on('open', start);
             });
+
+            peer.on('call', (call) => handleIncomingMediaCall(call));
 
             peer.on('disconnected', () => {
                 setTimeout(() => {
@@ -1436,6 +1611,10 @@
 
         function wireConnection(conn, friend) {
             sendToConn(myHelloPayload());
+            // Show the connected-friend panel (watch together, calls, session album) right away,
+            // instead of waiting for the first presence message to arrive.
+            document.getElementById('peer-activity-box').classList.remove('hidden');
+            sendPresence();
             startPingLoop();
             renderFriendList();
             updateTopBar();
@@ -1460,6 +1639,10 @@
                 document.getElementById('peer-activity-box').classList.add('hidden');
                 document.getElementById('btn-jump-peer-viewing').style.display = 'none';
                 peerTyping = false;
+                endWt(false);
+                endCall(false);
+                sessionPile = [];
+                updateSessionButton();
                 showToast(`${friend.name} went offline`);
                 renderFriendList();
                 updateTopBar();
@@ -1553,6 +1736,69 @@
                 const m = thread.find(x => x.id === data.messageId);
                 if (m) { m.deleted = true; m.attachment = null; saveMessages(); if (activeFriendId === friend.id && activeView === 'chat') renderMessages(); }
             }
+            else if (data.type === 'call_invite') { handleCallInvite(data, friend); }
+            else if (data.type === 'call_ready') { handleCallReady(friend); }
+            else if (data.type === 'call_decline') {
+                if (callState.pending) { cancelPendingCall(); showToast(data.busy ? `${friend.name} is already in a call.` : `${friend.name} didn't pick up.`, 'yellow'); }
+            }
+            else if (data.type === 'call_end') { if (callState.active || callState.pending || callState.expecting) { endCall(false); showToast(`${friend.name} ended the call.`); } }
+            else if (data.type === 'wt_invite') {
+                if (wt.active) { sendToConn({ type: 'wt_decline' }); }
+                else if (confirm(`${friend.name} wants to watch together. They'll drive and your screen will follow theirs. Join?`)) {
+                    beginWt('follower');
+                    sendToConn({ type: 'wt_accept' });
+                } else { sendToConn({ type: 'wt_decline' }); }
+            }
+            else if (data.type === 'wt_accept') {
+                if (wtInvitePending) { wtInvitePending = false; beginWt('driver'); showToast(`${friend.name} joined. You're driving! 🎬`, 'purple'); }
+            }
+            else if (data.type === 'wt_decline') { wtInvitePending = false; showToast(`${friend.name} can't watch together right now.`, 'yellow'); }
+            else if (data.type === 'wt_pass') {
+                if (wt.active && wt.role === 'follower') { setWtRole('driver'); showToast('You have the remote now 🎮', 'purple'); sendPresence(); }
+            }
+            else if (data.type === 'wt_request') {
+                if (wt.active && wt.role === 'driver' && confirm(`${friend.name} would like the remote. Pass it over?`)) passTheRemote();
+            }
+            else if (data.type === 'wt_end') {
+                if (wt.active) { endWt(false); showToast(`${friend.name} ended watching together.`); }
+            }
+            else if (data.type === 'sess_add') {
+                const thumb = (typeof data.thumb === 'string' && data.thumb.startsWith('data:image/') && data.thumb.length < 200000) ? data.thumb : '';
+                const entry = {
+                    hash: String(data.hash || ''), timestamp: Number(data.timestamp) || 0, dateStr: String(data.dateStr || '').slice(0, 10),
+                    mtype: data.mtype === 'video' ? 'video' : 'image', thumb,
+                    owner: data.owner === 'me' ? 'them' : 'me' // flipped: their "me" is our "them"
+                };
+                if (entry.hash && pushSession(entry)) showToast(`${friend.name} added to the session album 🗂️`, 'purple');
+            }
+            else if (data.type === 'sess_clear') { sessionPile = []; updateSessionButton(); showToast(`${friend.name} cleared the session album`); }
+            else if (data.type === 'caption_update') {
+                const item = remoteMediaFiles.find(m => m.hash === data.hash && m.timestamp === data.timestamp);
+                if (item) {
+                    item.caption = String(data.caption || '').slice(0, 200);
+                    updateLightboxFooter();
+                    if (activeFriendId === friend.id && activeView === 'gallery' && !isLightboxOpen()) renderView();
+                }
+            }
+            else if (data.type === 'media_react_save') {
+                const key = `${data.hash}|${data.timestamp}`;
+                const mine = allMediaFiles.find(m => mediaKey(m) === key);
+                if (mine && REACTION_EMOJIS.includes(data.emoji)) {
+                    const list = mediaReactions[key] = mediaReactions[key] || [];
+                    if (!list.some(r => r.emoji === data.emoji && r.from === friend.name)) {
+                        list.push({ emoji: data.emoji, from: friend.name });
+                        saveMediaReactions();
+                    }
+                    showToast(`${friend.name} reacted ${data.emoji} to one of your screenshots`, 'yellow');
+                    updateLightboxFooter();
+                    if (activeView === 'gallery' && !isLightboxOpen()) renderView();
+                }
+            }
+            else if (data.type === 'pin') {
+                const thread = ensureThread(friend.id);
+                const m = thread.find(x => x.id === data.messageId);
+                if (m) { m.pinned = !!data.pinned; saveMessages(); if (activeFriendId === friend.id && activeView === 'chat') renderMessages(); }
+            }
             else if (data.type === 'file_start') { handleChatFileStart(data, friend); }
             else if (data.type === 'file_chunk') { handleChatFileChunk(data, friend); }
             else if (data.type === 'file_end') { handleChatFileEnd(data, friend); }
@@ -1560,7 +1806,11 @@
 
         function handleChatMsg(data, friend) {
             const thread = ensureThread(friend.id);
-            thread.push({ id: data.id, mine: false, text: data.text, ts: data.ts, status: 'delivered', reactions: { mine: [], theirs: [] }, edited: false, deleted: false });
+            // The sender's "who" is from their point of view, so flip it for us.
+            const replyTo = (data.replyTo && data.replyTo.id)
+                ? { id: data.replyTo.id, who: data.replyTo.who === 'me' ? 'them' : 'me', snippet: String(data.replyTo.snippet || '').slice(0, 140) }
+                : null;
+            thread.push({ id: data.id, mine: false, text: data.text, ts: data.ts, status: 'delivered', reactions: { mine: [], theirs: [] }, edited: false, deleted: false, replyTo, pinned: false });
             saveMessages();
             sendToConn({ type: 'ack_delivered', id: data.id });
             const isActiveAndFocused = activeFriendId === friend.id && activeView === 'chat' && !document.hidden;
@@ -1618,7 +1868,7 @@
                 if (token !== gallerySyncToken || !conn.open) return;
                 const files = await Promise.all(allowed.slice(start, start + SYNC_BATCH_SIZE).map(async ({ m, i }) => {
                     const thumb = m.type === 'image' ? await createThumbnail(m.file) : '';
-                    return { originalIndex: i, type: m.type, dateStr: m.dateStr, hash: m.hash, timestamp: m.timestamp, thumb };
+                    return { originalIndex: i, type: m.type, dateStr: m.dateStr, hash: m.hash, timestamp: m.timestamp, thumb, caption: captions[mediaKey(m)] || '' };
                 }));
                 if (token !== gallerySyncToken || !conn.open) return;
                 await waitForBufferedAmountLow(conn);
@@ -1737,7 +1987,7 @@
             dhSchedule();
             if (!(activeConnection && activeConnection.open)) return;
             let viewing = null;
-            if (!lightbox.classList.contains('hidden') && activeMediaList[currentLightboxIndex]) {
+            if (lightboxOpenFlag && activeMediaList[currentLightboxIndex]) {
                 const m = activeMediaList[currentLightboxIndex];
                 viewing = { game: gameKey(m.hash), type: m.type, hash: m.hash, timestamp: m.timestamp };
             }
@@ -1756,6 +2006,8 @@
             } else {
                 peerViewingTarget = null;
                 jumpBtn.style.display = 'none';
+                // Watching together: when the driver closes their lightbox, the follower's closes too.
+                if (wt.active && wt.role === 'follower' && isLightboxOpen()) closeLightbox();
             }
             renderPeerActivityText();
         }
@@ -1777,7 +2029,7 @@
             bar.style.width = '0%';
             const data = lastPeerPresence;
             const friend = getActiveFriend();
-            if (!data) { text.textContent = 'Not connected.'; return; }
+            if (!data) { text.textContent = (activeConnection && activeConnection.open) ? 'Connected. Nothing to show yet.' : 'Not connected.'; return; }
             if (data.viewing) {
                 const galleryLabel = data.source === 'remote' ? 'your gallery' : `${friend ? friend.name + "'s" : "their"} own gallery`;
                 text.innerHTML = `👀 Looking at a ${data.viewing.type} from <strong style="color:white;">${data.viewing.game}</strong> in ${galleryLabel}`;
@@ -1792,7 +2044,7 @@
             const jumpBtn = document.getElementById('btn-jump-peer-viewing');
             const targetSource = peerViewingTarget.source === 'remote' ? 'local' : 'remote';
             const targetList = targetSource === 'local' ? allMediaFiles : remoteMediaFiles;
-            const alreadyShowing = !lightbox.classList.contains('hidden') &&
+            const alreadyShowing = lightboxOpenFlag &&
                 currentSource === targetSource &&
                 activeMediaList[currentLightboxIndex] &&
                 activeMediaList[currentLightboxIndex].hash === peerViewingTarget.hash &&
@@ -1819,6 +2071,730 @@
         document.getElementById('btn-jump-peer-viewing').addEventListener('click', jumpToPeerViewing);
         document.getElementById('setting-autofollow').addEventListener('change', (e) => { autoFollowPeer = e.target.checked; });
 
+        // ============================================================
+        // WATCH TOGETHER + SHARED SESSION ALBUM
+        // Position syncing itself is the existing presence/auto-follow
+        // machinery; this adds the session on top: invite/accept, one
+        // driver, passing the remote, and a banner.
+        // ============================================================
+        let wt = { active: false, role: null, prevAuto: false };
+        let wtInvitePending = false;
+        let sessionPile = []; // { hash, timestamp, dateStr, mtype, thumb, owner: 'me' | 'them' }
+
+        function setAutoFollow(on) {
+            autoFollowPeer = !!on;
+            const cb = document.getElementById('setting-autofollow');
+            if (cb) cb.checked = !!on;
+        }
+
+        function renderWtBanner() {
+            const banner = document.getElementById('wt-banner');
+            banner.classList.toggle('active', wt.active);
+            const startBtn = document.getElementById('btn-watch-together');
+            if (startBtn) startBtn.textContent = wt.active ? '⏹ Stop watching together' : '🎬 Watch together';
+            if (!wt.active) return;
+            const friend = friends.find(f => f.id === connectedFriendId);
+            const name = friend ? friend.name : 'your friend';
+            document.getElementById('wt-text').textContent = wt.role === 'driver'
+                ? `🎬 Watching with ${name}. You're driving`
+                : `🎬 Watching with ${name}. Following along`;
+            document.getElementById('wt-pass').textContent = wt.role === 'driver' ? 'Pass the remote' : 'Ask for the remote';
+        }
+
+        function beginWt(role) {
+            wt = { active: true, role, prevAuto: wt.active ? wt.prevAuto : autoFollowPeer };
+            setAutoFollow(role === 'follower');
+            renderWtBanner();
+            if (role === 'driver') sendPresence();
+            else if (peerViewingTarget) jumpToPeerViewing();
+        }
+
+        function setWtRole(role) {
+            wt.role = role;
+            setAutoFollow(role === 'follower');
+            renderWtBanner();
+            if (role === 'follower' && peerViewingTarget) jumpToPeerViewing();
+        }
+
+        function endWt(notifyPeer) {
+            wtInvitePending = false;
+            if (!wt.active) return;
+            setAutoFollow(wt.prevAuto);
+            wt = { active: false, role: null, prevAuto: false };
+            renderWtBanner();
+            if (notifyPeer) sendToConn({ type: 'wt_end' });
+        }
+
+        function passTheRemote() {
+            if (!wt.active || wt.role !== 'driver') return;
+            setWtRole('follower');
+            sendToConn({ type: 'wt_pass' });
+            showToast('You passed the remote 🎮');
+        }
+
+        document.getElementById('btn-watch-together').addEventListener('click', () => {
+            if (wt.active) { endWt(true); showToast('Stopped watching together.'); return; }
+            if (!(activeConnection && activeConnection.open)) { showToast("You need to be connected to a friend first.", 'yellow'); return; }
+            wtInvitePending = true;
+            sendToConn({ type: 'wt_invite' });
+            showToast('Invite sent. Waiting for them to accept...', 'purple');
+            setTimeout(() => { if (wtInvitePending) { wtInvitePending = false; showToast("No answer yet. You can invite them again.", 'yellow'); } }, 60000);
+        });
+        document.getElementById('wt-end').addEventListener('click', () => { endWt(true); showToast('Stopped watching together.'); });
+        document.getElementById('wt-pass').addEventListener('click', () => {
+            if (!wt.active) return;
+            if (wt.role === 'driver') passTheRemote();
+            else { sendToConn({ type: 'wt_request' }); showToast('Asked for the remote...', 'purple'); }
+        });
+
+        // ---- Shared session album ----
+        function updateSessionButton() {
+            const b = document.getElementById('btn-session-album');
+            if (b) b.textContent = `🗂️ Session album (${sessionPile.length})`;
+        }
+
+        function pushSession(entry) {
+            if (sessionPile.some(x => x.hash === entry.hash && x.timestamp === entry.timestamp && x.owner === entry.owner)) return false;
+            sessionPile.push(entry);
+            updateSessionButton();
+            return true;
+        }
+
+        async function addToSession(media, quiet) {
+            if (!(activeConnection && activeConnection.open)) { showToast('Connect to a friend first to use the session album.', 'yellow'); return false; }
+            if (!media.isRemote && isGameSpoiled(media.hash)) { showToast("That game is marked as a spoiler, so it can't go in the shared album.", 'yellow'); return false; }
+            const thumb = media.isRemote ? (media.thumb || '') : (media.type === 'image' && media.file ? await createThumbnail(media.file) : '');
+            const entry = { hash: media.hash, timestamp: media.timestamp, dateStr: media.dateStr, mtype: media.type, thumb, owner: media.isRemote ? 'them' : 'me' };
+            const added = pushSession(entry);
+            if (added) sendToConn({ type: 'sess_add', ...entry });
+            if (!quiet) showToast(added ? 'Added to the session album 🗂️' : 'Already in the session album', 'purple');
+            return added;
+        }
+
+        document.getElementById('btn-add-session').addEventListener('click', () => {
+            const media = activeMediaList[currentLightboxIndex];
+            if (media) addToSession(media);
+        });
+        document.getElementById('sel-session').addEventListener('click', async () => {
+            const items = selectedMedia();
+            if (!items.length) return;
+            if (!(activeConnection && activeConnection.open)) { showToast('Connect to a friend first to use the session album.', 'yellow'); return; }
+            const batch = items.slice(0, 30);
+            let n = 0;
+            for (const m of batch) { if (await addToSession(m, true)) n++; }
+            showToast(`Added ${n} to the session album` + (items.length > 30 ? ' (30 at a time)' : ''), 'purple');
+            setSelectMode(false);
+        });
+
+        function openSessionItem(e) {
+            const targetSource = e.owner === 'me' ? 'local' : 'remote';
+            const list = targetSource === 'local' ? allMediaFiles : remoteMediaFiles;
+            const idx = list.findIndex(m => m.hash === e.hash && m.timestamp === e.timestamp);
+            if (idx === -1) { showToast("That one isn't loaded on your side right now.", 'yellow'); return false; }
+            currentSource = targetSource;
+            if (activeView !== 'gallery') switchView('gallery'); else renderView();
+            triggerLightbox(idx, list);
+            return true;
+        }
+
+        function showSessionAlbumModal() {
+            const existing = document.getElementById('session-modal');
+            if (existing) existing.remove();
+            const friend = friends.find(f => f.id === connectedFriendId);
+            const modal = document.createElement('div');
+            modal.id = 'session-modal';
+            modal.className = 'custom-modal';
+            const card = document.createElement('div');
+            card.className = 'modal-card';
+            card.style.width = '560px';
+            const h = document.createElement('h3'); h.className = 'modal-title'; h.textContent = 'Session album';
+            card.appendChild(h);
+            const desc = document.createElement('p'); desc.className = 'modal-desc';
+            desc.textContent = `A shared pile for tonight. Anything either of you adds shows up for both${friend ? ' (you and ' + friend.name + ')' : ''}. It lives only while you're connected and vanishes when either of you leaves.`;
+            card.appendChild(desc);
+            if (!sessionPile.length) {
+                const empty = document.createElement('p'); empty.className = 'modal-desc';
+                empty.textContent = 'Nothing here yet. Open a screenshot and hit 🗂️, or use Select and "Add to session".';
+                card.appendChild(empty);
+            } else {
+                const grid = document.createElement('div');
+                grid.className = 'session-grid';
+                sessionPile.forEach(e => {
+                    const t = document.createElement('div');
+                    t.className = 'session-tile';
+                    if (e.thumb) { const img = document.createElement('img'); img.src = e.thumb; img.alt = ''; t.appendChild(img); }
+                    else t.textContent = e.mtype === 'video' ? '🎬' : '🖼️';
+                    const who = document.createElement('div');
+                    who.className = 'who';
+                    who.textContent = (e.owner === 'me' ? 'Yours' : (friend ? friend.name + "'s" : 'Theirs')) + (e.dateStr ? ' · ' + e.dateStr : '');
+                    t.appendChild(who);
+                    t.addEventListener('click', () => { if (openSessionItem(e)) modal.remove(); });
+                    grid.appendChild(t);
+                });
+                card.appendChild(grid);
+            }
+            const actions = document.createElement('div');
+            actions.className = 'modal-actions';
+            if (sessionPile.length) {
+                const clear = document.createElement('button');
+                clear.className = 'btn-cancel';
+                clear.textContent = 'Clear for both';
+                clear.addEventListener('click', () => {
+                    if (!confirm('Clear the session album for both of you?')) return;
+                    sessionPile = [];
+                    updateSessionButton();
+                    sendToConn({ type: 'sess_clear' });
+                    modal.remove();
+                });
+                actions.appendChild(clear);
+            }
+            const close = document.createElement('button');
+            close.className = 'btn-save';
+            close.textContent = 'Close';
+            close.addEventListener('click', () => modal.remove());
+            actions.appendChild(close);
+            card.appendChild(actions);
+            modal.appendChild(card);
+            modal.addEventListener('click', (ev) => { if (ev.target === modal) modal.remove(); });
+            document.body.appendChild(modal);
+        }
+        document.getElementById('btn-session-album').addEventListener('click', showSessionAlbumModal);
+
+        // ============================================================
+        // VOICE & VIDEO CALLS
+        // Ringing (invite / ready / decline / end) rides the existing data
+        // connection; the audio/video itself is a PeerJS media call that
+        // only starts once the other side has said yes. A media call that
+        // wasn't invited is rejected, so nobody can ring in uninvited.
+        // ============================================================
+        let callState = { active: false, pending: null, expecting: null, video: false, stream: null, call: null, timer: null };
+
+        function mediaErrorMessage(err, wantVideo) {
+            const n = err && err.name;
+            if (n === 'NotAllowedError' || n === 'SecurityError') return `Your browser blocked the ${wantVideo ? 'camera/microphone' : 'microphone'}. Allow it for this site (the icon next to the address bar) and try again.`;
+            if (n === 'NotFoundError' || n === 'OverconstrainedError') return `No ${wantVideo ? 'camera or microphone' : 'microphone'} was found on this device.`;
+            if (n === 'NotReadableError') return `Your ${wantVideo ? 'camera or microphone is' : 'microphone is'} being used by another app.`;
+            return "Couldn't start your microphone/camera: " + ((err && err.message) || n || 'unknown error');
+        }
+
+        async function getLocalMedia(wantVideo) {
+            if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) throw Object.assign(new Error('Calls need a secure (https) page and a supported browser.'), { name: 'SecurityError' });
+            return navigator.mediaDevices.getUserMedia({ audio: true, video: wantVideo ? { width: { ideal: 640 }, height: { ideal: 480 } } : false });
+        }
+
+        function stopStream(stream) { if (stream) stream.getTracks().forEach(t => { try { t.stop(); } catch (e) {} }); }
+
+        function cancelPendingCall() {
+            if (callState.timer) { clearTimeout(callState.timer); callState.timer = null; }
+            if (callState.pending) stopStream(callState.pending.stream);
+            callState.pending = null;
+            renderCallUi();
+        }
+
+        function renderCallUi() {
+            const overlay = document.getElementById('call-overlay');
+            const showing = callState.active || !!callState.pending || !!callState.expecting;
+            overlay.classList.toggle('active', showing);
+            document.getElementById('btn-voice-call').disabled = showing;
+            document.getElementById('btn-video-call').disabled = showing;
+            if (!showing) return;
+            const friend = friends.find(f => f.id === connectedFriendId);
+            const name = friend ? friend.name : 'your friend';
+            document.getElementById('call-title').textContent = callState.active ? `${callState.video ? 'Video' : 'Voice'} call with ${name}` : `Calling ${name}...`;
+            document.getElementById('call-audio-name').textContent = name;
+            document.getElementById('call-audio-avatar').textContent = (friend && friend.avatar) || '🎧';
+            const local = document.getElementById('call-local');
+            const stream = callState.stream || (callState.pending && callState.pending.stream);
+            const hasVideo = !!(stream && stream.getVideoTracks().length);
+            local.classList.toggle('hidden-pip', !hasVideo);
+            if (stream && local.srcObject !== stream) local.srcObject = stream;
+            const camBtn = document.getElementById('call-cam');
+            camBtn.disabled = !hasVideo;
+            const camOn = hasVideo && stream.getVideoTracks().every(t => t.enabled);
+            camBtn.classList.toggle('off', hasVideo && !camOn);
+            camBtn.textContent = camOn || !hasVideo ? '📷 Camera' : '📷 Camera off';
+            const micOn = !stream || stream.getAudioTracks().every(t => t.enabled);
+            const micBtn = document.getElementById('call-mute');
+            micBtn.classList.toggle('off', !micOn);
+            micBtn.textContent = micOn ? '🎤 Mute' : '🔇 Muted';
+            if (!callState.active) { document.getElementById('call-audio-only').classList.add('active'); }
+        }
+
+        function attachRemoteStream(remote) {
+            const v = document.getElementById('call-remote');
+            if (v.srcObject === remote) return; // PeerJS can report the same stream more than once
+            v.srcObject = remote;
+            const hasVideo = remote.getVideoTracks().length > 0;
+            v.classList.toggle('no-video', !hasVideo);
+            document.getElementById('call-audio-only').classList.toggle('active', !hasVideo);
+            const p = v.play();
+            // Only a genuine autoplay block deserves a toast; an AbortError just means the stream was swapped.
+            if (p && p.catch) p.catch((err) => { if (err && err.name === 'NotAllowedError') showToast('Click anywhere on the page to hear the call (your browser blocked auto-play).', 'yellow'); });
+        }
+
+        function wireMediaCall(call, video) {
+            callState.call = call;
+            callState.video = video;
+            call.on('stream', (remote) => {
+                callState.active = true;
+                callState.expecting = null;
+                attachRemoteStream(remote);
+                renderCallUi();
+            });
+            call.on('close', () => { if (callState.call === call) endCall(false); });
+            call.on('error', (err) => { console.error('Call error', err); if (callState.call === call) { endCall(false); showToast('The call dropped.', 'yellow'); } });
+        }
+
+        async function startCall(video) {
+            if (!(activeConnection && activeConnection.open)) { showToast('Connect to a friend first to call them.', 'yellow'); return; }
+            if (callState.active || callState.pending || callState.expecting) return;
+            let stream;
+            try { stream = await getLocalMedia(video); }
+            catch (err) { showToast(mediaErrorMessage(err, video), 'yellow', 6000); return; }
+            callState.pending = { stream, video };
+            callState.timer = setTimeout(() => {
+                if (callState.pending) { cancelPendingCall(); sendToConn({ type: 'call_end' }); renderCallUi(); showToast('No answer.', 'yellow'); }
+            }, 45000);
+            sendToConn({ type: 'call_invite', video });
+            renderCallUi();
+        }
+
+        function handleCallReady(friend) {
+            // The friend accepted and has their mic/camera ready: now place the media call.
+            const p = callState.pending;
+            if (!p || !peer) return;
+            if (callState.timer) { clearTimeout(callState.timer); callState.timer = null; }
+            callState.stream = p.stream;
+            callState.pending = null;
+            const call = peer.call(friend.peerId, p.stream, { metadata: { video: p.video } });
+            if (!call) { endCall(true); showToast("Couldn't start the call.", 'yellow'); return; }
+            wireMediaCall(call, p.video);
+            renderCallUi();
+        }
+
+        async function handleCallInvite(data, friend) {
+            const wantVideo = !!data.video;
+            if (callState.active || callState.pending || callState.expecting) { sendToConn({ type: 'call_decline', busy: true }); return; }
+            if (!confirm(`${friend.name} is calling you (${wantVideo ? 'video' : 'voice'}). Answer?`)) { sendToConn({ type: 'call_decline' }); return; }
+            let stream, video = wantVideo;
+            try { stream = await getLocalMedia(wantVideo); }
+            catch (err) {
+                if (wantVideo) {
+                    try { stream = await getLocalMedia(false); video = false; showToast(mediaErrorMessage(err, true) + ' Joining with audio only.', 'yellow', 6000); }
+                    catch (err2) { showToast(mediaErrorMessage(err2, false), 'yellow', 6000); sendToConn({ type: 'call_decline' }); return; }
+                } else { showToast(mediaErrorMessage(err, false), 'yellow', 6000); sendToConn({ type: 'call_decline' }); return; }
+            }
+            callState.stream = stream;
+            callState.video = video;
+            callState.expecting = { peerId: friend.peerId, video };
+            renderCallUi();
+            sendToConn({ type: 'call_ready' });
+            setTimeout(() => { if (callState.expecting && !callState.active) { endCall(false); showToast("The call didn't connect.", 'yellow'); } }, 20000);
+        }
+
+        function handleIncomingMediaCall(call) {
+            const exp = callState.expecting;
+            if (!exp || call.peer !== exp.peerId || !callState.stream) { try { call.close(); } catch (e) {} return; }
+            call.answer(callState.stream);
+            wireMediaCall(call, !!(call.metadata && call.metadata.video));
+        }
+
+        function endCall(notifyPeer) {
+            const had = callState.active || callState.pending || callState.expecting || callState.call;
+            if (callState.timer) { clearTimeout(callState.timer); callState.timer = null; }
+            const call = callState.call;
+            callState.call = null; // clear first so the close event can't re-enter
+            if (call) { try { call.close(); } catch (e) {} }
+            stopStream(callState.stream);
+            if (callState.pending) stopStream(callState.pending.stream);
+            callState = { active: false, pending: null, expecting: null, video: false, stream: null, call: null, timer: null };
+            const remote = document.getElementById('call-remote');
+            const local = document.getElementById('call-local');
+            if (remote) remote.srcObject = null;
+            if (local) local.srcObject = null;
+            if (had && notifyPeer) sendToConn({ type: 'call_end' });
+            renderCallUi();
+        }
+
+        document.getElementById('btn-voice-call').addEventListener('click', () => startCall(false));
+        document.getElementById('btn-video-call').addEventListener('click', () => startCall(true));
+        document.getElementById('call-hang').addEventListener('click', () => endCall(true));
+        document.getElementById('call-mute').addEventListener('click', () => {
+            const s = callState.stream || (callState.pending && callState.pending.stream);
+            if (!s) return;
+            const on = s.getAudioTracks().every(t => t.enabled);
+            s.getAudioTracks().forEach(t => { t.enabled = !on; });
+            renderCallUi();
+        });
+        document.getElementById('call-cam').addEventListener('click', () => {
+            const s = callState.stream || (callState.pending && callState.pending.stream);
+            if (!s) return;
+            const on = s.getVideoTracks().every(t => t.enabled);
+            s.getVideoTracks().forEach(t => { t.enabled = !on; });
+            renderCallUi();
+        });
+        window.addEventListener('beforeunload', () => { if (callState.active) sendToConn({ type: 'call_end' }); });
+
+        // ============================================================
+        // CLIP TOOLS: trim to WebM, export as GIF (all in the browser)
+        // ============================================================
+        function waitForEvent(el, okEvent, ms, errMsg) {
+            return new Promise((resolve, reject) => {
+                const t = setTimeout(() => { cleanup(); reject(new Error(errMsg || 'Timed out')); }, ms);
+                const ok = () => { cleanup(); resolve(); };
+                const bad = () => { cleanup(); reject(new Error("This clip can't be decoded by your browser (HEVC clips often can't).")); };
+                const cleanup = () => { clearTimeout(t); el.removeEventListener(okEvent, ok); el.removeEventListener('error', bad); };
+                el.addEventListener(okEvent, ok);
+                el.addEventListener('error', bad);
+            });
+        }
+
+        async function openWorkVideo(srcUrl, muted) {
+            const v = document.createElement('video');
+            v.muted = !!muted;
+            v.playsInline = true;
+            v.preload = 'auto';
+            v.style.cssText = 'position:fixed;left:-9999px;top:0;width:2px;height:2px;opacity:0;pointer-events:none;';
+            document.body.appendChild(v);
+            v.src = srcUrl;
+            try { await waitForEvent(v, 'loadedmetadata', 15000, 'The clip took too long to load.'); }
+            catch (e) { v.remove(); throw e; }
+            return v;
+        }
+
+        async function exportClipWebm(srcUrl, start, end, onProgress, isCancelled) {
+            if (typeof MediaRecorder === 'undefined') throw new Error("Your browser can't record video (MediaRecorder isn't available).");
+            const v = await openWorkVideo(srcUrl, false);
+            let ac = null;
+            try {
+                const cap = v.captureStream ? v.captureStream() : (v.mozCaptureStream ? v.mozCaptureStream() : null);
+                if (!cap) throw new Error("Your browser can't capture video from a clip (try Chrome or Edge).");
+                // Route the clip's audio into the recording only (never to the speakers).
+                const tracks = [...cap.getVideoTracks()];
+                try {
+                    ac = new (window.AudioContext || window.webkitAudioContext)();
+                    await ac.resume();
+                    const dest = ac.createMediaStreamDestination();
+                    ac.createMediaElementSource(v).connect(dest);
+                    tracks.push(...dest.stream.getAudioTracks());
+                } catch (e) { /* no audio track: export silent video */ }
+                const stream = new MediaStream(tracks);
+                const mime = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m));
+                if (!mime) throw new Error("Your browser can't write WebM video.");
+                const chunks = [];
+                const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6000000 });
+                rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+                const stopped = new Promise((resolve) => { rec.onstop = resolve; });
+                v.currentTime = start;
+                await waitForEvent(v, 'seeked', 8000, 'Could not jump to the start of the clip.');
+                rec.start(250);
+                await v.play();
+                await new Promise((resolve) => {
+                    const timer = setInterval(() => {
+                        const done = (v.currentTime - start) / Math.max(0.1, end - start);
+                        onProgress(Math.min(1, Math.max(0, done)));
+                        if (isCancelled() || v.currentTime >= end || v.ended) { clearInterval(timer); resolve(); }
+                    }, 120);
+                });
+                v.pause();
+                if (rec.state !== 'inactive') rec.stop();
+                await stopped;
+                if (isCancelled()) return null;
+                return new Blob(chunks, { type: 'video/webm' });
+            } finally {
+                if (ac) { try { ac.close(); } catch (e) {} }
+                v.remove();
+            }
+        }
+
+        // ---- Minimal GIF89a encoder ----
+        function lzwEncodeGif(indices, minCodeSize) {
+            const clear = 1 << minCodeSize, eoi = clear + 1;
+            let codeSize = minCodeSize + 1, next = eoi + 1;
+            const out = [];
+            let cur = 0, bits = 0;
+            const emit = (code) => {
+                cur |= code << bits; bits += codeSize;
+                while (bits >= 8) { out.push(cur & 255); cur >>>= 8; bits -= 8; }
+            };
+            let dict = new Map();
+            emit(clear);
+            let prefix = indices[0];
+            for (let i = 1; i < indices.length; i++) {
+                const k = indices[i];
+                const key = (prefix << 8) | k;
+                const hit = dict.get(key);
+                if (hit !== undefined) { prefix = hit; continue; }
+                emit(prefix);
+                if (next === 4096) {
+                    emit(clear);
+                    dict = new Map();
+                    codeSize = minCodeSize + 1;
+                    next = eoi + 1;
+                } else {
+                    if (next >= (1 << codeSize)) codeSize++;
+                    dict.set(key, next++);
+                }
+                prefix = k;
+            }
+            emit(prefix);
+            emit(eoi);
+            if (bits > 0) out.push(cur & 255);
+            return out;
+        }
+
+        const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+        function quantizeFrame(rgba, w, h) {
+            // Fixed 6x6x6 colour cube (216 colours) with ordered dithering.
+            const idx = new Uint8Array(w * h);
+            let p = 0;
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++, p++) {
+                    const bias = (BAYER4[((y & 3) << 2) | (x & 3)] / 16 - 0.5) * 51;
+                    const o = p * 4;
+                    let r = Math.round((rgba[o] + bias) / 51), g = Math.round((rgba[o + 1] + bias) / 51), b = Math.round((rgba[o + 2] + bias) / 51);
+                    r = r < 0 ? 0 : r > 5 ? 5 : r; g = g < 0 ? 0 : g > 5 ? 5 : g; b = b < 0 ? 0 : b > 5 ? 5 : b;
+                    idx[p] = r * 36 + g * 6 + b;
+                }
+            }
+            return idx;
+        }
+
+        function assembleGif(frames, w, h, delayCs) {
+            const bytes = [];
+            const push16 = (n) => bytes.push(n & 255, (n >> 8) & 255);
+            'GIF89a'.split('').forEach(c => bytes.push(c.charCodeAt(0)));
+            push16(w); push16(h);
+            bytes.push(0xF7, 0, 0);
+            for (let i = 0; i < 256; i++) {
+                if (i < 216) bytes.push(Math.floor(i / 36) * 51, Math.floor((i % 36) / 6) * 51, (i % 6) * 51);
+                else bytes.push(0, 0, 0);
+            }
+            bytes.push(0x21, 0xFF, 0x0B);
+            'NETSCAPE2.0'.split('').forEach(c => bytes.push(c.charCodeAt(0)));
+            bytes.push(0x03, 0x01, 0x00, 0x00, 0x00);
+            frames.forEach((idx) => {
+                bytes.push(0x21, 0xF9, 0x04, 0x04); push16(delayCs); bytes.push(0x00, 0x00);
+                bytes.push(0x2C); push16(0); push16(0); push16(w); push16(h); bytes.push(0x00);
+                bytes.push(8);
+                const data = lzwEncodeGif(idx, 8);
+                for (let i = 0; i < data.length; i += 255) {
+                    const n = Math.min(255, data.length - i);
+                    bytes.push(n);
+                    for (let j = 0; j < n; j++) bytes.push(data[i + j]);
+                }
+                bytes.push(0x00);
+            });
+            bytes.push(0x3B);
+            return new Blob([new Uint8Array(bytes)], { type: 'image/gif' });
+        }
+
+        async function exportClipGif(srcUrl, start, end, opts, onProgress, isCancelled) {
+            const v = await openWorkVideo(srcUrl, true);
+            try {
+                const vw = v.videoWidth, vh = v.videoHeight;
+                if (!vw || !vh) throw new Error("Couldn't read the video's size.");
+                const w = Math.min(opts.width, vw);
+                const h = Math.max(1, Math.round(vh * (w / vw)));
+                const canvas = document.createElement('canvas');
+                canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                const step = 1 / opts.fps;
+                const total = Math.max(1, Math.floor((end - start) / step));
+                const frames = [];
+                for (let i = 0; i < total; i++) {
+                    if (isCancelled()) return null;
+                    v.currentTime = Math.min(end, start + i * step);
+                    await waitForEvent(v, 'seeked', 8000, 'Seeking the clip timed out.');
+                    ctx.drawImage(v, 0, 0, w, h);
+                    frames.push(quantizeFrame(ctx.getImageData(0, 0, w, h).data, w, h));
+                    onProgress((i + 1) / total);
+                    if (i % 4 === 3) await new Promise(r => setTimeout(r, 0)); // keep the page responsive
+                }
+                return assembleGif(frames, w, h, Math.max(2, Math.round(100 / opts.fps)));
+            } finally { v.remove(); }
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 60000);
+        }
+
+        function openClipTools(media) {
+            const existing = document.getElementById('clip-modal');
+            if (existing) existing.remove();
+            let cancelled = false, busy = false;
+            const modal = document.createElement('div');
+            modal.id = 'clip-modal';
+            modal.className = 'custom-modal';
+            modal.style.zIndex = '90';
+            const card = document.createElement('div');
+            card.className = 'modal-card';
+            card.style.width = '560px';
+            const h = document.createElement('h3'); h.className = 'modal-title'; h.textContent = 'Trim clip / make a GIF';
+            card.appendChild(h);
+
+            const video = document.createElement('video');
+            video.src = media.url;
+            video.controls = true;
+            video.preload = 'metadata';
+            video.style.cssText = 'width:100%;max-height:38vh;background:#000;border-radius:0.5rem;';
+            card.appendChild(video);
+
+            const status = document.createElement('p');
+            status.className = 'modal-desc';
+            status.style.marginTop = '0.6rem';
+            status.textContent = 'Loading clip...';
+            card.appendChild(status);
+
+            const mkRow = (label) => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem;font-size:0.8rem;color:white;';
+                const l = document.createElement('span'); l.textContent = label; l.style.width = '3rem';
+                const range = document.createElement('input'); range.type = 'range'; range.min = '0'; range.max = '1'; range.step = '0.1'; range.value = '0'; range.style.flex = '1';
+                const val = document.createElement('span'); val.style.cssText = 'width:3.5rem;text-align:right;color:var(--switch-cyan);';
+                row.appendChild(l); row.appendChild(range); row.appendChild(val);
+                card.appendChild(row);
+                return { range, val };
+            };
+            const startRow = mkRow('Start');
+            const endRow = mkRow('End');
+            const fmt = (s) => `${s.toFixed(1)}s`;
+            const getStart = () => parseFloat(startRow.range.value);
+            const getEnd = () => parseFloat(endRow.range.value);
+            const refreshVals = () => {
+                startRow.val.textContent = fmt(getStart());
+                endRow.val.textContent = fmt(getEnd());
+                status.textContent = `Selected ${fmt(Math.max(0, getEnd() - getStart()))}. Drag the sliders or set them from the playhead.`;
+            };
+            startRow.range.addEventListener('input', () => { if (getStart() > getEnd() - 0.5) startRow.range.value = Math.max(0, getEnd() - 0.5); refreshVals(); video.currentTime = getStart(); });
+            endRow.range.addEventListener('input', () => { if (getEnd() < getStart() + 0.5) endRow.range.value = Math.min(parseFloat(endRow.range.max), getStart() + 0.5); refreshVals(); video.currentTime = getEnd(); });
+
+            const tools = document.createElement('div');
+            tools.style.cssText = 'display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.7rem;';
+            const smallBtn = (text, onClick) => { const b = document.createElement('button'); b.className = 'btn-discover'; b.style.cssText = 'width:auto;padding:0.35rem 0.7rem;'; b.textContent = text; b.addEventListener('click', onClick); tools.appendChild(b); return b; };
+            smallBtn('Set start here', () => { startRow.range.value = Math.min(video.currentTime, getEnd() - 0.5); refreshVals(); });
+            smallBtn('Set end here', () => { endRow.range.value = Math.max(video.currentTime, getStart() + 0.5); refreshVals(); });
+            smallBtn('▶ Preview selection', () => {
+                video.currentTime = getStart();
+                video.play();
+                const stop = () => { if (video.currentTime >= getEnd()) { video.pause(); video.removeEventListener('timeupdate', stop); } };
+                video.addEventListener('timeupdate', stop);
+            });
+            card.appendChild(tools);
+
+            const gifRow = document.createElement('div');
+            gifRow.style.cssText = 'display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap;margin-bottom:0.7rem;font-size:0.8rem;color:var(--switch-muted);';
+            const sel = (label, options, def) => {
+                const wrap = document.createElement('label'); wrap.textContent = label + ' ';
+                const s = document.createElement('select'); s.className = 'input-field'; s.style.cssText = 'width:auto;padding:0.25rem 0.4rem;display:inline-block;';
+                options.forEach(([v, t]) => { const o = document.createElement('option'); o.value = v; o.textContent = t; if (v === def) o.selected = true; s.appendChild(o); });
+                wrap.appendChild(s); gifRow.appendChild(wrap);
+                return s;
+            };
+            const widthSel = sel('GIF width', [['240', '240 px'], ['320', '320 px'], ['480', '480 px']], '320');
+            const fpsSel = sel('Frame rate', [['8', '8 fps'], ['10', '10 fps'], ['15', '15 fps']], '10');
+            card.appendChild(gifRow);
+
+            const bar = document.createElement('div');
+            bar.style.cssText = 'height:6px;background:rgba(255,255,255,0.1);border-radius:9999px;overflow:hidden;margin-bottom:0.6rem;display:none;';
+            const fill = document.createElement('div'); fill.style.cssText = 'height:100%;width:0%;background:var(--switch-cyan);transition:width 0.15s;';
+            bar.appendChild(fill); card.appendChild(bar);
+
+            const note = document.createElement('p');
+            note.className = 'modal-desc';
+            note.textContent = 'Trimmed clips are saved as WebM (browsers can\'t write MP4). Exporting runs in real time and everything stays on your computer. GIFs are limited to 15 seconds.';
+            card.appendChild(note);
+
+            const actions = document.createElement('div');
+            actions.className = 'modal-actions';
+            const close = document.createElement('button'); close.className = 'btn-cancel'; close.textContent = 'Close';
+            const btnGif = document.createElement('button'); btnGif.className = 'btn-save'; btnGif.style.background = 'var(--switch-purple, #a855f7)'; btnGif.style.color = 'white'; btnGif.textContent = 'Export GIF';
+            const btnWebm = document.createElement('button'); btnWebm.className = 'btn-save'; btnWebm.textContent = 'Export trimmed clip';
+            actions.appendChild(close); actions.appendChild(btnGif); actions.appendChild(btnWebm);
+            card.appendChild(actions);
+
+            const setBusy = (on) => { busy = on; [btnGif, btnWebm].forEach(b => { b.disabled = on; }); bar.style.display = on ? 'block' : 'none'; fill.style.width = '0%'; };
+            const baseName = () => `${gameKey(media.hash).replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '') || 'clip'}_${media.dateStr}`;
+
+            btnWebm.addEventListener('click', async () => {
+                if (busy) return;
+                setBusy(true); status.textContent = 'Recording the selection in real time...';
+                try {
+                    const blob = await exportClipWebm(media.url, getStart(), getEnd(), (f) => { fill.style.width = Math.round(f * 100) + '%'; }, () => cancelled);
+                    if (blob) { downloadBlob(blob, `${baseName()}_trim.webm`); showToast('Trimmed clip saved ✂️', 'purple'); status.textContent = 'Done! Saved as WebM.'; }
+                } catch (e) { console.error(e); status.textContent = e.message || 'Export failed.'; showToast(e.message || 'Export failed.', 'yellow', 6000); }
+                if (!cancelled) setBusy(false);
+            });
+            btnGif.addEventListener('click', async () => {
+                if (busy) return;
+                const len = getEnd() - getStart();
+                if (len > 15) { status.textContent = 'GIFs are limited to 15 seconds. Shorten the selection.'; return; }
+                setBusy(true); status.textContent = 'Building the GIF...';
+                try {
+                    const blob = await exportClipGif(media.url, getStart(), getEnd(), { width: parseInt(widthSel.value, 10), fps: parseInt(fpsSel.value, 10) }, (f) => { fill.style.width = Math.round(f * 100) + '%'; }, () => cancelled);
+                    if (blob) {
+                        downloadBlob(blob, `${baseName()}.gif`);
+                        status.textContent = `Done! GIF is ${(blob.size / 1048576).toFixed(1)} MB.` + (blob.size > 8 * 1048576 ? ' That is large for chat apps; try a smaller width or lower frame rate.' : '');
+                        showToast('GIF saved 🎞️', 'purple');
+                    }
+                } catch (e) { console.error(e); status.textContent = e.message || 'Export failed.'; showToast(e.message || 'Export failed.', 'yellow', 6000); }
+                if (!cancelled) setBusy(false);
+            });
+            const closeAll = () => { cancelled = true; video.pause(); modal.remove(); };
+            close.addEventListener('click', closeAll);
+            modal.addEventListener('click', (e) => { if (e.target === modal) closeAll(); });
+            modal.addEventListener('keydown', (e) => e.stopPropagation());
+
+            video.addEventListener('loadedmetadata', () => {
+                const d = video.duration;
+                [startRow.range, endRow.range].forEach(r => { r.max = String(d); });
+                startRow.range.value = '0'; endRow.range.value = String(d);
+                refreshVals();
+            });
+            video.addEventListener('error', () => { status.textContent = "Your browser can't decode this clip (HEVC clips often can't), so it can't be trimmed here."; btnGif.disabled = true; btnWebm.disabled = true; });
+            modal.appendChild(card);
+            document.body.appendChild(modal);
+        }
+        document.getElementById('btn-clip-tools').addEventListener('click', () => {
+            const media = activeMediaList[currentLightboxIndex];
+            if (!media || media.isRemote || media.type !== 'video') return;
+            stopSlideshow();
+            const lbVideo = lightboxMediaContainer.querySelector('video');
+            if (lbVideo) lbVideo.pause();
+            openClipTools(media);
+        });
+
+        // ============================================================
+        // INSTALLABLE APP (PWA)
+        // ============================================================
+        let deferredInstallPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+            document.getElementById('btn-install-app').style.display = 'block';
+        });
+        window.addEventListener('appinstalled', () => {
+            deferredInstallPrompt = null;
+            document.getElementById('btn-install-app').style.display = 'none';
+            showToast('Switch Hub installed 🎉', 'purple');
+        });
+        document.getElementById('btn-install-app').addEventListener('click', async () => {
+            if (!deferredInstallPrompt) return;
+            deferredInstallPrompt.prompt();
+            try { await deferredInstallPrompt.userChoice; } catch (e) { /* dismissed */ }
+            deferredInstallPrompt = null;
+            document.getElementById('btn-install-app').style.display = 'none';
+        });
+        if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch((err) => console.warn('Service worker not registered', err));
+            });
+        }
+
         function spawnFloatingReaction(emoji) {
             const host = document.querySelector('.lightbox-content');
             if (!host) return;
@@ -1834,8 +2810,102 @@
                 const emoji = btn.dataset.emoji;
                 spawnFloatingReaction(emoji);
                 sendToConn({ type: 'media_reaction', emoji });
+                // On a friend's screenshot, also leave the reaction on it for good
+                // (the burst above is live-only; this is what shows up as a badge).
+                const media = activeMediaList[currentLightboxIndex];
+                if (media && media.isRemote) sendToConn({ type: 'media_react_save', hash: media.hash, timestamp: media.timestamp, emoji });
             });
         });
+
+        function isLightboxOpen() { return lightboxOpenFlag; }
+
+        // Caption + saved-reactions strip at the bottom of the lightbox. Your own
+        // screenshots get an editable caption (synced live to a connected friend);
+        // a friend's screenshots show their caption read-only.
+        function updateLightboxFooter() {
+            const sessBtn = document.getElementById('btn-add-session');
+            if (sessBtn) sessBtn.style.display = (activeConnection && activeConnection.open) ? 'flex' : 'none';
+            const clipBtn = document.getElementById('btn-clip-tools');
+            if (clipBtn) {
+                const cur = activeMediaList[currentLightboxIndex];
+                clipBtn.style.display = (cur && !cur.isRemote && cur.type === 'video' && cur.file && isLightboxOpen()) ? 'flex' : 'none';
+            }
+            const el = document.getElementById('lightbox-caption');
+            if (!el) return;
+            el.innerHTML = '';
+            el.classList.remove('active');
+            const media = activeMediaList[currentLightboxIndex];
+            if (!media || !isLightboxOpen()) return;
+            const key = mediaKey(media);
+
+            if (media.isRemote) {
+                if (!media.caption) return;
+                const text = document.createElement('div');
+                text.className = 'cap-text';
+                text.textContent = media.caption;
+                el.appendChild(text);
+                el.classList.add('active');
+                return;
+            }
+
+            const text = document.createElement('div');
+            const current = captions[key] || '';
+            text.className = 'cap-text editable' + (current ? '' : ' placeholder');
+            text.textContent = current || '✏️ Add a caption (your friend will see it)';
+            text.title = 'Click to edit the caption';
+            text.addEventListener('click', () => {
+                const input = document.createElement('input');
+                input.className = 'cap-input';
+                input.maxLength = 200;
+                input.value = current;
+                input.placeholder = 'Write a caption, Enter to save';
+                let finished = false;
+                const finish = (save) => {
+                    if (finished) return;
+                    finished = true;
+                    if (save) setCaption(media, input.value);
+                    updateLightboxFooter();
+                };
+                input.addEventListener('keydown', (e) => {
+                    e.stopPropagation(); // keep arrow keys etc. from driving the lightbox
+                    if (e.key === 'Enter') finish(true);
+                    else if (e.key === 'Escape') finish(false);
+                });
+                input.addEventListener('blur', () => finish(true));
+                text.replaceWith(input);
+                input.focus();
+            });
+            el.appendChild(text);
+
+            const reacts = mediaReactions[key] || [];
+            if (reacts.length) {
+                const row = document.createElement('div');
+                row.className = 'cap-reacts';
+                const label = document.createElement('span');
+                label.textContent = reacts.map(r => `${r.emoji} ${r.from}`).join('   ');
+                const clear = document.createElement('button');
+                clear.textContent = '✕';
+                clear.title = 'Clear these reactions';
+                clear.addEventListener('click', () => {
+                    delete mediaReactions[key];
+                    saveMediaReactions();
+                    updateLightboxFooter();
+                });
+                row.appendChild(label);
+                row.appendChild(clear);
+                el.appendChild(row);
+            }
+            el.classList.add('active');
+        }
+        document.getElementById('lightbox-caption').addEventListener('click', (e) => e.stopPropagation());
+
+        function setCaption(media, value) {
+            const key = mediaKey(media);
+            const clean = String(value || '').trim().slice(0, 200);
+            if (clean) captions[key] = clean; else delete captions[key];
+            saveCaptions();
+            sendToConn({ type: 'caption_update', hash: media.hash, timestamp: media.timestamp, caption: clean });
+        }
         document.getElementById('btn-star-media').addEventListener('click', () => {
             const media = activeMediaList[currentLightboxIndex];
             if (!media || !media.isRemote || !(activeConnection && activeConnection.open)) return;
@@ -1882,9 +2952,9 @@
             renderFriendList();
         }
 
-        async function sendFile(file, caption) {
+        async function sendFile(file, caption, friendId) {
             caption = caption || '';
-            const thread = ensureThread(activeFriendId);
+            const thread = ensureThread(friendId || activeFriendId);
             const id = uid();
             const localUrl = URL.createObjectURL(file);
             const msg = { id, mine: true, text: caption, ts: Date.now(), status: 'sent', reactions: { mine: [], theirs: [] }, edited: false, deleted: false, attachment: { name: file.name, mime: file.type || 'application/octet-stream', url: localUrl, pending: false, progress: 100 } };
@@ -1998,12 +3068,15 @@
             }
             if (!text) return;
             const thread = ensureThread(activeFriendId);
-            const msg = { id: uid(), mine: true, text, ts: Date.now(), status: 'sent', reactions: { mine: [], theirs: [] }, edited: false, deleted: false };
+            const replyTo = (replyingTo && replyingTo.friendId === activeFriendId)
+                ? { id: replyingTo.id, who: replyingTo.who, snippet: replyingTo.snippet } : null;
+            const msg = { id: uid(), mine: true, text, ts: Date.now(), status: 'sent', reactions: { mine: [], theirs: [] }, edited: false, deleted: false, replyTo, pinned: false };
             thread.push(msg);
+            cancelReply();
             saveMessages();
             renderMessages();
             renderFriendList();
-            sendToConn({ type: 'msg', id: msg.id, text, ts: msg.ts });
+            sendToConn({ type: 'msg', id: msg.id, text, ts: msg.ts, replyTo });
             sendToConn({ type: 'typing', isTyping: false });
             composerInput.value = '';
             composerInput.style.height = 'auto';
@@ -2160,7 +3233,95 @@
             });
             renderTypingIndicator();
             area.scrollTop = area.scrollHeight;
+            if (replyingTo && replyingTo.friendId !== activeFriendId) cancelReply();
+            renderPinnedBar();
         }
+
+        // ---- Reply + pin helpers ----
+        function replySnippetFor(m) {
+            return (m.text || (m.attachment ? '📎 ' + (m.attachment.name || 'Attachment') : '')).slice(0, 140);
+        }
+
+        function startReply(messageId) {
+            const thread = messagesByContact[activeFriendId] || [];
+            const m = thread.find(x => x.id === messageId);
+            if (!m || m.deleted) return;
+            replyingTo = { friendId: activeFriendId, id: m.id, who: m.mine ? 'me' : 'them', snippet: replySnippetFor(m) };
+            renderReplyPreview();
+            composerInput.focus();
+        }
+
+        function cancelReply() {
+            replyingTo = null;
+            renderReplyPreview();
+        }
+
+        function renderReplyPreview() {
+            const existing = document.getElementById('reply-preview-bar');
+            if (existing) existing.remove();
+            if (!replyingTo) return;
+            const friend = getActiveFriend();
+            const bar = document.createElement('div');
+            bar.id = 'reply-preview-bar';
+            bar.className = 'reply-preview-bar';
+            const text = document.createElement('div');
+            text.className = 'reply-preview-text';
+            const who = document.createElement('b');
+            who.textContent = 'Replying to ' + (replyingTo.who === 'me' ? 'yourself' : (friend ? friend.name : 'them')) + ': ';
+            text.appendChild(who);
+            text.appendChild(document.createTextNode(replyingTo.snippet));
+            const close = document.createElement('button');
+            close.className = 'btn-icon-sm';
+            close.textContent = '✕';
+            close.title = 'Cancel reply';
+            close.addEventListener('click', cancelReply);
+            bar.appendChild(text);
+            bar.appendChild(close);
+            document.querySelector('.composer-area').insertBefore(bar, document.querySelector('.composer-row'));
+        }
+
+        function scrollToMessage(messageId) {
+            const row = document.querySelector(`#messages-area .msg-row[data-id="${CSS.escape(messageId)}"]`);
+            if (!row) { showToast("That message isn't in view (it may have been cleared).", 'yellow'); return; }
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            row.classList.remove('flash');
+            void row.offsetWidth; // restart the animation if it's already flashing
+            row.classList.add('flash');
+            setTimeout(() => row.classList.remove('flash'), 1300);
+        }
+
+        function togglePin(messageId) {
+            const thread = messagesByContact[activeFriendId] || [];
+            const m = thread.find(x => x.id === messageId);
+            if (!m || m.deleted) return;
+            m.pinned = !m.pinned;
+            saveMessages();
+            sendToConn({ type: 'pin', messageId: m.id, pinned: m.pinned });
+            renderMessages();
+        }
+
+        function renderPinnedBar() {
+            const bar = document.getElementById('pinned-bar');
+            if (!bar) return;
+            const thread = activeFriendId ? (messagesByContact[activeFriendId] || []) : [];
+            const pinned = thread.filter(m => m.pinned && !m.deleted);
+            bar.classList.toggle('active', pinned.length > 0);
+            if (!pinned.length) return;
+            pinCycleIndex = Math.min(pinCycleIndex, pinned.length - 1);
+            const shown = pinned[pinned.length - 1 - pinCycleIndex];
+            document.getElementById('pinned-text').textContent = replySnippetFor(shown) || 'Pinned message';
+            document.getElementById('pinned-count').textContent = pinned.length > 1 ? `${pinCycleIndex + 1} of ${pinned.length}` : '';
+        }
+
+        document.getElementById('pinned-bar').addEventListener('click', () => {
+            const thread = activeFriendId ? (messagesByContact[activeFriendId] || []) : [];
+            const pinned = thread.filter(m => m.pinned && !m.deleted);
+            if (!pinned.length) return;
+            const target = pinned[pinned.length - 1 - Math.min(pinCycleIndex, pinned.length - 1)];
+            scrollToMessage(target.id);
+            pinCycleIndex = (pinCycleIndex + 1) % pinned.length;
+            renderPinnedBar();
+        });
 
         function buildMessageRow(m) {
             const row = document.createElement('div');
@@ -2183,6 +3344,18 @@
             } else {
                 bubble.innerHTML = formatMessageText(m.text);
             }
+            if (!m.deleted && m.replyTo) {
+                const quote = document.createElement('span');
+                quote.className = 'reply-quote';
+                const quoted = (messagesByContact[activeFriendId] || []).find(x => x.id === m.replyTo.id);
+                const quoteText = quoted ? (quoted.deleted ? 'This message was deleted' : (quoted.text || (quoted.attachment ? '📎 Attachment' : ''))) : m.replyTo.snippet;
+                const strong = document.createElement('strong');
+                strong.textContent = m.replyTo.who === 'me' ? 'You' : (getActiveFriend() ? getActiveFriend().name : 'Them');
+                quote.appendChild(strong);
+                quote.appendChild(document.createTextNode(String(quoteText || '').slice(0, 140)));
+                quote.addEventListener('click', () => scrollToMessage(m.replyTo.id));
+                bubble.insertBefore(quote, bubble.firstChild);
+            }
             const actions = document.createElement('div');
             actions.className = 'msg-actions';
             const reactBtn = document.createElement('button');
@@ -2191,6 +3364,20 @@
             reactBtn.title = 'React';
             reactBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleReactionPicker(m.id, reactBtn); });
             actions.appendChild(reactBtn);
+            if (!m.deleted) {
+                const replyBtn = document.createElement('button');
+                replyBtn.className = 'msg-action-btn';
+                replyBtn.textContent = '↩️';
+                replyBtn.title = 'Reply';
+                replyBtn.addEventListener('click', (e) => { e.stopPropagation(); startReply(m.id); });
+                actions.appendChild(replyBtn);
+                const pinBtn = document.createElement('button');
+                pinBtn.className = 'msg-action-btn';
+                pinBtn.textContent = m.pinned ? '📍' : '📌';
+                pinBtn.title = m.pinned ? 'Unpin' : 'Pin';
+                pinBtn.addEventListener('click', (e) => { e.stopPropagation(); togglePin(m.id); });
+                actions.appendChild(pinBtn);
+            }
             if (m.mine && !m.deleted) {
                 const editBtn = document.createElement('button');
                 editBtn.className = 'msg-action-btn';
@@ -2227,7 +3414,7 @@
             if (!m.deleted) {
                 const meta = document.createElement('div');
                 meta.className = 'msg-meta';
-                meta.innerHTML = `${m.edited ? '<span class="edited-tag">edited</span> · ' : ''}${timeLabel(m.ts)}${m.mine ? ' · ' + statusTicks(m.status) : ''}`;
+                meta.innerHTML = `${m.edited ? '<span class="edited-tag">edited</span> · ' : ''}${timeLabel(m.ts)}${m.mine ? ' · ' + statusTicks(m.status) : ''}${m.pinned ? '<span class="pin-tag">📌 pinned</span>' : ''}`;
                 row.appendChild(meta);
             }
             return row;
@@ -2663,6 +3850,19 @@
                 star.textContent = '⭐';
                 container.appendChild(star);
             }
+            {
+                const k = mediaKey(media);
+                const savedReacts = media.isRemote ? [] : (mediaReactions[k] || []);
+                const hasCaption = media.isRemote ? !!media.caption : !!captions[k];
+                if (savedReacts.length || hasCaption) {
+                    const rb = document.createElement('div');
+                    rb.className = 'react-badge';
+                    const uniq = [...new Set(savedReacts.map(r => r.emoji))].slice(0, 3);
+                    rb.textContent = uniq.join('') + (hasCaption ? '💬' : '');
+                    rb.title = [hasCaption ? 'Has a caption' : '', savedReacts.length ? savedReacts.map(r => `${r.emoji} ${r.from}`).join(', ') : ''].filter(Boolean).join(' · ');
+                    container.appendChild(rb);
+                }
+            }
             const favKey = `${media.hash}|${media.timestamp}`;
             const favBtn = document.createElement('button');
             favBtn.className = 'favorite-badge';
@@ -2676,6 +3876,24 @@
             });
             container.appendChild(favBtn);
 
+            if (selectMode && !media.isRemote) {
+                const check = document.createElement('div');
+                check.className = 'select-check';
+                container.appendChild(check);
+                const setVisual = () => {
+                    const on = selectedKeys.has(mediaKey(media));
+                    container.classList.toggle('selected', on);
+                    check.textContent = on ? '✓' : '';
+                };
+                setVisual();
+                container.addEventListener('click', () => {
+                    const k = mediaKey(media);
+                    if (selectedKeys.has(k)) selectedKeys.delete(k); else selectedKeys.add(k);
+                    setVisual();
+                    updateSelectBar();
+                });
+                return container;
+            }
             container.addEventListener('click', () => triggerLightbox(index, globalList));
             return container;
         }
@@ -2683,6 +3901,556 @@
         // ============================================================
         // GALLERY: the core rendering engine (sort, filter, paginate, group)
         // ============================================================
+        // ============================================================
+        // ALBUMS, SELECT MODE, ZIP, DUPLICATES (my own screenshots)
+        // ============================================================
+        function showChoiceModal(title, choices, onPick) {
+            const existing = document.getElementById('choice-modal');
+            if (existing) existing.remove();
+            const modal = document.createElement('div');
+            modal.id = 'choice-modal';
+            modal.className = 'custom-modal';
+            const card = document.createElement('div');
+            card.className = 'modal-card';
+            card.style.width = '340px';
+            const h = document.createElement('h3');
+            h.className = 'modal-title';
+            h.textContent = title;
+            card.appendChild(h);
+            choices.forEach(c => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-discover';
+                btn.style.cssText = 'margin-bottom: 0.4rem; display: block; width: 100%;';
+                btn.textContent = c.label;
+                btn.addEventListener('click', () => { modal.remove(); onPick(c.value); });
+                card.appendChild(btn);
+            });
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'btn-cancel';
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.style.marginTop = '0.5rem';
+            cancelBtn.addEventListener('click', () => modal.remove());
+            card.appendChild(cancelBtn);
+            modal.appendChild(card);
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+            document.body.appendChild(modal);
+        }
+
+        function createAlbum(name) {
+            const id = uid();
+            albums[id] = { name: String(name).trim().slice(0, 40) || 'Album', keys: [] };
+            saveAlbums();
+            return id;
+        }
+
+        function renderAlbumsList() {
+            const tools = document.getElementById('local-tools');
+            const show = currentSource === 'local' && allMediaFiles.length > 0;
+            tools.style.display = show ? 'block' : 'none';
+            if (!show) return;
+            const list = document.getElementById('albums-list');
+            list.innerHTML = '';
+            Object.keys(albums).forEach(id => {
+                const a = albums[id];
+                const row = document.createElement('div');
+                row.className = 'album-row';
+                const btn = document.createElement('button');
+                btn.className = 'nav-item' + (currentAlbumId === id ? ' active' : '');
+                btn.textContent = `📁 ${a.name} (${a.keys.length})`;
+                btn.title = currentAlbumId === id ? 'Click to show all media again' : 'Show only this album';
+                btn.addEventListener('click', () => { currentAlbumId = currentAlbumId === id ? null : id; currentPage = 1; renderView(); });
+                const edit = document.createElement('button');
+                edit.className = 'album-mini';
+                edit.textContent = '✎';
+                edit.title = 'Rename album';
+                edit.addEventListener('click', () => {
+                    const name = (prompt('Rename album:', a.name) || '').trim();
+                    if (name) { a.name = name.slice(0, 40); saveAlbums(); renderAlbumsList(); }
+                });
+                const del = document.createElement('button');
+                del.className = 'album-mini';
+                del.textContent = '🗑';
+                del.title = 'Delete album (your screenshots are not touched)';
+                del.addEventListener('click', () => {
+                    if (!confirm(`Delete the album "${a.name}"? Your screenshots stay where they are.`)) return;
+                    delete albums[id];
+                    if (currentAlbumId === id) currentAlbumId = null;
+                    saveAlbums();
+                    renderView();
+                });
+                row.appendChild(btn); row.appendChild(edit); row.appendChild(del);
+                list.appendChild(row);
+            });
+            document.getElementById('btn-select-mode').textContent = selectMode ? '☑️ Exit Select' : '☑️ Select';
+        }
+
+        function selectedMedia() { return allMediaFiles.filter(m => selectedKeys.has(mediaKey(m))); }
+
+        function updateSelectBar() {
+            const bar = document.getElementById('select-bar');
+            const on = selectMode && currentSource === 'local';
+            bar.classList.toggle('active', on);
+            if (!on) return;
+            const n = selectedKeys.size;
+            document.getElementById('select-count').textContent = `${n} selected`;
+            ['sel-album', 'sel-send', 'sel-zip'].forEach(id => { document.getElementById(id).disabled = n === 0; });
+            document.getElementById('sel-unalbum').disabled = n === 0 || !currentAlbumId;
+        }
+
+        function setSelectMode(on) {
+            selectMode = !!on;
+            if (!selectMode) selectedKeys.clear();
+            renderView();
+        }
+
+        document.getElementById('btn-select-mode').addEventListener('click', () => setSelectMode(!selectMode));
+        document.getElementById('sel-cancel').addEventListener('click', () => setSelectMode(false));
+        document.getElementById('sel-all').addEventListener('click', () => {
+            currentSortedList.forEach(m => selectedKeys.add(mediaKey(m)));
+            renderView();
+        });
+        document.getElementById('btn-new-album').addEventListener('click', () => {
+            const name = (prompt('Name your new album:') || '').trim();
+            if (!name) return;
+            currentAlbumId = createAlbum(name);
+            currentPage = 1;
+            renderView();
+            showToast('Album created. Use Select to add screenshots to it.', 'purple');
+        });
+        document.getElementById('sel-album').addEventListener('click', () => {
+            if (!selectedKeys.size) return;
+            const choices = Object.keys(albums).map(id => ({ label: `📁 ${albums[id].name}`, value: id }));
+            choices.push({ label: '➕ New album…', value: '__new__' });
+            showChoiceModal(`Add ${selectedKeys.size} to album`, choices, (v) => {
+                let id = v;
+                if (v === '__new__') {
+                    const name = (prompt('Name your new album:') || '').trim();
+                    if (!name) return;
+                    id = createAlbum(name);
+                }
+                const a = albums[id];
+                const merged = new Set(a.keys);
+                selectedKeys.forEach(k => merged.add(k));
+                a.keys = [...merged];
+                saveAlbums();
+                showToast(`Added to "${a.name}"`, 'purple');
+                setSelectMode(false);
+            });
+        });
+        document.getElementById('sel-unalbum').addEventListener('click', () => {
+            const a = albums[currentAlbumId];
+            if (!a || !selectedKeys.size) return;
+            a.keys = a.keys.filter(k => !selectedKeys.has(k));
+            saveAlbums();
+            showToast(`Removed from "${a.name}"`);
+            setSelectMode(false);
+        });
+
+        function safeMediaFileName(m) {
+            const game = gameKey(m.hash).replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '') || 'Unsorted';
+            const ext = m.type === 'video' ? 'mp4' : 'jpg';
+            return { game, name: `${game}_${m.dateStr}.${ext}` };
+        }
+
+        document.getElementById('sel-send').addEventListener('click', () => {
+            const items = selectedMedia();
+            if (!items.length) return;
+            const go = async (friend) => {
+                if (!(activeConnection && activeConnection.open && connectedFriendId === friend.id)) {
+                    showToast(`You're not connected to ${friend.name} right now. Open their chat so it connects, then try again.`, 'yellow');
+                    return;
+                }
+                if (items.length > 20 && !confirm(`Send ${items.length} files to ${friend.name}? They arrive one at a time.`)) return;
+                setSelectMode(false);
+                let sent = 0;
+                for (let i = 0; i < items.length; i++) {
+                    if (!(activeConnection && activeConnection.open && connectedFriendId === friend.id)) {
+                        showToast(`Connection dropped after ${sent} of ${items.length}.`, 'yellow');
+                        return;
+                    }
+                    const m = items[i];
+                    const blob = await getShareableBlob(m);
+                    if (!blob) continue;
+                    const { name } = safeMediaFileName(m);
+                    const file = new File([blob], `${i + 1}_${name}`, { type: m.type === 'video' ? 'video/mp4' : 'image/jpeg' });
+                    showToast(`Sending ${i + 1} of ${items.length} to ${friend.name}...`, 'purple', 2500);
+                    await sendFile(file, captions[mediaKey(m)] || `${gameKey(m.hash)} · ${m.dateStr}`, friend.id);
+                    sent++;
+                }
+                showToast(`Sent ${sent} to ${friend.name} ✓`, 'purple');
+            };
+            if (friends.length === 0) showToast("You don't have any friends added yet, so there's nobody to send to.", 'yellow');
+            else if (friends.length === 1) go(friends[0]);
+            else showFriendPickerModal(go);
+        });
+
+        // Minimal "store only" ZIP writer: no compression (screenshots/clips are
+        // already compressed), no library, handles up to ~4 GB.
+        const CRC_TABLE = (() => {
+            const t = new Uint32Array(256);
+            for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; }
+            return t;
+        })();
+        async function crc32OfBlob(blob) {
+            let crc = 0xFFFFFFFF;
+            const CHUNK = 4 * 1024 * 1024;
+            for (let off = 0; off < blob.size; off += CHUNK) {
+                const buf = new Uint8Array(await blob.slice(off, off + CHUNK).arrayBuffer());
+                for (let i = 0; i < buf.length; i++) crc = CRC_TABLE[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8);
+            }
+            return (crc ^ 0xFFFFFFFF) >>> 0;
+        }
+        async function buildZip(entries, onProgress) {
+            const enc = new TextEncoder();
+            const now = new Date();
+            const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
+            const dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+            const parts = [], central = [];
+            let offset = 0;
+            for (let i = 0; i < entries.length; i++) {
+                const { name, blob } = entries[i];
+                const nameBytes = enc.encode(name);
+                const crc = await crc32OfBlob(blob);
+                const size = blob.size;
+                const lh = new DataView(new ArrayBuffer(30));
+                lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+                lh.setUint16(10, dosTime, true); lh.setUint16(12, dosDate, true); lh.setUint32(14, crc, true);
+                lh.setUint32(18, size, true); lh.setUint32(22, size, true); lh.setUint16(26, nameBytes.length, true); lh.setUint16(28, 0, true);
+                parts.push(lh.buffer, nameBytes, blob);
+                const ch = new DataView(new ArrayBuffer(46));
+                ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(10, 0, true);
+                ch.setUint16(12, dosTime, true); ch.setUint16(14, dosDate, true); ch.setUint32(16, crc, true);
+                ch.setUint32(20, size, true); ch.setUint32(24, size, true); ch.setUint16(28, nameBytes.length, true);
+                ch.setUint32(42, offset, true);
+                central.push(ch.buffer, nameBytes);
+                offset += 30 + nameBytes.length + size;
+                if (onProgress) onProgress(i + 1, entries.length);
+            }
+            const cdSize = central.reduce((s, p) => s + p.byteLength, 0);
+            const end = new DataView(new ArrayBuffer(22));
+            end.setUint32(0, 0x06054b50, true); end.setUint16(8, entries.length, true); end.setUint16(10, entries.length, true);
+            end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+            return new Blob([...parts, ...central, end.buffer], { type: 'application/zip' });
+        }
+
+        document.getElementById('sel-zip').addEventListener('click', async () => {
+            const items = selectedMedia().filter(m => m.file);
+            if (!items.length) return;
+            const total = items.reduce((s, m) => s + m.file.size, 0);
+            if (items.length > 65000 || total > 3.9 * 1024 * 1024 * 1024) {
+                showToast('That selection is too big for a single zip (limit is about 4 GB). Try fewer files.', 'yellow', 5000);
+                return;
+            }
+            const used = new Set();
+            const entries = items.map(m => {
+                const { game } = safeMediaFileName(m);
+                let path = `${game}/${m.file.name}`;
+                for (let n = 2; used.has(path); n++) path = `${game}/${n}_${m.file.name}`;
+                used.add(path);
+                return { name: path, blob: m.file };
+            });
+            showToast(`Building a zip of ${items.length} file${items.length === 1 ? '' : 's'}...`, 'purple', 4000);
+            try {
+                const blob = await buildZip(entries);
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `switch-hub-${new Date().toISOString().slice(0, 10)}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 60000);
+                showToast('Zip ready ✓', 'purple');
+            } catch (e) {
+                console.error('Zip failed', e);
+                showToast("Couldn't build the zip (the browser may have run out of memory). Try a smaller selection.", 'yellow', 5000);
+            }
+        });
+
+        // Duplicate finder: same size first, then a fingerprint of the start,
+        // middle and end of each file. Never touches the files on disk.
+        async function fingerprintFile(file) {
+            const SAMPLE = 256 * 1024;
+            const size = file.size;
+            const parts = [file.slice(0, SAMPLE)];
+            if (size > SAMPLE * 3) parts.push(file.slice(Math.floor(size / 2), Math.floor(size / 2) + SAMPLE));
+            if (size > SAMPLE) parts.push(file.slice(Math.max(0, size - SAMPLE)));
+            const digest = await crypto.subtle.digest('SHA-1', await new Blob(parts).arrayBuffer());
+            return size + ':' + [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function findDuplicates() {
+            if (!(window.crypto && crypto.subtle)) { showToast("Duplicate scanning needs a secure (https) page.", 'yellow'); return; }
+            showToast('Scanning for duplicates...', 'purple', 3000);
+            const bySize = new Map();
+            allMediaFiles.forEach(m => { if (m.file) { const a = bySize.get(m.file.size) || []; a.push(m); bySize.set(m.file.size, a); } });
+            const groups = [];
+            for (const [, list] of bySize) {
+                if (list.length < 2) continue;
+                const byPrint = new Map();
+                for (const m of list) {
+                    try {
+                        const fp = await fingerprintFile(m.file);
+                        const g = byPrint.get(fp) || [];
+                        g.push(m);
+                        byPrint.set(fp, g);
+                    } catch (e) { /* unreadable file: skip it */ }
+                }
+                byPrint.forEach(g => { if (g.length > 1) groups.push(g); });
+            }
+            showDuplicatesModal(groups);
+        }
+
+        function showDuplicatesModal(groups) {
+            const existing = document.getElementById('dupes-modal');
+            if (existing) existing.remove();
+            const modal = document.createElement('div');
+            modal.id = 'dupes-modal';
+            modal.className = 'custom-modal';
+            const card = document.createElement('div');
+            card.className = 'modal-card';
+            card.style.width = '520px';
+            const h = document.createElement('h3');
+            h.className = 'modal-title';
+            h.textContent = 'Duplicate finder';
+            card.appendChild(h);
+            const extras = groups.flatMap(g => g.slice(1));
+            const savedBytes = extras.reduce((s, m) => s + m.file.size, 0);
+            const summary = document.createElement('p');
+            summary.className = 'modal-desc';
+            summary.textContent = groups.length === 0
+                ? 'No duplicates found. Nothing to clean up.'
+                : `Found ${groups.length} set${groups.length === 1 ? '' : 's'} of identical files: ${extras.length} extra cop${extras.length === 1 ? 'y' : 'ies'}, about ${(savedBytes / 1048576).toFixed(1)} MB. Hiding extras only removes them from this session (stats, sync, zips); nothing is deleted from your SD card, and reloading the folder brings them back.`;
+            card.appendChild(summary);
+            groups.slice(0, 30).forEach(g => {
+                const d = document.createElement('div');
+                d.className = 'dupe-group';
+                d.innerHTML = '';
+                g.forEach((m, i) => {
+                    const line = document.createElement('div');
+                    const b = document.createElement('b');
+                    b.textContent = i === 0 ? 'Keep: ' : 'Extra: ';
+                    line.appendChild(b);
+                    line.appendChild(document.createTextNode(m.file.name));
+                    d.appendChild(line);
+                });
+                card.appendChild(d);
+            });
+            if (groups.length > 30) {
+                const more = document.createElement('p');
+                more.className = 'modal-desc';
+                more.textContent = `...and ${groups.length - 30} more sets.`;
+                card.appendChild(more);
+            }
+            const actions = document.createElement('div');
+            actions.className = 'modal-actions';
+            const close = document.createElement('button');
+            close.className = 'btn-cancel';
+            close.textContent = 'Close';
+            close.addEventListener('click', () => modal.remove());
+            actions.appendChild(close);
+            if (extras.length) {
+                const hide = document.createElement('button');
+                hide.className = 'btn-save';
+                hide.textContent = `Hide ${extras.length} extra${extras.length === 1 ? '' : 's'}`;
+                hide.addEventListener('click', () => {
+                    const drop = new Set(extras);
+                    allMediaFiles = allMediaFiles.filter(m => !drop.has(m));
+                    modal.remove();
+                    renderView();
+                    if (activeConnection && activeConnection.open) syncGallery(activeConnection);
+                    showToast(`Hid ${extras.length} duplicate${extras.length === 1 ? '' : 's'} for this session`, 'purple');
+                });
+                actions.appendChild(hide);
+            }
+            card.appendChild(actions);
+            modal.appendChild(card);
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+            document.body.appendChild(modal);
+        }
+        document.getElementById('btn-find-dupes').addEventListener('click', findDuplicates);
+
+        // ============================================================
+        // STATS & YEAR IN REVIEW (all computed locally from loaded files)
+        // ============================================================
+        const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+        function dayNumber(dateStr) {
+            const [y, m, d] = dateStr.split('-').map(Number);
+            return Math.round(Date.UTC(y, m - 1, d) / 86400000);
+        }
+
+        function computeStats(items) {
+            const s = { total: items.length, photos: 0, videos: 0, byGame: new Map(), byDay: new Map(), byMonth: new Array(12).fill(0), bytes: 0 };
+            items.forEach(m => {
+                if (m.type === 'video') s.videos++; else s.photos++;
+                s.bytes += m.file ? m.file.size : 0;
+                const g = gameKey(m.hash);
+                s.byGame.set(g, (s.byGame.get(g) || 0) + 1);
+                s.byDay.set(m.dateStr, (s.byDay.get(m.dateStr) || 0) + 1);
+                const mo = parseInt(m.dateStr.slice(5, 7), 10);
+                if (mo >= 1 && mo <= 12) s.byMonth[mo - 1]++;
+            });
+            s.games = [...s.byGame.entries()].sort((a, b) => b[1] - a[1]);
+            s.days = [...s.byDay.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+            const sortedDays = [...s.byDay.keys()].sort();
+            let best = 0, run = 0, prev = null;
+            sortedDays.forEach(d => {
+                const n = dayNumber(d);
+                run = (prev !== null && n === prev + 1) ? run + 1 : 1;
+                if (run > best) best = run;
+                prev = n;
+            });
+            s.longestStreak = best;
+            s.activeDays = sortedDays.length;
+            s.busiestMonthIdx = s.byMonth.reduce((bi, v, i, arr) => v > arr[bi] ? i : bi, 0);
+            return s;
+        }
+
+        function statCard(big, label) {
+            const c = document.createElement('div');
+            c.className = 'stat-card' + (String(big).length > 12 ? ' long' : '');
+            const b = document.createElement('div'); b.className = 'big'; b.textContent = big;
+            const l = document.createElement('div'); l.className = 'lbl'; l.textContent = label;
+            c.appendChild(b); c.appendChild(l);
+            return c;
+        }
+
+        function buildHeatmap(year, byDay) {
+            const wrap = document.createElement('div');
+            wrap.className = 'heat-wrap';
+            const grid = document.createElement('div');
+            grid.className = 'heat-grid';
+            const first = new Date(Date.UTC(year, 0, 1));
+            for (let i = 0; i < first.getUTCDay(); i++) {
+                const pad = document.createElement('div'); pad.className = 'heat-cell pad'; grid.appendChild(pad);
+            }
+            let max = 0;
+            byDay.forEach((v, k) => { if (k.startsWith(year + '-') && v > max) max = v; });
+            const cur = new Date(first);
+            while (cur.getUTCFullYear() === year) {
+                const key = `${year}-${String(cur.getUTCMonth() + 1).padStart(2, '0')}-${String(cur.getUTCDate()).padStart(2, '0')}`;
+                const n = byDay.get(key) || 0;
+                const cell = document.createElement('div');
+                const level = n === 0 ? 0 : Math.min(4, Math.ceil((n / max) * 4));
+                cell.className = 'heat-cell' + (level ? ' l' + level : '');
+                cell.title = `${key}: ${n} capture${n === 1 ? '' : 's'}`;
+                grid.appendChild(cell);
+                cur.setUTCDate(cur.getUTCDate() + 1);
+            }
+            wrap.appendChild(grid);
+            return wrap;
+        }
+
+        function buildBars(entries, max) {
+            const box = document.createElement('div');
+            entries.forEach(([name, n]) => {
+                const row = document.createElement('div'); row.className = 'bar-row';
+                const nm = document.createElement('div'); nm.className = 'bar-name'; nm.textContent = name; nm.title = name;
+                const track = document.createElement('div'); track.className = 'bar-track';
+                const fill = document.createElement('div'); fill.className = 'bar-fill'; fill.style.width = Math.max(2, Math.round((n / max) * 100)) + '%';
+                track.appendChild(fill);
+                const cnt = document.createElement('div'); cnt.className = 'bar-n'; cnt.textContent = n;
+                row.appendChild(nm); row.appendChild(track); row.appendChild(cnt);
+                box.appendChild(row);
+            });
+            return box;
+        }
+
+        function heading(text) { const h = document.createElement('div'); h.className = 'stats-h'; h.textContent = text; return h; }
+
+        function showStatsModal(view) {
+            const existing = document.getElementById('stats-modal');
+            if (existing) existing.remove();
+            const items = allMediaFiles;
+            if (!items.length) { showToast('Load your SD card first, then there is something to count.', 'yellow'); return; }
+
+            const years = [...new Set(items.map(m => parseInt(m.dateStr.slice(0, 4), 10)).filter(y => y >= 2000 && y <= 2100))].sort((a, b) => b - a);
+            if (view === undefined) view = years.length ? years[0] : 'all';
+            const scoped = view === 'all' ? items : items.filter(m => m.dateStr.startsWith(view + '-'));
+            const s = computeStats(scoped);
+
+            const modal = document.createElement('div');
+            modal.id = 'stats-modal';
+            modal.className = 'custom-modal';
+            const card = document.createElement('div');
+            card.className = 'modal-card';
+            card.style.width = '640px';
+
+            const tabs = document.createElement('div');
+            tabs.className = 'stats-tabs';
+            const addTab = (label, v) => {
+                const b = document.createElement('button');
+                b.textContent = label;
+                if (v === view) b.classList.add('active');
+                b.addEventListener('click', () => showStatsModal(v));
+                tabs.appendChild(b);
+            };
+            years.forEach(y => addTab(String(y), y));
+            addTab('All time', 'all');
+            card.appendChild(tabs);
+
+            if (s.total === 0) {
+                const p = document.createElement('p'); p.className = 'modal-desc'; p.textContent = 'Nothing captured in this period.';
+                card.appendChild(p);
+            } else {
+                if (view !== 'all') {
+                    const hero = document.createElement('div');
+                    hero.className = 'recap-hero';
+                    const yr = document.createElement('div'); yr.className = 'year'; yr.textContent = `${view} in review`;
+                    const topGame = s.games[0];
+                    const line = document.createElement('div'); line.className = 'line';
+                    line.textContent = `You captured ${s.total.toLocaleString()} moment${s.total === 1 ? '' : 's'} across ${s.games.length} game${s.games.length === 1 ? '' : 's'}, mostly ${topGame[0]}.`;
+                    hero.appendChild(yr); hero.appendChild(line);
+                    card.appendChild(hero);
+                }
+
+                const cards = document.createElement('div');
+                cards.className = 'stat-cards';
+                cards.appendChild(statCard(s.total.toLocaleString(), view === 'all' ? 'Total captures' : 'Captures'));
+                cards.appendChild(statCard(`${s.photos.toLocaleString()} / ${s.videos.toLocaleString()}`, 'Photos / clips'));
+                cards.appendChild(statCard(s.games[0][0], `Top game (${s.games[0][1]})`));
+                const [busyDay, busyN] = s.days[0];
+                cards.appendChild(statCard(busyDay, `Busiest day (${busyN})`));
+                if (view !== 'all') cards.appendChild(statCard(MONTH_NAMES[s.busiestMonthIdx], `Busiest month (${s.byMonth[s.busiestMonthIdx]})`));
+                cards.appendChild(statCard(`${s.longestStreak} day${s.longestStreak === 1 ? '' : 's'}`, 'Longest streak'));
+                cards.appendChild(statCard(s.activeDays.toLocaleString(), 'Days with captures'));
+                if (s.bytes) cards.appendChild(statCard(s.bytes >= 1073741824 ? (s.bytes / 1073741824).toFixed(1) + ' GB' : Math.round(s.bytes / 1048576) + ' MB', 'Total size'));
+                card.appendChild(cards);
+
+                if (view !== 'all') {
+                    card.appendChild(heading('Your year, day by day'));
+                    card.appendChild(buildHeatmap(view, s.byDay));
+                    card.appendChild(heading('By month'));
+                    const monthEntries = MONTH_NAMES.map((n, i) => [n.slice(0, 3), s.byMonth[i]]);
+                    card.appendChild(buildBars(monthEntries, Math.max(1, ...s.byMonth)));
+                } else {
+                    const yearEntries = years.map(y => [String(y), items.filter(m => m.dateStr.startsWith(y + '-')).length]);
+                    if (yearEntries.length > 1) {
+                        card.appendChild(heading('By year'));
+                        card.appendChild(buildBars(yearEntries, Math.max(1, ...yearEntries.map(e => e[1]))));
+                    }
+                }
+
+                card.appendChild(heading('Top games'));
+                const top = s.games.slice(0, 10);
+                card.appendChild(buildBars(top, top[0][1]));
+            }
+
+            const actions = document.createElement('div');
+            actions.className = 'modal-actions';
+            const close = document.createElement('button');
+            close.className = 'btn-cancel';
+            close.textContent = 'Close';
+            close.addEventListener('click', () => modal.remove());
+            actions.appendChild(close);
+            card.appendChild(actions);
+            modal.appendChild(card);
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+            document.body.appendChild(modal);
+        }
+        document.getElementById('btn-stats').addEventListener('click', () => showStatsModal());
+
         function renderView() {
             mediaGrid.innerHTML = '';
             const paginationControls = document.getElementById('pagination-controls');
@@ -2691,6 +4459,9 @@
 
             let sourceList = currentSource === 'local' ? allMediaFiles : remoteMediaFiles;
             updateTopBar();
+            if (currentSource !== 'local') { selectMode = false; selectedKeys.clear(); }
+            renderAlbumsList();
+            updateSelectBar();
 
             if (sourceList.length === 0) {
                 if (currentSource === 'remote') {
@@ -2702,6 +4473,10 @@
             }
 
             let filteredList = sourceList;
+            if (currentSource === 'local' && currentAlbumId && albums[currentAlbumId]) {
+                const inAlbum = new Set(albums[currentAlbumId].keys);
+                filteredList = filteredList.filter(m => inAlbum.has(mediaKey(m)));
+            }
             if (typeFilter !== 'all') filteredList = filteredList.filter(m => m.type === typeFilter);
             if (favoritesOnly) filteredList = filteredList.filter(m => favorites[`${m.hash}|${m.timestamp}`]);
             if (searchQuery.trim()) {
@@ -2938,14 +4713,17 @@
         const btnNext = document.getElementById('btn-next');
 
         function triggerLightbox(index, globalList) {
+            lightboxOpenFlag = true;
             currentLightboxIndex = index;
             activeMediaList = globalList;
             updateLightboxContent();
             lightbox.classList.remove('hidden');
+            updateLightboxFooter(); // runs after un-hiding, since the first pass above sees a closed lightbox
             requestAnimationFrame(() => lightbox.classList.remove('opacity-0'));
             sendPresence();
         }
         function closeLightbox() {
+            lightboxOpenFlag = false; // so the presence update below reports "not viewing" right away
             lightbox.classList.add('opacity-0');
             setTimeout(() => { lightbox.classList.add('hidden'); lightboxMediaContainer.innerHTML = ''; }, 300);
             stopSlideshow();
@@ -2995,6 +4773,7 @@
             lightboxMediaContainer.innerHTML = '';
             currentLightboxSrcUrl = null;
 
+            updateLightboxFooter();
             const starBtn = document.getElementById('btn-star-media');
             starBtn.style.display = (currentSource === 'remote' && activeConnection && activeConnection.open) ? 'flex' : 'none';
             starBtn.textContent = '⭐';
