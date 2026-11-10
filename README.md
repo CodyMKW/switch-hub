@@ -27,7 +27,7 @@ No install, no sign-up. Just open it in Chrome, Edge, or Opera on desktop (it ne
 - Real read receipts (sent / delivered / seen), typing indicators, message reactions
 - **Reply** to a specific message (it shows the quote, click it to jump back to the original)
 - **Pin** messages for both of you — pinned messages show up in a bar at the top of the chat
-- **Voice and video calls** with mute and camera toggles. Calls go straight between your browsers, same as everything else
+- **Voice calls** with a ringing prompt, mute and a timer. Calls go straight between your browsers, same as everything else
 - Edit or delete your own messages
 - Send files and images, with an actual progress bar instead of just... nothing happening for 20 seconds
 - Basic markdown (`**bold**`, `*italic*`, `` `code` ``), auto-linked URLs

@@ -2,6 +2,18 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.1.1] - 2026-11-10
+
+### Changed
+- **Video calls are gone; voice calls stay.** No camera is ever asked for now. A call shows a small panel with a timer, mute and hang up.
+- **Faster, and much harder to freeze.** Select mode, Select all and sorting no longer rebuild the whole grid or keep dozens of video decoders alive: clip previews only load while they're on (or near) the screen and are released when they scroll away. Select all updates the tiles in place (about 8x faster on a 3,000-file library in my test). Sorting by game and the per-group counts are computed once instead of once per comparison. Chat writes to storage are batched instead of saving the whole history on every event, long chats only draw the latest 200 messages (with a "Show earlier" button), bursts of incoming file chunks or a batch send redraw once per frame, and zipping shows progress and lets the page breathe between files.
+
+### Fixed
+- **Watch together invites said "they can't watch right now" and the other person never saw anything.** Invites and calls used the browser's own pop-up dialog, which Chrome can block or skip when the tab is in the background, and that counted as "no". They now show a card inside the page (with a ringing sound, a flashing tab title, and a system notification if you've allowed those), and your friend's answer is what you see.
+- **Accepting a watch together invite cancelled it straight away.** Joining now takes a proper invite, accept, start handshake, so a late or stale answer can't leave one side stuck. The follower's screen also only closes when the host actually stops viewing something, not at the start of the session.
+- **Voice calls said "invite sent" and "didn't pick up" at once.** The call only starts after the other person presses Answer. If you cancel it, they see a missed call; if they're already on a call, you're told.
+- A late "disconnected" event from an old connection can no longer tear down the new one.
+
 ## [1.1.0] - 2026-11-09
 
 ### Added
