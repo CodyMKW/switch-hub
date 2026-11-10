@@ -317,22 +317,24 @@
         .session-tile { position: relative; aspect-ratio: 1; border-radius: 0.5rem; overflow: hidden; background: #111; cursor: pointer; border: 1px solid rgba(77,77,77,0.4); display: flex; align-items: center; justify-content: center; color: var(--switch-muted); font-size: 1.6rem; }
         .session-tile img { width: 100%; height: 100%; object-fit: cover; }
         .session-tile .who { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.65); color: white; font-size: 0.65rem; padding: 0.15rem 0.35rem; text-align: center; }
-        .call-overlay { position: fixed; right: 1rem; top: 4.5rem; width: min(360px, 92vw); z-index: 85; display: none; flex-direction: column; gap: 0.5rem; background: var(--switch-darker); border: 1px solid #a855f7; border-radius: 0.9rem; padding: 0.6rem; box-shadow: 0 12px 34px rgba(0,0,0,0.6); }
+        .prompt-stack { position: fixed; top: 3.6rem; left: 50%; transform: translateX(-50%); z-index: 95; display: flex; flex-direction: column; gap: 0.5rem; width: min(440px, 94vw); pointer-events: none; }
+        .prompt-card { pointer-events: auto; background: var(--switch-darker); border: 1px solid #a855f7; border-radius: 0.9rem; padding: 0.8rem 0.95rem; box-shadow: 0 12px 34px rgba(0,0,0,0.65); display: flex; flex-direction: column; gap: 0.55rem; animation: toastIn 0.25s ease; }
+        .prompt-card.ringing { animation: ringPulse 1.2s ease-in-out infinite; }
+        @keyframes ringPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(168,85,247,0.55), 0 12px 34px rgba(0,0,0,0.65); } 50% { box-shadow: 0 0 0 9px rgba(168,85,247,0), 0 12px 34px rgba(0,0,0,0.65); } }
+        .prompt-card .p-title { font-weight: 800; color: white; font-size: 0.95rem; }
+        .prompt-card .p-text { color: var(--switch-muted); font-size: 0.8rem; line-height: 1.35; }
+        .prompt-card .p-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+        .prompt-card .p-actions button { padding: 0.4rem 0.95rem; border-radius: 9999px; border: 1px solid rgba(77,77,77,0.6); background: var(--switch-light); color: white; font-size: 0.82rem; font-weight: 700; cursor: pointer; }
+        .prompt-card .p-actions button.accept { background: #22c55e; border-color: #22c55e; color: #04200d; }
+        .prompt-card .p-actions button:hover { filter: brightness(1.12); }
+        .call-overlay { position: fixed; right: 1rem; top: 4.5rem; width: min(300px, 92vw); z-index: 85; display: none; flex-direction: column; gap: 0.45rem; align-items: center; background: var(--switch-darker); border: 1px solid #a855f7; border-radius: 0.9rem; padding: 0.7rem 0.8rem; box-shadow: 0 12px 34px rgba(0,0,0,0.6); }
         .call-overlay.active { display: flex; }
-        .call-stage { position: relative; aspect-ratio: 16 / 10; background: #000; border-radius: 0.6rem; overflow: hidden; }
-        .call-stage video#call-remote { width: 100%; height: 100%; object-fit: cover; }
-        .call-stage video#call-remote.no-video { opacity: 0; position: absolute; pointer-events: none; }
-        .call-audio-only { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 0.3rem; color: white; font-weight: 700; }
-        .call-audio-only .big { font-size: 2.4rem; }
-        .call-audio-only.active { display: flex; }
-        .call-local { position: absolute; right: 0.4rem; bottom: 0.4rem; width: 28%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 0.4rem; border: 2px solid rgba(255,255,255,0.5); background: #111; transform: scaleX(-1); }
-        .call-local.hidden-pip { display: none; }
-        .call-title { text-align: center; font-size: 0.78rem; color: var(--switch-muted); }
+        .call-title { text-align: center; font-size: 0.85rem; font-weight: 700; color: white; }
+        .call-timer { font-size: 0.78rem; color: var(--switch-muted); font-variant-numeric: tabular-nums; }
         .call-controls { display: flex; justify-content: center; gap: 0.5rem; }
-        .call-controls button { padding: 0.4rem 0.8rem; border-radius: 9999px; border: 1px solid rgba(77,77,77,0.5); background: var(--switch-light); color: white; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+        .call-controls button { padding: 0.4rem 0.9rem; border-radius: 9999px; border: 1px solid rgba(77,77,77,0.5); background: var(--switch-light); color: white; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
         .call-controls button.off { background: rgba(230,0,18,0.25); border-color: var(--switch-red); }
         .call-controls button.hang { background: var(--switch-red); border-color: var(--switch-red); }
-        .call-controls button:disabled { opacity: 0.4; cursor: not-allowed; }
         .dupe-group { background: rgba(255,255,255,0.04); border-radius: 0.5rem; padding: 0.5rem 0.7rem; margin-bottom: 0.5rem; font-size: 0.78rem; color: var(--switch-muted); word-break: break-all; }
         .dupe-group b { color: white; }
         .react-badge { position: absolute; bottom: 0.5rem; left: 0.5rem; display: flex; align-items: center; gap: 0.2rem; background: rgba(0,0,0,0.65); backdrop-filter: blur(4px); border-radius: 9999px; padding: 0.1rem 0.45rem; font-size: 0.8rem; z-index: 2; pointer-events: none; }
@@ -527,10 +529,7 @@
             </div>
             <button id="btn-watch-together" style="margin-top: 0.5rem; width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #a855f7; color: #a855f7; background: transparent; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">🎬 Watch together</button>
             <button id="btn-session-album" style="margin-top: 0.4rem; width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #a855f7; color: #a855f7; background: transparent; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">🗂️ Session album (0)</button>
-            <div style="display: flex; gap: 0.4rem; margin-top: 0.4rem;">
-                <button id="btn-voice-call" style="flex: 1; padding: 0.35rem 0.4rem; border: 1px solid #a855f7; color: #a855f7; background: transparent; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">📞 Voice</button>
-                <button id="btn-video-call" style="flex: 1; padding: 0.35rem 0.4rem; border: 1px solid #a855f7; color: #a855f7; background: transparent; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">📹 Video</button>
-            </div>
+            <button id="btn-voice-call" style="margin-top: 0.4rem; width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #a855f7; color: #a855f7; background: transparent; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">📞 Voice call</button>
             <button id="btn-jump-peer-viewing" style="display:none; margin-top: 0.5rem; width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #a855f7; color: #a855f7; background: rgba(168,85,247,0.08); border-radius: 0.25rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.03em; cursor: pointer;">▶ Jump to what they're viewing</button>
             <label style="display: flex; align-items: center; gap: 0.4rem; margin-top: 0.6rem; font-size: 0.7rem; color: var(--switch-muted); cursor: pointer;">
                 <input type="checkbox" id="setting-autofollow" style="width: 1rem; height: 1rem; accent-color: #a855f7;">
@@ -672,15 +671,11 @@
     </div>
 
     <div id="call-overlay" class="call-overlay">
-        <div class="call-stage">
-            <video id="call-remote" autoplay playsinline></video>
-            <div id="call-audio-only" class="call-audio-only"><div class="big" id="call-audio-avatar">🎧</div><div id="call-audio-name"></div></div>
-            <video id="call-local" class="call-local hidden-pip" autoplay playsinline muted></video>
-        </div>
         <div class="call-title" id="call-title"></div>
+        <div class="call-timer" id="call-timer"></div>
+        <audio id="call-remote" autoplay></audio>
         <div class="call-controls">
             <button id="call-mute" title="Mute or unmute your microphone">🎤 Mute</button>
-            <button id="call-cam" title="Turn your camera on or off">📷 Camera</button>
             <button id="call-hang" class="hang">📞 Hang up</button>
         </div>
     </div>
@@ -1010,7 +1005,15 @@
         function saveProfile() { localStorage.setItem('switch_hub_profile', JSON.stringify(myProfile)); }
         function savePresenceEntries() { localStorage.setItem('switch_hub_presence_entries', JSON.stringify(presenceEntries)); }
         function saveFriends() { localStorage.setItem('switch_hub_friends', JSON.stringify(friends)); }
+        let saveMessagesTimer = null;
         function saveMessages() {
+            // Serialising every thread is costly, so bursts of events (file chunks, receipts,
+            // batch sends) are folded into one write a moment later. It is also flushed when the page is hidden.
+            if (saveMessagesTimer) return;
+            saveMessagesTimer = setTimeout(flushMessages, 400);
+        }
+        function flushMessages() {
+            if (saveMessagesTimer) { clearTimeout(saveMessagesTimer); saveMessagesTimer = null; }
             // Attachments aren't persisted (their blob URLs die on reload) -
             // only the text-safe parts of each message get saved.
             const trimmed = {};
@@ -1021,8 +1024,10 @@
                     return copy;
                 });
             }
-            localStorage.setItem('switch_hub_messages', JSON.stringify(trimmed));
+            try { localStorage.setItem('switch_hub_messages', JSON.stringify(trimmed)); } catch (e) { console.warn('Could not save messages', e); }
         }
+        window.addEventListener('pagehide', flushMessages);
+        document.addEventListener('visibilitychange', () => { if (document.hidden) flushMessages(); });
         function saveGameMap() { localStorage.setItem('switch_gallery_games', JSON.stringify(hashToGameMap)); }
         function saveSpoilerMap() { localStorage.setItem('switch_gallery_spoilers', JSON.stringify(spoilerGamesMap)); }
         function saveReceivedStars() { localStorage.setItem('switch_gallery_received_stars', JSON.stringify(receivedStars)); }
@@ -1625,6 +1630,9 @@
             conn.on('data', (data) => handleIncomingData(data, friend, conn));
 
             conn.on('close', () => {
+                // A late "close" from an OLD connection (after a refresh or a simultaneous connect)
+                // must not tear down the live one that replaced it.
+                if (activeConnection && activeConnection !== conn && activeConnection.open) return;
                 if (connectedFriendId === friend.id) { connectedFriendId = null; activeConnection = null; }
                 remoteMediaFiles = [];
                 peerViewingTarget = null;
@@ -1639,8 +1647,8 @@
                 document.getElementById('peer-activity-box').classList.add('hidden');
                 document.getElementById('btn-jump-peer-viewing').style.display = 'none';
                 peerTyping = false;
-                endWt(false);
-                endCall(false);
+                resetWatchState();
+                resetCallState();
                 sessionPile = [];
                 updateSessionButton();
                 showToast(`${friend.name} went offline`);
@@ -1706,12 +1714,12 @@
             else if (data.type === 'ack_delivered') {
                 const thread = ensureThread(friend.id);
                 const m = thread.find(x => x.id === data.id);
-                if (m && m.status === 'sent') { m.status = 'delivered'; saveMessages(); if (activeFriendId === friend.id && activeView === 'chat') renderMessages(); }
+                if (m && m.status === 'sent') { m.status = 'delivered'; saveMessages(); if (activeFriendId === friend.id && activeView === 'chat') renderMessagesSoon(); }
             }
             else if (data.type === 'ack_seen') {
                 const thread = ensureThread(friend.id);
                 const m = thread.find(x => x.id === data.id);
-                if (m) { m.status = 'seen'; saveMessages(); if (activeFriendId === friend.id && activeView === 'chat') renderMessages(); }
+                if (m) { m.status = 'seen'; saveMessages(); if (activeFriendId === friend.id && activeView === 'chat') renderMessagesSoon(); }
             }
             else if (data.type === 'typing') {
                 if (activeFriendId === friend.id) { peerTyping = !!data.isTyping; if (activeView === 'chat') renderTypingIndicator(); }
@@ -1723,45 +1731,21 @@
                     const idx = m.reactions.theirs.indexOf(data.emoji);
                     if (idx >= 0) m.reactions.theirs.splice(idx, 1); else m.reactions.theirs.push(data.emoji);
                     saveMessages();
-                    if (activeFriendId === friend.id && activeView === 'chat') renderMessages();
+                    if (activeFriendId === friend.id && activeView === 'chat') renderMessagesSoon();
                 }
             }
             else if (data.type === 'edit') {
                 const thread = ensureThread(friend.id);
                 const m = thread.find(x => x.id === data.messageId);
-                if (m) { m.text = data.newText; m.edited = true; saveMessages(); if (activeFriendId === friend.id && activeView === 'chat') renderMessages(); }
+                if (m) { m.text = data.newText; m.edited = true; saveMessages(); if (activeFriendId === friend.id && activeView === 'chat') renderMessagesSoon(); }
             }
             else if (data.type === 'delete') {
                 const thread = ensureThread(friend.id);
                 const m = thread.find(x => x.id === data.messageId);
-                if (m) { m.deleted = true; m.attachment = null; saveMessages(); if (activeFriendId === friend.id && activeView === 'chat') renderMessages(); }
+                if (m) { m.deleted = true; m.attachment = null; saveMessages(); if (activeFriendId === friend.id && activeView === 'chat') renderMessagesSoon(); }
             }
-            else if (data.type === 'call_invite') { handleCallInvite(data, friend); }
-            else if (data.type === 'call_ready') { handleCallReady(friend); }
-            else if (data.type === 'call_decline') {
-                if (callState.pending) { cancelPendingCall(); showToast(data.busy ? `${friend.name} is already in a call.` : `${friend.name} didn't pick up.`, 'yellow'); }
-            }
-            else if (data.type === 'call_end') { if (callState.active || callState.pending || callState.expecting) { endCall(false); showToast(`${friend.name} ended the call.`); } }
-            else if (data.type === 'wt_invite') {
-                if (wt.active) { sendToConn({ type: 'wt_decline' }); }
-                else if (confirm(`${friend.name} wants to watch together. They'll drive and your screen will follow theirs. Join?`)) {
-                    beginWt('follower');
-                    sendToConn({ type: 'wt_accept' });
-                } else { sendToConn({ type: 'wt_decline' }); }
-            }
-            else if (data.type === 'wt_accept') {
-                if (wtInvitePending) { wtInvitePending = false; beginWt('driver'); showToast(`${friend.name} joined. You're driving! 🎬`, 'purple'); }
-            }
-            else if (data.type === 'wt_decline') { wtInvitePending = false; showToast(`${friend.name} can't watch together right now.`, 'yellow'); }
-            else if (data.type === 'wt_pass') {
-                if (wt.active && wt.role === 'follower') { setWtRole('driver'); showToast('You have the remote now 🎮', 'purple'); sendPresence(); }
-            }
-            else if (data.type === 'wt_request') {
-                if (wt.active && wt.role === 'driver' && confirm(`${friend.name} would like the remote. Pass it over?`)) passTheRemote();
-            }
-            else if (data.type === 'wt_end') {
-                if (wt.active) { endWt(false); showToast(`${friend.name} ended watching together.`); }
-            }
+            else if (typeof data.type === 'string' && data.type.startsWith('call_')) { handleCallMessage(data, friend); }
+            else if (typeof data.type === 'string' && data.type.startsWith('wt_')) { handleWtMessage(data, friend); }
             else if (data.type === 'sess_add') {
                 const thumb = (typeof data.thumb === 'string' && data.thumb.startsWith('data:image/') && data.thumb.length < 200000) ? data.thumb : '';
                 const entry = {
@@ -1797,7 +1781,7 @@
             else if (data.type === 'pin') {
                 const thread = ensureThread(friend.id);
                 const m = thread.find(x => x.id === data.messageId);
-                if (m) { m.pinned = !!data.pinned; saveMessages(); if (activeFriendId === friend.id && activeView === 'chat') renderMessages(); }
+                if (m) { m.pinned = !!data.pinned; saveMessages(); if (activeFriendId === friend.id && activeView === 'chat') renderMessagesSoon(); }
             }
             else if (data.type === 'file_start') { handleChatFileStart(data, friend); }
             else if (data.type === 'file_chunk') { handleChatFileChunk(data, friend); }
@@ -1814,7 +1798,7 @@
             saveMessages();
             sendToConn({ type: 'ack_delivered', id: data.id });
             const isActiveAndFocused = activeFriendId === friend.id && activeView === 'chat' && !document.hidden;
-            if (activeFriendId === friend.id && activeView === 'chat') renderMessages();
+            if (activeFriendId === friend.id && activeView === 'chat') renderMessagesSoon();
             renderFriendList();
             if (activeFriendId === friend.id) {
                 document.getElementById('chat-tab-badge').classList.toggle('hidden', activeView === 'chat' || unreadCount(friend.id) === 0);
@@ -1998,6 +1982,7 @@
             lastPeerPresence = data;
             const jumpBtn = document.getElementById('btn-jump-peer-viewing');
             document.getElementById('peer-activity-box').classList.remove('hidden');
+            const peerWasViewing = !!peerViewingTarget;
             if (data.viewing) {
                 peerViewingTarget = { hash: data.viewing.hash, timestamp: data.viewing.timestamp, source: data.source };
                 jumpBtn.style.display = 'block';
@@ -2007,7 +1992,7 @@
                 peerViewingTarget = null;
                 jumpBtn.style.display = 'none';
                 // Watching together: when the driver closes their lightbox, the follower's closes too.
-                if (wt.active && wt.role === 'follower' && isLightboxOpen()) closeLightbox();
+                if (peerWasViewing && wt.active && wt.role === 'follower' && isLightboxOpen()) closeLightbox();
             }
             renderPeerActivityText();
         }
@@ -2077,8 +2062,95 @@
         // machinery; this adds the session on top: invite/accept, one
         // driver, passing the remote, and a banner.
         // ============================================================
+        // ---- In-page prompts (invites, incoming calls) ----
+        // These replace the browser's confirm() popup, which a background or unfocused
+        // tab can suppress or defer, so the other person never saw it and it counted as "no".
+        const activePrompts = new Map(); // key -> { close, title, attention }
+        let ringTimer = null, titleFlashTimer = null;
+        const BASE_TITLE = document.title;
+
+        function playRingTone() {
+            if (!myProfile.sound) return;
+            try {
+                audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                [0, 0.32].forEach((offset) => {
+                    const t = audioCtx.currentTime + offset;
+                    const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(offset ? 520 : 440, t);
+                    gain.gain.setValueAtTime(0.0001, t);
+                    gain.gain.exponentialRampToValueAtTime(0.12, t + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
+                    osc.connect(gain).connect(audioCtx.destination);
+                    osc.start(t); osc.stop(t + 0.28);
+                });
+            } catch (e) { /* audio unavailable */ }
+        }
+        function startRing() { stopRing(); playRingTone(); ringTimer = setInterval(playRingTone, 2200); }
+        function stopRing() { if (ringTimer) { clearInterval(ringTimer); ringTimer = null; } }
+
+        function refreshAttention() {
+            const waiting = [...activePrompts.values()].filter(p => p.attention);
+            if (!waiting.length || !document.hidden) {
+                if (titleFlashTimer) { clearInterval(titleFlashTimer); titleFlashTimer = null; }
+                document.title = BASE_TITLE;
+                return;
+            }
+            if (titleFlashTimer) return;
+            let on = false;
+            titleFlashTimer = setInterval(() => {
+                on = !on;
+                const w = [...activePrompts.values()].filter(p => p.attention);
+                document.title = on && w.length ? '🔔 ' + w[0].title : BASE_TITLE;
+            }, 900);
+        }
+        document.addEventListener('visibilitychange', refreshAttention);
+
+        function showPrompt(key, opts) {
+            closePrompt(key);
+            let stack = document.getElementById('prompt-stack');
+            if (!stack) { stack = document.createElement('div'); stack.id = 'prompt-stack'; stack.className = 'prompt-stack'; document.body.appendChild(stack); }
+            const card = document.createElement('div');
+            card.className = 'prompt-card' + (opts.ring ? ' ringing' : '');
+            const t = document.createElement('div'); t.className = 'p-title'; t.textContent = opts.title;
+            card.appendChild(t);
+            if (opts.text) { const p = document.createElement('div'); p.className = 'p-text'; p.textContent = opts.text; card.appendChild(p); }
+            const actions = document.createElement('div'); actions.className = 'p-actions';
+            const no = document.createElement('button'); no.textContent = opts.declineLabel || 'Decline';
+            const yes = document.createElement('button'); yes.className = 'accept'; yes.textContent = opts.acceptLabel || 'Accept';
+            actions.appendChild(no); actions.appendChild(yes); card.appendChild(actions);
+            let done = false;
+            const finish = (cb) => {
+                if (done) return;
+                done = true;
+                clearTimeout(timer); card.remove(); activePrompts.delete(key);
+                if (opts.ring) stopRing();
+                refreshAttention();
+                if (cb) { try { cb(); } catch (e) { console.error(e); } }
+            };
+            const timer = setTimeout(() => finish(opts.onExpire), opts.timeoutMs || 60000);
+            yes.addEventListener('click', () => finish(opts.onAccept));
+            no.addEventListener('click', () => finish(opts.onDecline));
+            activePrompts.set(key, { close: () => finish(null), title: opts.title, attention: true });
+            stack.appendChild(card);
+            if (opts.ring) startRing(); else playBlip();
+            // Tab not in front: flash its title, and show a system notification if you've allowed those.
+            if (document.hidden && myProfile.notifications && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                try { new Notification(opts.title, { body: opts.text || '', tag: key }); } catch (e) { /* notifications unavailable */ }
+            }
+            refreshAttention();
+        }
+        function closePrompt(key) { const p = activePrompts.get(key); if (p) p.close(); }
+
+        // ---- Watch together ----
+        // Handshake: invite -> accept -> start. Each step carries the invite's id, so a late
+        // "accept" for an invite that has already expired or been cancelled can never leave
+        // someone stuck in a session nobody is hosting.
         let wt = { active: false, role: null, prevAuto: false };
-        let wtInvitePending = false;
+        let wtOutgoing = null;     // { id, timer }: our invite, waiting for an answer
+        let wtAcceptedId = null;   // an invite we accepted, waiting for the host to start
+        let wtPromptId = null;     // id of the invite currently shown to us
         let sessionPile = []; // { hash, timestamp, dateStr, mtype, thumb, owner: 'me' | 'them' }
 
         function setAutoFollow(on) {
@@ -2091,7 +2163,7 @@
             const banner = document.getElementById('wt-banner');
             banner.classList.toggle('active', wt.active);
             const startBtn = document.getElementById('btn-watch-together');
-            if (startBtn) startBtn.textContent = wt.active ? '⏹ Stop watching together' : '🎬 Watch together';
+            if (startBtn) startBtn.textContent = wt.active ? '⏹ Stop watching together' : (wtOutgoing ? '✖ Cancel invite' : '🎬 Watch together');
             if (!wt.active) return;
             const friend = friends.find(f => f.id === connectedFriendId);
             const name = friend ? friend.name : 'your friend';
@@ -2117,12 +2189,29 @@
         }
 
         function endWt(notifyPeer) {
-            wtInvitePending = false;
-            if (!wt.active) return;
+            if (!wt.active) { renderWtBanner(); return; }
             setAutoFollow(wt.prevAuto);
             wt = { active: false, role: null, prevAuto: false };
             renderWtBanner();
             if (notifyPeer) sendToConn({ type: 'wt_end' });
+        }
+
+        function cancelOutgoingInvite(notifyPeer) {
+            if (!wtOutgoing) return;
+            clearTimeout(wtOutgoing.timer);
+            const id = wtOutgoing.id;
+            wtOutgoing = null;
+            if (notifyPeer) sendToConn({ type: 'wt_cancel', id });
+            renderWtBanner();
+        }
+
+        // Everything watch-related goes back to "nothing happening" (used when the connection drops).
+        function resetWatchState() {
+            cancelOutgoingInvite(false);
+            closePrompt('wt-invite');
+            closePrompt('wt-remote');
+            wtAcceptedId = null; wtPromptId = null;
+            endWt(false);
         }
 
         function passTheRemote() {
@@ -2132,14 +2221,88 @@
             showToast('You passed the remote 🎮');
         }
 
-        document.getElementById('btn-watch-together').addEventListener('click', () => {
+        function startWatchTogether() {
             if (wt.active) { endWt(true); showToast('Stopped watching together.'); return; }
+            if (wtOutgoing) { cancelOutgoingInvite(true); showToast('Invite cancelled.'); return; }
             if (!(activeConnection && activeConnection.open)) { showToast("You need to be connected to a friend first.", 'yellow'); return; }
-            wtInvitePending = true;
-            sendToConn({ type: 'wt_invite' });
-            showToast('Invite sent. Waiting for them to accept...', 'purple');
-            setTimeout(() => { if (wtInvitePending) { wtInvitePending = false; showToast("No answer yet. You can invite them again.", 'yellow'); } }, 60000);
-        });
+            const id = uid();
+            wtOutgoing = {
+                id,
+                timer: setTimeout(() => {
+                    if (wtOutgoing && wtOutgoing.id === id) { cancelOutgoingInvite(true); showToast('No answer to your watch together invite. You can try again.', 'yellow'); }
+                }, 60000)
+            };
+            sendToConn({ type: 'wt_invite', id });
+            showToast('Invite sent. Waiting for them to answer...', 'purple');
+            renderWtBanner();
+        }
+
+        function handleWtMessage(data, friend) {
+            const id = String(data.id || '');
+            switch (data.type) {
+                case 'wt_invite':
+                    if (!id) return;
+                    wtPromptId = id;
+                    showPrompt('wt-invite', {
+                        title: `🎬 ${friend.name} wants to watch together`,
+                        text: wt.active ? 'This will replace the session you are in now.' : "They'll browse and your screen follows along. You can leave any time.",
+                        acceptLabel: 'Join', declineLabel: 'Not now', timeoutMs: 60000,
+                        onAccept: () => {
+                            wtAcceptedId = id; wtPromptId = null;
+                            sendToConn({ type: 'wt_accept', id });
+                            setTimeout(() => { if (wtAcceptedId === id) { wtAcceptedId = null; showToast("That didn't start. Ask them to invite you again.", 'yellow'); } }, 10000);
+                        },
+                        onDecline: () => { wtPromptId = null; sendToConn({ type: 'wt_decline', id }); },
+                        onExpire: () => { wtPromptId = null; sendToConn({ type: 'wt_decline', id, expired: true }); }
+                    });
+                    break;
+                case 'wt_accept':
+                    if (wtOutgoing && wtOutgoing.id === id) {
+                        clearTimeout(wtOutgoing.timer); wtOutgoing = null;
+                        if (wt.active) endWt(false);
+                        beginWt('driver');
+                        sendToConn({ type: 'wt_start', id });
+                        showToast(`${friend.name} joined. You're driving! 🎬`, 'purple');
+                    } else {
+                        sendToConn({ type: 'wt_cancel', id, expired: true }); // that invite is no longer open
+                    }
+                    break;
+                case 'wt_start':
+                    if (wtAcceptedId && wtAcceptedId === id) {
+                        wtAcceptedId = null;
+                        if (wt.active) endWt(false);
+                        beginWt('follower');
+                    }
+                    break;
+                case 'wt_decline':
+                    if (wtOutgoing && wtOutgoing.id === id) {
+                        cancelOutgoingInvite(false);
+                        showToast(data.expired ? `${friend.name} didn't answer.` : `${friend.name} isn't up for it right now.`, 'yellow');
+                    }
+                    break;
+                case 'wt_cancel':
+                    if (wtPromptId && wtPromptId === id) { closePrompt('wt-invite'); wtPromptId = null; showToast(`${friend.name} cancelled the invite.`); }
+                    else if (wtAcceptedId && wtAcceptedId === id) { wtAcceptedId = null; showToast(data.expired ? 'That invite had already expired. Ask them to invite you again.' : `${friend.name} cancelled the invite.`, 'yellow'); }
+                    break;
+                case 'wt_pass':
+                    if (wt.active && wt.role === 'follower') { setWtRole('driver'); showToast('You have the remote now 🎮', 'purple'); sendPresence(); }
+                    break;
+                case 'wt_request':
+                    if (wt.active && wt.role === 'driver') {
+                        showPrompt('wt-remote', {
+                            title: `🎮 ${friend.name} would like the remote`, text: 'Pass it over so they can drive for a bit?',
+                            acceptLabel: 'Pass it', declineLabel: 'Keep it', timeoutMs: 30000,
+                            onAccept: () => passTheRemote()
+                        });
+                    }
+                    break;
+                case 'wt_end':
+                    if (wt.active) { endWt(false); showToast(`${friend.name} ended watching together.`); }
+                    break;
+            }
+        }
+
+        document.getElementById('btn-watch-together').addEventListener('click', startWatchTogether);
         document.getElementById('wt-end').addEventListener('click', () => { endWt(true); showToast('Stopped watching together.'); });
         document.getElementById('wt-pass').addEventListener('click', () => {
             if (!wt.active) return;
@@ -2261,25 +2424,27 @@
         document.getElementById('btn-session-album').addEventListener('click', showSessionAlbumModal);
 
         // ============================================================
-        // VOICE & VIDEO CALLS
-        // Ringing (invite / ready / decline / end) rides the existing data
-        // connection; the audio/video itself is a PeerJS media call that
-        // only starts once the other side has said yes. A media call that
-        // wasn't invited is rejected, so nobody can ring in uninvited.
+        // VOICE CALLS
+        // Ringing (invite / ready / decline / end) rides the existing data connection and shows
+        // an in-page prompt; the audio itself is a PeerJS media call that only starts once the
+        // other side has answered. A media call that wasn't invited is rejected.
         // ============================================================
-        let callState = { active: false, pending: null, expecting: null, video: false, stream: null, call: null, timer: null };
+        let callState = { active: false, pending: null, expecting: null, stream: null, call: null, callId: '', timer: null, startedAt: 0, tick: null };
+        let callIncomingId = '';
 
-        function mediaErrorMessage(err, wantVideo) {
+        function callBusy() { return callState.active || !!callState.pending || !!callState.expecting || activePrompts.has('call-incoming'); }
+
+        function mediaErrorMessage(err) {
             const n = err && err.name;
-            if (n === 'NotAllowedError' || n === 'SecurityError') return `Your browser blocked the ${wantVideo ? 'camera/microphone' : 'microphone'}. Allow it for this site (the icon next to the address bar) and try again.`;
-            if (n === 'NotFoundError' || n === 'OverconstrainedError') return `No ${wantVideo ? 'camera or microphone' : 'microphone'} was found on this device.`;
-            if (n === 'NotReadableError') return `Your ${wantVideo ? 'camera or microphone is' : 'microphone is'} being used by another app.`;
-            return "Couldn't start your microphone/camera: " + ((err && err.message) || n || 'unknown error');
+            if (n === 'NotAllowedError' || n === 'SecurityError') return 'Your browser blocked the microphone. Allow it for this site (the icon next to the address bar) and try again.';
+            if (n === 'NotFoundError' || n === 'OverconstrainedError') return 'No microphone was found on this device.';
+            if (n === 'NotReadableError') return 'Your microphone is being used by another app.';
+            return "Couldn't start your microphone: " + ((err && err.message) || n || 'unknown error');
         }
 
-        async function getLocalMedia(wantVideo) {
+        async function getLocalMedia() {
             if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) throw Object.assign(new Error('Calls need a secure (https) page and a supported browser.'), { name: 'SecurityError' });
-            return navigator.mediaDevices.getUserMedia({ audio: true, video: wantVideo ? { width: { ideal: 640 }, height: { ideal: 480 } } : false });
+            return navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false });
         }
 
         function stopStream(stream) { if (stream) stream.getTracks().forEach(t => { try { t.stop(); } catch (e) {} }); }
@@ -2291,51 +2456,51 @@
             renderCallUi();
         }
 
+        function formatDuration(totalSeconds) {
+            const m = Math.floor(totalSeconds / 60), s = totalSeconds % 60;
+            return `${m}:${String(s).padStart(2, '0')}`;
+        }
+
         function renderCallUi() {
             const overlay = document.getElementById('call-overlay');
             const showing = callState.active || !!callState.pending || !!callState.expecting;
             overlay.classList.toggle('active', showing);
-            document.getElementById('btn-voice-call').disabled = showing;
-            document.getElementById('btn-video-call').disabled = showing;
-            if (!showing) return;
+            document.getElementById('btn-voice-call').disabled = showing || activePrompts.has('call-incoming');
+            if (!showing) {
+                if (callState.tick) { clearInterval(callState.tick); callState.tick = null; }
+                return;
+            }
             const friend = friends.find(f => f.id === connectedFriendId);
             const name = friend ? friend.name : 'your friend';
-            document.getElementById('call-title').textContent = callState.active ? `${callState.video ? 'Video' : 'Voice'} call with ${name}` : `Calling ${name}...`;
-            document.getElementById('call-audio-name').textContent = name;
-            document.getElementById('call-audio-avatar').textContent = (friend && friend.avatar) || '🎧';
-            const local = document.getElementById('call-local');
+            document.getElementById('call-title').textContent = callState.active ? `📞 On a call with ${name}` : `📞 Calling ${name}...`;
             const stream = callState.stream || (callState.pending && callState.pending.stream);
-            const hasVideo = !!(stream && stream.getVideoTracks().length);
-            local.classList.toggle('hidden-pip', !hasVideo);
-            if (stream && local.srcObject !== stream) local.srcObject = stream;
-            const camBtn = document.getElementById('call-cam');
-            camBtn.disabled = !hasVideo;
-            const camOn = hasVideo && stream.getVideoTracks().every(t => t.enabled);
-            camBtn.classList.toggle('off', hasVideo && !camOn);
-            camBtn.textContent = camOn || !hasVideo ? '📷 Camera' : '📷 Camera off';
             const micOn = !stream || stream.getAudioTracks().every(t => t.enabled);
             const micBtn = document.getElementById('call-mute');
             micBtn.classList.toggle('off', !micOn);
             micBtn.textContent = micOn ? '🎤 Mute' : '🔇 Muted';
-            if (!callState.active) { document.getElementById('call-audio-only').classList.add('active'); }
+            const timerEl = document.getElementById('call-timer');
+            if (callState.active) {
+                const draw = () => { timerEl.textContent = formatDuration(Math.floor((Date.now() - callState.startedAt) / 1000)); };
+                draw();
+                if (!callState.tick) callState.tick = setInterval(draw, 1000);
+            } else {
+                timerEl.textContent = 'Ringing...';
+            }
         }
 
         function attachRemoteStream(remote) {
-            const v = document.getElementById('call-remote');
-            if (v.srcObject === remote) return; // PeerJS can report the same stream more than once
-            v.srcObject = remote;
-            const hasVideo = remote.getVideoTracks().length > 0;
-            v.classList.toggle('no-video', !hasVideo);
-            document.getElementById('call-audio-only').classList.toggle('active', !hasVideo);
-            const p = v.play();
+            const a = document.getElementById('call-remote');
+            if (a.srcObject === remote) return; // PeerJS can report the same stream more than once
+            a.srcObject = remote;
+            const p = a.play();
             // Only a genuine autoplay block deserves a toast; an AbortError just means the stream was swapped.
             if (p && p.catch) p.catch((err) => { if (err && err.name === 'NotAllowedError') showToast('Click anywhere on the page to hear the call (your browser blocked auto-play).', 'yellow'); });
         }
 
-        function wireMediaCall(call, video) {
+        function wireMediaCall(call) {
             callState.call = call;
-            callState.video = video;
             call.on('stream', (remote) => {
+                if (!callState.active) callState.startedAt = Date.now();
                 callState.active = true;
                 callState.expecting = null;
                 attachRemoteStream(remote);
@@ -2345,79 +2510,107 @@
             call.on('error', (err) => { console.error('Call error', err); if (callState.call === call) { endCall(false); showToast('The call dropped.', 'yellow'); } });
         }
 
-        async function startCall(video) {
+        async function startCall() {
             if (!(activeConnection && activeConnection.open)) { showToast('Connect to a friend first to call them.', 'yellow'); return; }
-            if (callState.active || callState.pending || callState.expecting) return;
+            if (callBusy()) return;
             let stream;
-            try { stream = await getLocalMedia(video); }
-            catch (err) { showToast(mediaErrorMessage(err, video), 'yellow', 6000); return; }
-            callState.pending = { stream, video };
+            try { stream = await getLocalMedia(); }
+            catch (err) { showToast(mediaErrorMessage(err), 'yellow', 6000); return; }
+            const id = uid();
+            callState.pending = { id, stream };
+            callState.callId = id;
             callState.timer = setTimeout(() => {
-                if (callState.pending) { cancelPendingCall(); sendToConn({ type: 'call_end' }); renderCallUi(); showToast('No answer.', 'yellow'); }
+                if (callState.pending && callState.pending.id === id) { cancelPendingCall(); sendToConn({ type: 'call_end', id }); showToast('No answer.', 'yellow'); }
             }, 45000);
-            sendToConn({ type: 'call_invite', video });
+            sendToConn({ type: 'call_invite', id });
             renderCallUi();
         }
 
-        function handleCallReady(friend) {
-            // The friend accepted and has their mic/camera ready: now place the media call.
+        function handleCallMessage(data, friend) {
+            const id = String(data.id || '');
+            if (data.type === 'call_invite') {
+                if (callBusy()) { sendToConn({ type: 'call_decline', id, busy: true }); return; }
+                callIncomingId = id;
+                showPrompt('call-incoming', {
+                    title: `📞 ${friend.name} is calling`,
+                    text: 'Voice call. Your microphone only turns on once you answer.',
+                    acceptLabel: 'Answer', declineLabel: 'Decline', ring: true, timeoutMs: 40000,
+                    onAccept: () => answerCall(id, friend),
+                    onDecline: () => { sendToConn({ type: 'call_decline', id }); renderCallUi(); },
+                    onExpire: () => { sendToConn({ type: 'call_decline', id, expired: true }); showToast(`Missed call from ${friend.name}`, 'yellow'); renderCallUi(); }
+                });
+                renderCallUi();
+            } else if (data.type === 'call_ready') {
+                handleCallReady(id, friend);
+            } else if (data.type === 'call_decline') {
+                if (callState.pending && (!id || callState.pending.id === id)) {
+                    cancelPendingCall();
+                    showToast(data.busy ? `${friend.name} is already on a call.` : (data.expired ? `${friend.name} didn't answer.` : `${friend.name} declined the call.`), 'yellow');
+                }
+            } else if (data.type === 'call_end') {
+                if (activePrompts.has('call-incoming') && (!id || id === callIncomingId)) {
+                    closePrompt('call-incoming'); renderCallUi();
+                    showToast(`Missed call from ${friend.name}`, 'yellow');
+                } else if (callState.active || callState.pending || callState.expecting) {
+                    endCall(false);
+                    showToast(`${friend.name} ended the call.`);
+                }
+            }
+        }
+
+        function handleCallReady(id, friend) {
+            // The friend answered and has their microphone ready: now place the media call.
             const p = callState.pending;
-            if (!p || !peer) return;
+            if (!p || p.id !== id || !peer) { sendToConn({ type: 'call_end', id }); return; }
             if (callState.timer) { clearTimeout(callState.timer); callState.timer = null; }
             callState.stream = p.stream;
             callState.pending = null;
-            const call = peer.call(friend.peerId, p.stream, { metadata: { video: p.video } });
+            const call = peer.call(friend.peerId, p.stream);
             if (!call) { endCall(true); showToast("Couldn't start the call.", 'yellow'); return; }
-            wireMediaCall(call, p.video);
+            wireMediaCall(call);
             renderCallUi();
         }
 
-        async function handleCallInvite(data, friend) {
-            const wantVideo = !!data.video;
-            if (callState.active || callState.pending || callState.expecting) { sendToConn({ type: 'call_decline', busy: true }); return; }
-            if (!confirm(`${friend.name} is calling you (${wantVideo ? 'video' : 'voice'}). Answer?`)) { sendToConn({ type: 'call_decline' }); return; }
-            let stream, video = wantVideo;
-            try { stream = await getLocalMedia(wantVideo); }
-            catch (err) {
-                if (wantVideo) {
-                    try { stream = await getLocalMedia(false); video = false; showToast(mediaErrorMessage(err, true) + ' Joining with audio only.', 'yellow', 6000); }
-                    catch (err2) { showToast(mediaErrorMessage(err2, false), 'yellow', 6000); sendToConn({ type: 'call_decline' }); return; }
-                } else { showToast(mediaErrorMessage(err, false), 'yellow', 6000); sendToConn({ type: 'call_decline' }); return; }
-            }
+        async function answerCall(id, friend) {
+            let stream;
+            try { stream = await getLocalMedia(); }
+            catch (err) { showToast(mediaErrorMessage(err), 'yellow', 6000); sendToConn({ type: 'call_decline', id }); renderCallUi(); return; }
+            if (!(activeConnection && activeConnection.open)) { stopStream(stream); renderCallUi(); return; }
             callState.stream = stream;
-            callState.video = video;
-            callState.expecting = { peerId: friend.peerId, video };
+            callState.callId = id;
+            callState.expecting = { peerId: friend.peerId, id };
             renderCallUi();
-            sendToConn({ type: 'call_ready' });
-            setTimeout(() => { if (callState.expecting && !callState.active) { endCall(false); showToast("The call didn't connect.", 'yellow'); } }, 20000);
+            sendToConn({ type: 'call_ready', id });
+            setTimeout(() => { if (callState.expecting && callState.expecting.id === id && !callState.active) { endCall(false); showToast("The call didn't connect.", 'yellow'); } }, 20000);
         }
 
         function handleIncomingMediaCall(call) {
             const exp = callState.expecting;
             if (!exp || call.peer !== exp.peerId || !callState.stream) { try { call.close(); } catch (e) {} return; }
             call.answer(callState.stream);
-            wireMediaCall(call, !!(call.metadata && call.metadata.video));
+            wireMediaCall(call);
         }
 
         function endCall(notifyPeer) {
             const had = callState.active || callState.pending || callState.expecting || callState.call;
+            const id = callState.callId;
             if (callState.timer) { clearTimeout(callState.timer); callState.timer = null; }
+            if (callState.tick) { clearInterval(callState.tick); callState.tick = null; }
             const call = callState.call;
             callState.call = null; // clear first so the close event can't re-enter
             if (call) { try { call.close(); } catch (e) {} }
             stopStream(callState.stream);
             if (callState.pending) stopStream(callState.pending.stream);
-            callState = { active: false, pending: null, expecting: null, video: false, stream: null, call: null, timer: null };
+            callState = { active: false, pending: null, expecting: null, stream: null, call: null, callId: '', timer: null, startedAt: 0, tick: null };
             const remote = document.getElementById('call-remote');
-            const local = document.getElementById('call-local');
             if (remote) remote.srcObject = null;
-            if (local) local.srcObject = null;
-            if (had && notifyPeer) sendToConn({ type: 'call_end' });
+            if (had && notifyPeer) sendToConn({ type: 'call_end', id });
             renderCallUi();
         }
 
-        document.getElementById('btn-voice-call').addEventListener('click', () => startCall(false));
-        document.getElementById('btn-video-call').addEventListener('click', () => startCall(true));
+        function resetCallState() { closePrompt('call-incoming'); endCall(false); }
+
+        document.getElementById('btn-voice-call').addEventListener('click', () => startCall());
         document.getElementById('call-hang').addEventListener('click', () => endCall(true));
         document.getElementById('call-mute').addEventListener('click', () => {
             const s = callState.stream || (callState.pending && callState.pending.stream);
@@ -2426,14 +2619,7 @@
             s.getAudioTracks().forEach(t => { t.enabled = !on; });
             renderCallUi();
         });
-        document.getElementById('call-cam').addEventListener('click', () => {
-            const s = callState.stream || (callState.pending && callState.pending.stream);
-            if (!s) return;
-            const on = s.getVideoTracks().every(t => t.enabled);
-            s.getVideoTracks().forEach(t => { t.enabled = !on; });
-            renderCallUi();
-        });
-        window.addEventListener('beforeunload', () => { if (callState.active) sendToConn({ type: 'call_end' }); });
+        window.addEventListener('beforeunload', () => { if (callState.active || callState.pending) sendToConn({ type: 'call_end', id: callState.callId }); });
 
         // ============================================================
         // CLIP TOOLS: trim to WebM, export as GIF (all in the browser)
@@ -2926,7 +3112,7 @@
             incomingFileTransfer = { id: data.id, name: data.name, mime: data.mime, size: data.size, chunks: new Array(data.totalChunks), receivedBytes: 0, friendId: friend.id };
             const thread = ensureThread(friend.id);
             thread.push({ id: data.id, mine: false, text: data.caption || '', ts: data.ts, status: 'delivered', reactions: { mine: [], theirs: [] }, edited: false, deleted: false, attachment: { name: data.name, mime: data.mime, pending: true, progress: 0 } });
-            if (activeFriendId === friend.id && activeView === 'chat') renderMessages();
+            if (activeFriendId === friend.id && activeView === 'chat') renderMessagesSoon();
         }
         function handleChatFileChunk(data, friend) {
             if (!incomingFileTransfer || incomingFileTransfer.id !== data.id) return;
@@ -2959,7 +3145,7 @@
             const localUrl = URL.createObjectURL(file);
             const msg = { id, mine: true, text: caption, ts: Date.now(), status: 'sent', reactions: { mine: [], theirs: [] }, edited: false, deleted: false, attachment: { name: file.name, mime: file.type || 'application/octet-stream', url: localUrl, pending: false, progress: 100 } };
             thread.push(msg);
-            renderMessages();
+            renderMessagesSoon();
             renderFriendList();
             const buffer = await file.arrayBuffer();
             const totalSize = buffer.byteLength;
@@ -3211,8 +3397,17 @@
             return '✓';
         }
 
+        const MESSAGE_RENDER_CAP = 200;
+        let messageRenderLimit = MESSAGE_RENDER_CAP, messageRenderOwner = null, renderMessagesQueued = false;
+        // Same as renderMessages but folded to once per frame: used for bursts (chunks, receipts, batch sends).
+        function renderMessagesSoon() {
+            if (renderMessagesQueued) return;
+            renderMessagesQueued = true;
+            requestAnimationFrame(() => { renderMessagesQueued = false; renderMessages(); });
+        }
         function renderMessages() {
             const area = document.getElementById('messages-area');
+            if (messageRenderOwner !== activeFriendId) { messageRenderOwner = activeFriendId; messageRenderLimit = MESSAGE_RENDER_CAP; }
             area.innerHTML = '';
             if (!activeFriendId) return;
             const thread = messagesByContact[activeFriendId] || [];
@@ -3220,7 +3415,16 @@
             const filtered = searchFilterActive && searchFilterQuery.trim()
                 ? thread.filter(m => !m.deleted && m.text && m.text.toLowerCase().includes(searchFilterQuery.trim().toLowerCase()))
                 : thread;
-            filtered.forEach(m => {
+            const hiddenCount = Math.max(0, filtered.length - messageRenderLimit);
+            if (hiddenCount) {
+                const more = document.createElement('button');
+                more.className = 'btn-discover';
+                more.style.cssText = 'align-self:center; margin:0.4rem auto;';
+                more.textContent = `Show ${Math.min(hiddenCount, MESSAGE_RENDER_CAP)} earlier messages (${hiddenCount} hidden)`;
+                more.addEventListener('click', () => { messageRenderLimit += MESSAGE_RENDER_CAP; const prev = area.scrollHeight; renderMessages(); area.scrollTop = area.scrollHeight - prev; });
+                area.appendChild(more);
+            }
+            (hiddenCount ? filtered.slice(hiddenCount) : filtered).forEach(m => {
                 const day = dayLabel(m.ts);
                 if (day !== lastDay) {
                     lastDay = day;
@@ -3797,6 +4001,27 @@
             }
         }
 
+        let _videoObserver = null;
+        function videoTileObserver() {
+            if (_videoObserver) return _videoObserver;
+            _videoObserver = new IntersectionObserver((entries) => {
+                for (const e of entries) {
+                    const v = e.target;
+                    if (e.isIntersecting) {
+                        if (!v.getAttribute('src') && v.dataset.src) v.src = v.dataset.src;
+                    } else if (v.getAttribute('src')) {
+                        v.pause(); v.removeAttribute('src'); v.load(); // release the decoder
+                    }
+                }
+            }, { root: null, rootMargin: '300px 0px' });
+            return _videoObserver;
+        }
+        // Drop every tile's video before the grid is rebuilt, otherwise decoders linger until GC.
+        function releaseGridMedia() {
+            if (_videoObserver) _videoObserver.disconnect();
+            mediaGrid.querySelectorAll('video').forEach(v => { try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} });
+        }
+
         function createMediaItem(media, index, globalList) {
             const container = document.createElement('div');
             container.className = 'media-item';
@@ -3816,8 +4041,11 @@
             } else {
                 if (media.type === 'video') {
                     const video = document.createElement('video');
-                    video.src = `${media.url}#t=0.001`;
+                    // The source is attached only while the tile is near the viewport (see videoTileObserver),
+                    // so a page of 60 clips doesn't keep 60 decoders alive.
+                    video.dataset.src = `${media.url}#t=0.001`;
                     video.preload = 'metadata'; video.muted = true; video.loop = true;
+                    videoTileObserver().observe(video);
                     video.addEventListener('mouseover', () => { const p = video.play(); if (p && p.catch) p.catch(() => {}); });
                     video.addEventListener('mouseout', () => video.pause());
                     video.addEventListener('error', () => showVideoUnsupportedTile(container, video, media));
@@ -3886,6 +4114,7 @@
                     check.textContent = on ? '✓' : '';
                 };
                 setVisual();
+                container.__setVisual = setVisual;
                 container.addEventListener('click', () => {
                     const k = mediaKey(media);
                     if (selectedKeys.has(k)) selectedKeys.delete(k); else selectedKeys.add(k);
@@ -4005,9 +4234,14 @@
 
         document.getElementById('btn-select-mode').addEventListener('click', () => setSelectMode(!selectMode));
         document.getElementById('sel-cancel').addEventListener('click', () => setSelectMode(false));
+        function refreshSelectVisuals() {
+            mediaGrid.querySelectorAll('.media-item').forEach(el => { if (el.__setVisual) el.__setVisual(); });
+            updateSelectBar();
+        }
         document.getElementById('sel-all').addEventListener('click', () => {
+            // Update the tiles that are already on screen instead of rebuilding the whole grid.
             currentSortedList.forEach(m => selectedKeys.add(mediaKey(m)));
-            renderView();
+            refreshSelectVisuals();
         });
         document.getElementById('btn-new-album').addEventListener('click', () => {
             const name = (prompt('Name your new album:') || '').trim();
@@ -4125,6 +4359,7 @@
                 central.push(ch.buffer, nameBytes);
                 offset += 30 + nameBytes.length + size;
                 if (onProgress) onProgress(i + 1, entries.length);
+                await new Promise(r => setTimeout(r)); // let the page breathe between files
             }
             const cdSize = central.reduce((s, p) => s + p.byteLength, 0);
             const end = new DataView(new ArrayBuffer(22));
@@ -4151,7 +4386,11 @@
             });
             showToast(`Building a zip of ${items.length} file${items.length === 1 ? '' : 's'}...`, 'purple', 4000);
             try {
-                const blob = await buildZip(entries);
+                let lastTick = 0;
+                const blob = await buildZip(entries, (done, all) => {
+                    const now = performance.now();
+                    if (now - lastTick > 400 || done === all) { lastTick = now; showToast(`Zipping ${done} of ${all}...`, 'purple', 1200); }
+                });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -4452,6 +4691,7 @@
         document.getElementById('btn-stats').addEventListener('click', () => showStatsModal());
 
         function renderView() {
+            releaseGridMedia();
             mediaGrid.innerHTML = '';
             const paginationControls = document.getElementById('pagination-controls');
             paginationControls.classList.add('hidden');
@@ -4491,8 +4731,17 @@
             }
 
             currentSortedList = [...filteredList];
-            if (currentSort === 'date') currentSortedList.sort((a, b) => b.dateStr.localeCompare(a.dateStr));
-            else if (currentSort === 'game') currentSortedList.sort((a, b) => gameKey(a.hash).localeCompare(gameKey(b.hash)));
+            const groupOf = new Map(); // media -> its group label, computed once instead of in every comparison
+            if (currentSort === 'date') {
+                currentSortedList.forEach(m => groupOf.set(m, m.dateStr));
+                currentSortedList.sort((a, b) => (a.dateStr < b.dateStr ? 1 : a.dateStr > b.dateStr ? -1 : 0));
+            } else if (currentSort === 'game') {
+                const gk = new Map();
+                currentSortedList.forEach(m => { let g = gk.get(m.hash); if (g === undefined) { g = gameKey(m.hash); gk.set(m.hash, g); } groupOf.set(m, g); });
+                currentSortedList.sort((a, b) => groupOf.get(a).localeCompare(groupOf.get(b)));
+            }
+            const groupCounts = new Map();
+            groupOf.forEach(g => groupCounts.set(g, (groupCounts.get(g) || 0) + 1));
 
             const totalItems = currentSortedList.length;
             const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
@@ -4508,8 +4757,7 @@
             pagedItems.forEach((media, indexInPage) => {
                 const globalIndex = startIndex + indexInPage;
                 let targetGroup = null;
-                if (currentSort === 'date') targetGroup = media.dateStr;
-                else if (currentSort === 'game') targetGroup = gameKey(media.hash);
+                if (currentSort !== 'none' && groupOf.has(media)) targetGroup = groupOf.get(media);
 
                 if (targetGroup !== currentGroupTracker || !currentGridElement) {
                     currentGroupTracker = targetGroup;
@@ -4568,11 +4816,7 @@
                         headerContainer.appendChild(titleWrapper);
                         const countBadge = document.createElement('span');
                         countBadge.className = 'group-count';
-                        const groupCount = currentSortedList.filter(m => {
-                            if (currentSort === 'date') return m.dateStr === targetGroup;
-                            return gameKey(m.hash) === targetGroup;
-                        }).length;
-                        countBadge.textContent = groupCount;
+                        countBadge.textContent = groupCounts.get(targetGroup) || 0;
                         headerContainer.appendChild(countBadge);
                         mediaGrid.appendChild(headerContainer);
                     }
