@@ -2,6 +2,11 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.1.2] - 2026-11-10
+
+### Changed
+- **Videos in chat now play right in the conversation**, the same way screenshots show up as images, instead of appearing as a download link. They have the usual controls (play, scrub, volume, fullscreen), and keep playing if the chat refreshes underneath. If your browser can't play a particular clip, it falls back to a download link.
+
 ## [1.1.1] - 2026-11-10
 
 ### Changed
