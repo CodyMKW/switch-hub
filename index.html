@@ -343,7 +343,8 @@
         .lightbox-caption .cap-text { background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); color: white; padding: 0.4rem 0.9rem; border-radius: 9999px; font-size: 0.85rem; text-align: center; word-break: break-word; }
         .lightbox-caption .cap-text.editable { cursor: text; border: 1px dashed rgba(255,255,255,0.3); }
         .lightbox-caption .cap-text.placeholder { opacity: 0.6; }
-        .lightbox-caption input.cap-input { background: rgba(0,0,0,0.8); color: white; border: 1px solid var(--switch-cyan); border-radius: 9999px; padding: 0.4rem 0.9rem; font-size: 0.85rem; width: min(80vw, 30rem); outline: none; }
+        .lightbox-caption input.cap-input { background: #0b0b0f !important; color: #fff !important; -webkit-text-fill-color: #fff !important; caret-color: var(--switch-cyan); color-scheme: dark; font-family: inherit; opacity: 1; border: 1px solid var(--switch-cyan); border-radius: 9999px; padding: 0.5rem 1rem; font-size: 1rem; line-height: 1.3; width: min(80vw, 30rem); outline: none; box-shadow: 0 0 0 3px rgba(0,200,255,0.18); -webkit-appearance: none; appearance: none; }
+        .lightbox-caption .cap-count { font-size: 0.7rem; color: rgba(255,255,255,0.65); }
         .lightbox-caption .cap-reacts { display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.6); border-radius: 9999px; padding: 0.2rem 0.7rem; font-size: 0.78rem; color: rgba(255,255,255,0.85); }
         .lightbox-caption .cap-reacts button { background: none; border: none; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 0.75rem; }
         .lightbox-toolbar { height: 4rem; display: flex; justify-content: space-between; align-items: center; padding: 0 1.5rem; flex-shrink: 0; background: linear-gradient(to bottom, black, transparent); }
@@ -1853,7 +1854,7 @@
                 if (token !== gallerySyncToken || !conn.open) return;
                 const files = await Promise.all(allowed.slice(start, start + SYNC_BATCH_SIZE).map(async ({ m, i }) => {
                     const thumb = m.type === 'image' ? await createThumbnail(m.file) : '';
-                    return { originalIndex: i, type: m.type, dateStr: m.dateStr, hash: m.hash, timestamp: m.timestamp, thumb, caption: captions[mediaKey(m)] || '' };
+                    return { originalIndex: i, type: m.type, dateStr: m.dateStr, hash: m.hash, timestamp: m.timestamp, capturedAt: m.capturedAt || 0, timeKnown: !!m.timeKnown, thumb, caption: captions[mediaKey(m)] || '' };
                 }));
                 if (token !== gallerySyncToken || !conn.open) return;
                 await waitForBufferedAmountLow(conn);
@@ -2649,7 +2650,210 @@
             return v;
         }
 
+        // ---- Exact WebM export (WebCodecs + a small WebM writer) ----
+        // Recording a playing <video> with MediaRecorder stamps every frame with the moment it
+        // happened to arrive, so any hiccup in the page becomes a stutter in the file (and the
+        // result has no duration or seek index). Here every frame keeps the exact timestamp it has
+        // in the source, and the WebM is written with a duration and a seek index.
+        function ebmlSize(n) {
+            if (n < 0x7f) return Uint8Array.of(0x80 | n);
+            if (n < 0x3fff) return Uint8Array.of(0x40 | (n >> 8), n & 255);
+            if (n < 0x1fffff) return Uint8Array.of(0x20 | (n >> 16), (n >> 8) & 255, n & 255);
+            if (n < 0x0fffffff) return Uint8Array.of(0x10 | (n >>> 24), (n >> 16) & 255, (n >> 8) & 255, n & 255);
+            const hi = Math.floor(n / 4294967296), lo = n >>> 0; // up to 2^53
+            return Uint8Array.of(0x01, (hi >> 16) & 255, (hi >> 8) & 255, hi & 255, (lo >>> 24) & 255, (lo >> 16) & 255, (lo >> 8) & 255, lo & 255);
+        }
+        function ebmlCat(parts) {
+            let len = 0; for (const p of parts) len += p.length;
+            const out = new Uint8Array(len); let o = 0;
+            for (const p of parts) { out.set(p, o); o += p.length; }
+            return out;
+        }
+        function ebmlEl(idBytes, payload) { return ebmlCat([Uint8Array.from(idBytes), ebmlSize(payload.length), payload]); }
+        function ebmlUint(idBytes, v) {
+            const b = []; let x = v;
+            do { b.unshift(x % 256); x = Math.floor(x / 256); } while (x > 0);
+            return ebmlEl(idBytes, Uint8Array.from(b));
+        }
+        function ebmlFloat(idBytes, v, bytes) {
+            const buf = new ArrayBuffer(bytes); const dv = new DataView(buf);
+            if (bytes === 8) dv.setFloat64(0, v); else dv.setFloat32(0, v);
+            return ebmlEl(idBytes, new Uint8Array(buf));
+        }
+        function ebmlStr(idBytes, str) { return ebmlEl(idBytes, new TextEncoder().encode(str)); }
+
+        // video: { codec: 'V_VP8'|'V_VP9', width, height, frames: [{ t (ms), data, key }] }
+        // audio: null or { channels, rate, preSkip, head (OpusHead bytes), packets: [{ t (ms), data }] }
+        function writeWebm(video, audio, durationMs) {
+            const info = ebmlEl([0x15, 0x49, 0xA9, 0x66], ebmlCat([
+                ebmlUint([0x2A, 0xD7, 0xB1], 1000000),
+                ebmlFloat([0x44, 0x89], durationMs, 8),
+                ebmlStr([0x4D, 0x80], 'Switch Hub'), ebmlStr([0x57, 0x41], 'Switch Hub')
+            ]));
+            const vEntry = ebmlEl([0xAE], ebmlCat([
+                ebmlUint([0xD7], 1), ebmlUint([0x73, 0xC5], 1), ebmlUint([0x83], 1), ebmlStr([0x86], video.codec),
+                ebmlEl([0xE0], ebmlCat([ebmlUint([0xB0], video.width), ebmlUint([0xBA], video.height)]))
+            ]));
+            const entries = [vEntry];
+            if (audio) {
+                entries.push(ebmlEl([0xAE], ebmlCat([
+                    ebmlUint([0xD7], 2), ebmlUint([0x73, 0xC5], 2), ebmlUint([0x83], 2), ebmlStr([0x86], 'A_OPUS'),
+                    ebmlEl([0x63, 0xA2], audio.head),
+                    ebmlUint([0x56, 0xAA], Math.round(audio.preSkip / 48000 * 1e9)), ebmlUint([0x56, 0xBB], 80000000),
+                    ebmlEl([0xE1], ebmlCat([ebmlFloat([0xB5], audio.rate, 4), ebmlUint([0x9F], audio.channels)]))
+                ])));
+            }
+            const tracks = ebmlEl([0x16, 0x54, 0xAE, 0x6B], ebmlCat(entries));
+            // Interleave by time; start a new cluster on each video keyframe (or if one gets long).
+            const blocks = video.frames.map(f => ({ t: f.t, track: 1, data: f.data, key: f.key }));
+            if (audio) audio.packets.forEach(p => blocks.push({ t: p.t, track: 2, data: p.data, key: true }));
+            blocks.sort((a, b) => a.t - b.t || a.track - b.track);
+            const clusters = []; let cur = null;
+            for (const b of blocks) {
+                if (!cur || (b.track === 1 && b.key && b.t > cur.t0) || b.t - cur.t0 > 20000) { cur = { t0: Math.max(0, Math.round(b.t)), blocks: [] }; clusters.push(cur); }
+                cur.blocks.push(b);
+            }
+            const clusterBytes = [], cues = [];
+            let pos = info.length + tracks.length;
+            for (const c of clusters) {
+                const parts = [ebmlUint([0xE7], c.t0)];
+                for (const b of c.blocks) {
+                    const rel = Math.max(-32768, Math.min(32767, Math.round(b.t) - c.t0));
+                    const hdr = Uint8Array.of(0x80 | b.track, (rel >> 8) & 255, rel & 255, b.key ? 0x80 : 0);
+                    parts.push(ebmlEl([0xA3], ebmlCat([hdr, b.data])));
+                }
+                const bytes = ebmlEl([0x1F, 0x43, 0xB6, 0x75], ebmlCat(parts));
+                cues.push(ebmlEl([0xBB], ebmlCat([ebmlUint([0xB3], c.t0), ebmlEl([0xB7], ebmlCat([ebmlUint([0xF7], 1), ebmlUint([0xF1], pos)]))])));
+                pos += bytes.length;
+                clusterBytes.push(bytes);
+            }
+            const cuesEl = ebmlEl([0x1C, 0x53, 0xBB, 0x6B], ebmlCat(cues));
+            const segPayload = ebmlCat([info, tracks, ...clusterBytes, cuesEl]);
+            const header = ebmlEl([0x1A, 0x45, 0xDF, 0xA3], ebmlCat([
+                ebmlUint([0x42, 0x86], 1), ebmlUint([0x42, 0xF7], 1), ebmlUint([0x42, 0xF2], 4), ebmlUint([0x42, 0xF3], 8),
+                ebmlStr([0x42, 0x82], 'webm'), ebmlUint([0x42, 0x87], 4), ebmlUint([0x42, 0x85], 2)
+            ]));
+            return new Blob([header, ebmlEl([0x18, 0x53, 0x80, 0x67], segPayload)], { type: 'video/webm' });
+        }
+
+        function webCodecsExportAvailable(v) {
+            return typeof VideoEncoder !== 'undefined' && typeof VideoFrame !== 'undefined' && typeof v.requestVideoFrameCallback === 'function';
+        }
+
+        async function exportClipWebmExact(srcUrl, start, end, onProgress, isCancelled) {
+            const v = await openWorkVideo(srcUrl, true);
+            let venc = null, aenc = null;
+            try {
+                if (!webCodecsExportAvailable(v)) throw Object.assign(new Error('no webcodecs'), { fallback: true });
+                const scale = Math.min(1, 1920 / Math.max(v.videoWidth, v.videoHeight));
+                const w = Math.max(2, Math.round(v.videoWidth * scale / 2) * 2), h = Math.max(2, Math.round(v.videoHeight * scale / 2) * 2);
+                const fps = 30;
+                const bitrate = Math.min(14000000, Math.max(4000000, Math.round(w * h * 6)));
+                let vcfg = null, vcodecId = '';
+                for (const [codec, id] of [['vp09.00.40.08', 'V_VP9'], ['vp8', 'V_VP8']]) {
+                    const cfg = { codec, width: w, height: h, bitrate, framerate: fps, latencyMode: 'quality' };
+                    let ok = false; try { ok = (await VideoEncoder.isConfigSupported(cfg)).supported; } catch (e) {}
+                    if (ok) { vcfg = cfg; vcodecId = id; break; }
+                }
+                if (!vcfg) throw Object.assign(new Error('no video encoder'), { fallback: true });
+
+                // ---- audio: decode the file, cut the selection, resample to 48 kHz, encode as Opus ----
+                let audio = null;
+                if (typeof AudioEncoder !== 'undefined' && typeof AudioData !== 'undefined') {
+                    try {
+                        const resp = await fetch(srcUrl); const arr = await resp.arrayBuffer();
+                        const dctx = new (window.AudioContext || window.webkitAudioContext)();
+                        let decoded; try { decoded = await dctx.decodeAudioData(arr); } finally { try { dctx.close(); } catch (e) {} }
+                        const channels = Math.min(2, decoded.numberOfChannels);
+                        const dur = Math.max(0.05, end - start);
+                        const off = new OfflineAudioContext(channels, Math.ceil(dur * 48000), 48000);
+                        const src = off.createBufferSource(); src.buffer = decoded; src.connect(off.destination); src.start(0, start, dur);
+                        const pcm = await off.startRendering();
+                        const acfg = { codec: 'opus', sampleRate: 48000, numberOfChannels: channels, bitrate: 128000 };
+                        if (!(await AudioEncoder.isConfigSupported(acfg)).supported) throw new Error('no opus');
+                        const packets = []; let head = null;
+                        aenc = new AudioEncoder({
+                            output: (chunk, meta) => {
+                                const d = new Uint8Array(chunk.byteLength); chunk.copyTo(d);
+                                packets.push({ t: chunk.timestamp / 1000, data: d });
+                                if (!head && meta && meta.decoderConfig && meta.decoderConfig.description) { const dsc = meta.decoderConfig.description; head = new Uint8Array(dsc instanceof ArrayBuffer ? dsc : dsc.buffer.slice(dsc.byteOffset, dsc.byteOffset + dsc.byteLength)); }
+                            },
+                            error: (e) => console.error('audio encoder', e)
+                        });
+                        aenc.configure(acfg);
+                        const FR = 960; // 20 ms
+                        for (let o = 0; o < pcm.length; o += FR) {
+                            const n = Math.min(FR, pcm.length - o);
+                            const planar = new Float32Array(n * channels);
+                            for (let c = 0; c < channels; c++) planar.set(pcm.getChannelData(c).subarray(o, o + n), c * n);
+                            const ad = new AudioData({ format: 'f32-planar', sampleRate: 48000, numberOfFrames: n, numberOfChannels: channels, timestamp: Math.round(o / 48000 * 1e6), data: planar });
+                            aenc.encode(ad); ad.close();
+                            if (aenc.encodeQueueSize > 20) await new Promise(r => setTimeout(r, 0));
+                        }
+                        await aenc.flush();
+                        if (!head) { // build a standard OpusHead if the encoder didn't supply one
+                            head = new Uint8Array(19); head.set([0x4F, 0x70, 0x75, 0x73, 0x48, 0x65, 0x61, 0x64, 1, channels, 312 & 255, 312 >> 8, 0x80, 0xBB, 0, 0, 0, 0, 0]);
+                        }
+                        const preSkip = head[10] | (head[11] << 8);
+                        if (packets.length) audio = { channels, rate: 48000, preSkip, head, packets };
+                    } catch (e) { console.warn('Exporting without audio:', e); audio = null; }
+                    if (aenc) { try { aenc.close(); } catch (e) {} aenc = null; }
+                }
+                if (isCancelled()) return null;
+
+                // ---- video: every frame the player presents is encoded with its own exact timestamp ----
+                const frames = []; let encError = null;
+                venc = new VideoEncoder({
+                    output: (chunk) => { const d = new Uint8Array(chunk.byteLength); chunk.copyTo(d); frames.push({ t: chunk.timestamp / 1000, data: d, key: chunk.type === 'key' }); },
+                    error: (e) => { encError = e; }
+                });
+                venc.configure(vcfg);
+                v.currentTime = start;
+                await waitForEvent(v, 'seeked', 8000, 'Could not jump to the start of the clip.');
+                let lastMedia = -1, count = 0, finished = false;
+                const stopAt = end;
+                const done = new Promise((resolve) => {
+                    const onFrame = async (_now, meta) => {
+                        if (finished) return;
+                        const mt = meta.mediaTime;
+                        if (isCancelled() || mt >= stopAt - 0.0005 || v.ended) { finished = true; resolve(); return; }
+                        if (mt !== lastMedia && mt >= start - 0.001) {
+                            lastMedia = mt;
+                            const vf = new VideoFrame(v, { timestamp: Math.max(0, Math.round((mt - start) * 1e6)) });
+                            venc.encode(vf, { keyFrame: count % 60 === 0 }); vf.close(); count++;
+                            onProgress(Math.min(1, Math.max(0, (mt - start) / Math.max(0.1, end - start))));
+                        }
+                        if (venc.encodeQueueSize > 6) await new Promise(r => setTimeout(r, 0));
+                        v.requestVideoFrameCallback(onFrame);
+                    };
+                    v.requestVideoFrameCallback(onFrame);
+                    v.play().catch((e) => { finished = true; resolve(); });
+                });
+                await done;
+                v.pause();
+                if (isCancelled()) return null;
+                await venc.flush();
+                if (encError) throw encError;
+                if (!frames.length) throw new Error('No video frames were captured.');
+                frames.sort((a, b) => a.t - b.t);
+                return writeWebm({ codec: vcodecId, width: w, height: h, frames }, audio, (end - start) * 1000);
+            } finally {
+                if (venc) { try { venc.close(); } catch (e) {} }
+                if (aenc) { try { aenc.close(); } catch (e) {} }
+                v.remove();
+            }
+        }
+
         async function exportClipWebm(srcUrl, start, end, onProgress, isCancelled) {
+            try {
+                return await exportClipWebmExact(srcUrl, start, end, onProgress, isCancelled);
+            } catch (e) {
+                if (!(e && e.fallback)) console.warn('Exact export failed, using the recorder instead:', e);
+            }
+            return exportClipWebmRecorder(srcUrl, start, end, onProgress, isCancelled);
+        }
+
+        async function exportClipWebmRecorder(srcUrl, start, end, onProgress, isCancelled) {
             if (typeof MediaRecorder === 'undefined') throw new Error("Your browser can't record video (MediaRecorder isn't available).");
             const v = await openWorkVideo(srcUrl, false);
             let ac = null;
@@ -3077,6 +3281,8 @@
                 const input = document.createElement('input');
                 input.className = 'cap-input';
                 input.maxLength = 200;
+                input.type = 'text'; input.autocomplete = 'off'; input.enterKeyHint = 'done';
+                input.setAttribute('aria-label', 'Caption');
                 input.value = current;
                 input.placeholder = 'Write a caption, Enter to save';
                 let finished = false;
@@ -3093,7 +3299,15 @@
                 });
                 input.addEventListener('blur', () => finish(true));
                 text.replaceWith(input);
+                // A live count right under the box, so it's obvious the text is going in.
+                const count = document.createElement('div');
+                count.className = 'cap-count';
+                const updateCount = () => { count.textContent = `${input.value.length}/200`; };
+                input.addEventListener('input', updateCount);
+                updateCount();
+                input.after(count);
                 input.focus();
+                input.setSelectionRange(input.value.length, input.value.length);
             });
             el.appendChild(text);
 
@@ -3913,6 +4127,31 @@
             return null;
         }
 
+        // Switch file names start with the capture moment: YYYYMMDDHHMMSS then a 2-digit counter
+        // (e.g. 2017122820483800-<title id>.mp4 = 28 Dec 2017, 8:48:38 PM). Returns local-time ms, or null.
+        function captureTimeFromName(name) {
+            const m = String(name).match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})?/);
+            if (!m) return null;
+            const [y, mo, d, hh, mi] = [+m[1], +m[2], +m[3], +m[4], +m[5]], ss = m[6] === undefined ? 0 : +m[6];
+            if (mo < 1 || mo > 12 || d < 1 || d > 31 || hh > 23 || mi > 59 || ss > 59) return null;
+            const t = new Date(y, mo - 1, d, hh, mi, ss).getTime();
+            return isNaN(t) ? null : t;
+        }
+        const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        function formatClock(ms) {
+            const d = new Date(ms); let h = d.getHours();
+            const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
+            return `${h}:${String(d.getMinutes()).padStart(2, '0')} ${ap}`;
+        }
+        function formatDay(ms) { const d = new Date(ms); return `${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`; }
+        // The moment a capture was taken, for sorting: from the name when it has one, else the file's own date.
+        function mediaSortTime(m) { return m.capturedAt || (m.dateStr && /^\d{4}-\d{2}-\d{2}$/.test(m.dateStr) ? Date.parse(m.dateStr + 'T00:00:00') : 0) || m.timestamp || 0; }
+        // "Mar 10, 2025 at 8:48 PM" (just the day when the name carries no time)
+        function describeCaptured(m) {
+            const t = mediaSortTime(m);
+            if (!t) return '';
+            return m.timeKnown ? `${formatDay(t)} at ${formatClock(t)}` : formatDay(t);
+        }
         function parseFileName(file, trail) {
             const name = file.name;
             const ext = name.split('.').pop().toLowerCase();
@@ -3948,7 +4187,12 @@
                 dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
             }
             const blobForUrl = (ext === 'mp4' && file.type !== 'video/mp4') ? new Blob([file], { type: 'video/mp4' }) : file;
-            return { file, url: URL.createObjectURL(blobForUrl), type: ext === 'mp4' ? 'video' : 'image', dateStr, hash, timestamp: file.lastModified, isRemote: false };
+            // capturedAt/timeKnown come from the file name. (timestamp stays the file's own date: it is part of
+            // every saved favourite, caption and album key, so it must not change.)
+            const named = captureTimeFromName(name);
+            const timeKnown = named !== null && /^\d{12}/.test(name);
+            const capturedAt = named !== null ? named : 0;
+            return { file, url: URL.createObjectURL(blobForUrl), type: ext === 'mp4' ? 'video' : 'image', dateStr, hash, timestamp: file.lastModified, capturedAt, timeKnown, isRemote: false };
         }
 
         // Yields { file, trail } where trail is the list of folder names
@@ -3991,7 +4235,7 @@
                     count++;
                     if (count % 50 === 0) { loadingCount.textContent = `Found: ${count} files`; statCount.textContent = count; }
                 }
-                allMediaFiles.sort((a, b) => b.timestamp - a.timestamp);
+                allMediaFiles.sort((a, b) => mediaSortTime(b) - mediaSortTime(a) || b.timestamp - a.timestamp);
 
                 loadingCount.textContent = `Found: ${allMediaFiles.length} files`;
                 statCount.textContent = allMediaFiles.length;
@@ -4118,6 +4362,7 @@
                 }
             }
 
+            { const cap = describeCaptured(media); if (cap) container.title = cap; }
             const badge = document.createElement('div');
             badge.className = 'media-badge';
             badge.textContent = media.type === 'video' ? 'MP4' : 'JPG';
@@ -4791,13 +5036,19 @@
 
             currentSortedList = [...filteredList];
             const groupOf = new Map(); // media -> its group label, computed once instead of in every comparison
+            // Newest first, by the date and time in the file name (computed once per item, not per comparison).
+            const when = new Map();
+            currentSortedList.forEach(m => when.set(m, mediaSortTime(m)));
+            const newestFirst = (a, b) => when.get(b) - when.get(a) || (b.timestamp || 0) - (a.timestamp || 0);
             if (currentSort === 'date') {
                 currentSortedList.forEach(m => groupOf.set(m, m.dateStr));
-                currentSortedList.sort((a, b) => (a.dateStr < b.dateStr ? 1 : a.dateStr > b.dateStr ? -1 : 0));
+                currentSortedList.sort((a, b) => (a.dateStr < b.dateStr ? 1 : a.dateStr > b.dateStr ? -1 : newestFirst(a, b)));
             } else if (currentSort === 'game') {
                 const gk = new Map();
                 currentSortedList.forEach(m => { let g = gk.get(m.hash); if (g === undefined) { g = gameKey(m.hash); gk.set(m.hash, g); } groupOf.set(m, g); });
-                currentSortedList.sort((a, b) => groupOf.get(a).localeCompare(groupOf.get(b)));
+                currentSortedList.sort((a, b) => groupOf.get(a).localeCompare(groupOf.get(b)) || newestFirst(a, b));
+            } else {
+                currentSortedList.sort(newestFirst);
             }
             const groupCounts = new Map();
             groupOf.forEach(g => groupCounts.set(g, (groupCounts.get(g) || 0) + 1));
@@ -5116,7 +5367,8 @@
             lightboxMediaContainer.innerHTML = '';
             currentLightboxSrcUrl = srcUrl;
             const gameName = gameKey(media.hash);
-            lightboxInfo.innerHTML = `<span style="opacity: 0.6; margin-right: 0.5rem;">${media.dateStr}</span> <span style="margin-right:0.5rem;">&bull;</span> <strong style="color: var(--switch-cyan);">${gameName}</strong>`;
+            const clock = media.timeKnown && mediaSortTime(media) ? ` · ${formatClock(mediaSortTime(media))}` : '';
+            lightboxInfo.innerHTML = `<span style="opacity: 0.6; margin-right: 0.5rem;">${media.dateStr}${clock}</span> <span style="margin-right:0.5rem;">&bull;</span> <strong style="color: var(--switch-cyan);">${gameName}</strong>`;
             if (media.type === 'video') {
                 const video = document.createElement('video');
                 video.controls = true; video.autoplay = true;
@@ -5527,7 +5779,7 @@
                 const game   = dhGameLabel(m.hash);
                 const kind   = m.type === 'video' ? 'Video' : 'Screenshot';
                 const pos    = activeMediaList.length > 1 ? ` ${currentLightboxIndex + 1} of ${activeMediaList.length}` : '';
-                const when   = m.timestamp ? new Date(m.timestamp).toLocaleDateString() : '';
+                const when   = describeCaptured(m);
                 return {
                     key: gKey(remote),
                     activity: {

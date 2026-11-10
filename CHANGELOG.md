@@ -2,6 +2,20 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.2.0] - 2026-11-10
+
+### Changed
+- **Capture times come from the file name.** Switch names start with the moment of capture (for example `2017122820483800-…` is 28 Dec 2017 at 8:48 PM). Hub now reads the time as well as the date, and shows it in a 12-hour format with AM/PM: in the lightbox next to the date, in the tooltip when you hover a thumbnail, and in the Discord large-image hover text ("captured Dec 28, 2017 at 8:48 PM"). Friends see the time too once they're on this version. Files whose name has no time just show the date.
+- **All Media now sorts newest to oldest by the file name's date and time**, the same source Date sort uses, instead of the file's own modified date. Within a day, Date sort and Game sort now also put the latest capture first. Your favourites, captions and albums are unaffected.
+
+### Fixed
+- **Caption box hardened.** The caption field now has a solid dark background, forced white text, a larger font and a live character count under it, so what you type is always visible. (I couldn't reproduce text going missing here, so if it still looks blank for you, tell me what device and browser you're on.)
+
+## [1.1.4] - 2026-11-10
+
+### Fixed
+- **WebM exports still froze and stuttered.** Tested against a real 720p Switch clip: the old export stamped each frame with the moment it happened to arrive, so the file had uneven gaps (about 19 ms next to 48 ms) and repeated frames, and it had no duration or seek index. WebM export now encodes with the browser's video encoder and gives every frame the exact timestamp it has in the original clip. Audio is cut and encoded as Opus separately, and the WebM is written with its duration and a seek index, so it scrubs and loops properly. On the test clip, 299 of the 300 source frames came out with a steady 33 ms between them. Browsers without the video encoder fall back to the previous method.
+
 ## [1.1.3] - 2026-11-10
 
 ### Fixed
