@@ -406,6 +406,7 @@
         .pinned-bar .pinned-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .pinned-bar .pinned-count { color: var(--switch-muted); font-size: 0.72rem; }
         .msg-attachment-img { max-width: 260px; max-height: 260px; border-radius: 0.75rem; display: block; cursor: pointer; }
+        .msg-attachment-video { max-width: min(320px, 100%); max-height: 300px; border-radius: 0.75rem; display: block; background: #000; }
         .msg-attachment-file { display: flex; align-items: center; gap: 0.6rem; padding: 0.6rem 0.85rem; border-radius: 0.75rem; background: rgba(255,255,255,0.08); font-size: 0.82rem; text-decoration: none; color: inherit; }
         .msg-attachment-progress { font-size: 0.78rem; opacity: 0.85; display: flex; align-items: center; gap: 0.5rem; }
         .msg-attachment-progress .mini-bar { width: 90px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 9999px; overflow: hidden; }
@@ -3624,13 +3625,17 @@
             return row;
         }
 
+        const chatVideoEls = new Map(); // blob url -> <video>
+        function isVideoAttachment(a) {
+            return (a.mime && a.mime.startsWith('video/')) || /\.(mp4|mov|webm|m4v)$/i.test(a.name || '');
+        }
         function buildAttachmentEl(m) {
             const a = m.attachment;
             if (a.pending) {
                 const wrap = document.createElement('div');
                 wrap.className = 'msg-attachment-progress';
                 wrap.dataset.attachmentId = m.id;
-                wrap.innerHTML = `<span>${a.mime && a.mime.startsWith('image/') ? '🖼️' : '📎'} ${escapeHtml(a.name)} — <span class="pct">${a.progress}%</span></span><div class="mini-bar"><div class="mini-bar-fill" style="width:${a.progress}%;"></div></div>`;
+                wrap.innerHTML = `<span>${a.mime && a.mime.startsWith('image/') ? '🖼️' : isVideoAttachment(a) ? '🎞️' : '📎'} ${escapeHtml(a.name)} — <span class="pct">${a.progress}%</span></span><div class="mini-bar"><div class="mini-bar-fill" style="width:${a.progress}%;"></div></div>`;
                 return wrap;
             }
             if (!a.url) {
@@ -3645,6 +3650,27 @@
                 img.src = a.url;
                 img.addEventListener('click', () => openImageLightbox(a.url));
                 return img;
+            }
+            if (isVideoAttachment(a)) {
+                // Reuse the same <video> when the thread re-renders (receipts, new messages),
+                // so a clip that is playing isn't reset every time.
+                let v = chatVideoEls.get(a.url);
+                if (!v) {
+                    v = document.createElement('video');
+                    v.className = 'msg-attachment-video';
+                    v.src = a.url;
+                    v.controls = true; v.preload = 'metadata'; v.playsInline = true;
+                    v.addEventListener('error', () => {
+                        // Codec the browser can't play (e.g. some HEVC clips): fall back to a download link.
+                        chatVideoEls.delete(a.url);
+                        const fb = document.createElement('a');
+                        fb.className = 'msg-attachment-file'; fb.href = a.url; fb.download = a.name;
+                        fb.innerHTML = `🎞️ ${escapeHtml(a.name)} <span style="opacity:0.6; margin-left:0.3rem;">(can't preview here, click to download)</span>`;
+                        if (v.parentNode) v.replaceWith(fb);
+                    }, { once: true });
+                    chatVideoEls.set(a.url, v);
+                }
+                return v;
             }
             const link = document.createElement('a');
             link.className = 'msg-attachment-file';
