@@ -2,6 +2,11 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.2.1] - 2026-11-10
+
+### Fixed
+- **The caption was hidden behind the picture.** The screenshot or clip sat on a higher layer than the caption box, so whenever it reached the bottom of the window (short or wide windows, tall clips) the caption was covered and you could only see a sliver. The caption is now on top, and the picture makes room for it so it never covers the video controls either. Thanks for the screen recording that pointed this out.
+
 ## [1.2.0] - 2026-11-10
 
 ### Changed
