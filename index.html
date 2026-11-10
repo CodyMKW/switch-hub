@@ -343,7 +343,8 @@
         .lightbox-caption .cap-text { background: rgba(0,0,0,0.7); backdrop-filter: blur(6px); color: white; padding: 0.4rem 0.9rem; border-radius: 9999px; font-size: 0.85rem; text-align: center; word-break: break-word; }
         .lightbox-caption .cap-text.editable { cursor: text; border: 1px dashed rgba(255,255,255,0.3); }
         .lightbox-caption .cap-text.placeholder { opacity: 0.6; }
-        .lightbox-caption input.cap-input { background: rgba(0,0,0,0.8); color: white; border: 1px solid var(--switch-cyan); border-radius: 9999px; padding: 0.4rem 0.9rem; font-size: 0.85rem; width: min(80vw, 30rem); outline: none; }
+        .lightbox-caption input.cap-input { background: #0b0b0f !important; color: #fff !important; -webkit-text-fill-color: #fff !important; caret-color: var(--switch-cyan); color-scheme: dark; font-family: inherit; opacity: 1; border: 1px solid var(--switch-cyan); border-radius: 9999px; padding: 0.5rem 1rem; font-size: 1rem; line-height: 1.3; width: min(80vw, 30rem); outline: none; box-shadow: 0 0 0 3px rgba(0,200,255,0.18); -webkit-appearance: none; appearance: none; }
+        .lightbox-caption .cap-count { font-size: 0.7rem; color: rgba(255,255,255,0.65); }
         .lightbox-caption .cap-reacts { display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.6); border-radius: 9999px; padding: 0.2rem 0.7rem; font-size: 0.78rem; color: rgba(255,255,255,0.85); }
         .lightbox-caption .cap-reacts button { background: none; border: none; color: rgba(255,255,255,0.6); cursor: pointer; font-size: 0.75rem; }
         .lightbox-toolbar { height: 4rem; display: flex; justify-content: space-between; align-items: center; padding: 0 1.5rem; flex-shrink: 0; background: linear-gradient(to bottom, black, transparent); }
@@ -1853,7 +1854,7 @@
                 if (token !== gallerySyncToken || !conn.open) return;
                 const files = await Promise.all(allowed.slice(start, start + SYNC_BATCH_SIZE).map(async ({ m, i }) => {
                     const thumb = m.type === 'image' ? await createThumbnail(m.file) : '';
-                    return { originalIndex: i, type: m.type, dateStr: m.dateStr, hash: m.hash, timestamp: m.timestamp, thumb, caption: captions[mediaKey(m)] || '' };
+                    return { originalIndex: i, type: m.type, dateStr: m.dateStr, hash: m.hash, timestamp: m.timestamp, capturedAt: m.capturedAt || 0, timeKnown: !!m.timeKnown, thumb, caption: captions[mediaKey(m)] || '' };
                 }));
                 if (token !== gallerySyncToken || !conn.open) return;
                 await waitForBufferedAmountLow(conn);
@@ -3280,6 +3281,8 @@
                 const input = document.createElement('input');
                 input.className = 'cap-input';
                 input.maxLength = 200;
+                input.type = 'text'; input.autocomplete = 'off'; input.enterKeyHint = 'done';
+                input.setAttribute('aria-label', 'Caption');
                 input.value = current;
                 input.placeholder = 'Write a caption, Enter to save';
                 let finished = false;
@@ -3296,7 +3299,15 @@
                 });
                 input.addEventListener('blur', () => finish(true));
                 text.replaceWith(input);
+                // A live count right under the box, so it's obvious the text is going in.
+                const count = document.createElement('div');
+                count.className = 'cap-count';
+                const updateCount = () => { count.textContent = `${input.value.length}/200`; };
+                input.addEventListener('input', updateCount);
+                updateCount();
+                input.after(count);
                 input.focus();
+                input.setSelectionRange(input.value.length, input.value.length);
             });
             el.appendChild(text);
 
@@ -4116,6 +4127,31 @@
             return null;
         }
 
+        // Switch file names start with the capture moment: YYYYMMDDHHMMSS then a 2-digit counter
+        // (e.g. 2017122820483800-<title id>.mp4 = 28 Dec 2017, 8:48:38 PM). Returns local-time ms, or null.
+        function captureTimeFromName(name) {
+            const m = String(name).match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})?/);
+            if (!m) return null;
+            const [y, mo, d, hh, mi] = [+m[1], +m[2], +m[3], +m[4], +m[5]], ss = m[6] === undefined ? 0 : +m[6];
+            if (mo < 1 || mo > 12 || d < 1 || d > 31 || hh > 23 || mi > 59 || ss > 59) return null;
+            const t = new Date(y, mo - 1, d, hh, mi, ss).getTime();
+            return isNaN(t) ? null : t;
+        }
+        const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        function formatClock(ms) {
+            const d = new Date(ms); let h = d.getHours();
+            const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
+            return `${h}:${String(d.getMinutes()).padStart(2, '0')} ${ap}`;
+        }
+        function formatDay(ms) { const d = new Date(ms); return `${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`; }
+        // The moment a capture was taken, for sorting: from the name when it has one, else the file's own date.
+        function mediaSortTime(m) { return m.capturedAt || (m.dateStr && /^\d{4}-\d{2}-\d{2}$/.test(m.dateStr) ? Date.parse(m.dateStr + 'T00:00:00') : 0) || m.timestamp || 0; }
+        // "Mar 10, 2025 at 8:48 PM" (just the day when the name carries no time)
+        function describeCaptured(m) {
+            const t = mediaSortTime(m);
+            if (!t) return '';
+            return m.timeKnown ? `${formatDay(t)} at ${formatClock(t)}` : formatDay(t);
+        }
         function parseFileName(file, trail) {
             const name = file.name;
             const ext = name.split('.').pop().toLowerCase();
@@ -4151,7 +4187,12 @@
                 dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
             }
             const blobForUrl = (ext === 'mp4' && file.type !== 'video/mp4') ? new Blob([file], { type: 'video/mp4' }) : file;
-            return { file, url: URL.createObjectURL(blobForUrl), type: ext === 'mp4' ? 'video' : 'image', dateStr, hash, timestamp: file.lastModified, isRemote: false };
+            // capturedAt/timeKnown come from the file name. (timestamp stays the file's own date: it is part of
+            // every saved favourite, caption and album key, so it must not change.)
+            const named = captureTimeFromName(name);
+            const timeKnown = named !== null && /^\d{12}/.test(name);
+            const capturedAt = named !== null ? named : 0;
+            return { file, url: URL.createObjectURL(blobForUrl), type: ext === 'mp4' ? 'video' : 'image', dateStr, hash, timestamp: file.lastModified, capturedAt, timeKnown, isRemote: false };
         }
 
         // Yields { file, trail } where trail is the list of folder names
@@ -4194,7 +4235,7 @@
                     count++;
                     if (count % 50 === 0) { loadingCount.textContent = `Found: ${count} files`; statCount.textContent = count; }
                 }
-                allMediaFiles.sort((a, b) => b.timestamp - a.timestamp);
+                allMediaFiles.sort((a, b) => mediaSortTime(b) - mediaSortTime(a) || b.timestamp - a.timestamp);
 
                 loadingCount.textContent = `Found: ${allMediaFiles.length} files`;
                 statCount.textContent = allMediaFiles.length;
@@ -4321,6 +4362,7 @@
                 }
             }
 
+            { const cap = describeCaptured(media); if (cap) container.title = cap; }
             const badge = document.createElement('div');
             badge.className = 'media-badge';
             badge.textContent = media.type === 'video' ? 'MP4' : 'JPG';
@@ -4994,13 +5036,19 @@
 
             currentSortedList = [...filteredList];
             const groupOf = new Map(); // media -> its group label, computed once instead of in every comparison
+            // Newest first, by the date and time in the file name (computed once per item, not per comparison).
+            const when = new Map();
+            currentSortedList.forEach(m => when.set(m, mediaSortTime(m)));
+            const newestFirst = (a, b) => when.get(b) - when.get(a) || (b.timestamp || 0) - (a.timestamp || 0);
             if (currentSort === 'date') {
                 currentSortedList.forEach(m => groupOf.set(m, m.dateStr));
-                currentSortedList.sort((a, b) => (a.dateStr < b.dateStr ? 1 : a.dateStr > b.dateStr ? -1 : 0));
+                currentSortedList.sort((a, b) => (a.dateStr < b.dateStr ? 1 : a.dateStr > b.dateStr ? -1 : newestFirst(a, b)));
             } else if (currentSort === 'game') {
                 const gk = new Map();
                 currentSortedList.forEach(m => { let g = gk.get(m.hash); if (g === undefined) { g = gameKey(m.hash); gk.set(m.hash, g); } groupOf.set(m, g); });
-                currentSortedList.sort((a, b) => groupOf.get(a).localeCompare(groupOf.get(b)));
+                currentSortedList.sort((a, b) => groupOf.get(a).localeCompare(groupOf.get(b)) || newestFirst(a, b));
+            } else {
+                currentSortedList.sort(newestFirst);
             }
             const groupCounts = new Map();
             groupOf.forEach(g => groupCounts.set(g, (groupCounts.get(g) || 0) + 1));
@@ -5319,7 +5367,8 @@
             lightboxMediaContainer.innerHTML = '';
             currentLightboxSrcUrl = srcUrl;
             const gameName = gameKey(media.hash);
-            lightboxInfo.innerHTML = `<span style="opacity: 0.6; margin-right: 0.5rem;">${media.dateStr}</span> <span style="margin-right:0.5rem;">&bull;</span> <strong style="color: var(--switch-cyan);">${gameName}</strong>`;
+            const clock = media.timeKnown && mediaSortTime(media) ? ` · ${formatClock(mediaSortTime(media))}` : '';
+            lightboxInfo.innerHTML = `<span style="opacity: 0.6; margin-right: 0.5rem;">${media.dateStr}${clock}</span> <span style="margin-right:0.5rem;">&bull;</span> <strong style="color: var(--switch-cyan);">${gameName}</strong>`;
             if (media.type === 'video') {
                 const video = document.createElement('video');
                 video.controls = true; video.autoplay = true;
@@ -5730,7 +5779,7 @@
                 const game   = dhGameLabel(m.hash);
                 const kind   = m.type === 'video' ? 'Video' : 'Screenshot';
                 const pos    = activeMediaList.length > 1 ? ` ${currentLightboxIndex + 1} of ${activeMediaList.length}` : '';
-                const when   = m.timestamp ? new Date(m.timestamp).toLocaleDateString() : '';
+                const when   = describeCaptured(m);
                 return {
                     key: gKey(remote),
                     activity: {
