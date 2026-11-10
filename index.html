@@ -2641,7 +2641,7 @@
             v.muted = !!muted;
             v.playsInline = true;
             v.preload = 'auto';
-            v.style.cssText = 'position:fixed;left:-9999px;top:0;width:2px;height:2px;opacity:0;pointer-events:none;';
+            v.style.cssText = 'position:fixed;right:0;bottom:0;width:160px;height:90px;opacity:0.01;pointer-events:none;z-index:-1;';
             document.body.appendChild(v);
             v.src = srcUrl;
             try { await waitForEvent(v, 'loadedmetadata', 15000, 'The clip took too long to load.'); }
@@ -2654,10 +2654,25 @@
             const v = await openWorkVideo(srcUrl, false);
             let ac = null;
             try {
-                const cap = v.captureStream ? v.captureStream() : (v.mozCaptureStream ? v.mozCaptureStream() : null);
-                if (!cap) throw new Error("Your browser can't capture video from a clip (try Chrome or Edge).");
+                // Preferred path: copy each decoded frame to a canvas exactly once and record the canvas.
+                // Recording the <video> element directly samples it at the recorder's own clock, which
+                // repeats and skips frames unevenly (e.g. 24 or 30 fps source -> uneven cadence = stutter).
+                const canvasPath = typeof v.requestVideoFrameCallback === 'function' && !!HTMLCanvasElement.prototype.captureStream;
+                let tracks, canvas = null, ctx2d = null, vtrack = null, w = 0, h = 0;
+                if (canvasPath) {
+                    const scale = Math.min(1, 1920 / Math.max(v.videoWidth, v.videoHeight));
+                    w = Math.max(2, Math.round(v.videoWidth * scale / 2) * 2); h = Math.max(2, Math.round(v.videoHeight * scale / 2) * 2);
+                    canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+                    ctx2d = canvas.getContext('2d', { alpha: false });
+                    const cs = canvas.captureStream(0); // 0 = only when we ask, one frame per decoded video frame
+                    vtrack = cs.getVideoTracks()[0];
+                    tracks = [vtrack];
+                } else {
+                    const cap = v.captureStream ? v.captureStream() : (v.mozCaptureStream ? v.mozCaptureStream() : null);
+                    if (!cap) throw new Error("Your browser can't capture video from a clip (try Chrome or Edge).");
+                    tracks = [...cap.getVideoTracks()];
+                }
                 // Route the clip's audio into the recording only (never to the speakers).
-                const tracks = [...cap.getVideoTracks()];
                 try {
                     ac = new (window.AudioContext || window.webkitAudioContext)();
                     await ac.resume();
@@ -2666,14 +2681,31 @@
                     tracks.push(...dest.stream.getAudioTracks());
                 } catch (e) { /* no audio track: export silent video */ }
                 const stream = new MediaStream(tracks);
-                const mime = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'].find(m => MediaRecorder.isTypeSupported(m));
+                // VP9 compresses better but can't always encode large frames in real time, which drops frames.
+                const big = canvasPath ? w * h > 1280 * 720 : false;
+                const prefs = big ? ['video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9,opus', 'video/webm'] : ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+                const mime = prefs.find(m => MediaRecorder.isTypeSupported(m));
                 if (!mime) throw new Error("Your browser can't write WebM video.");
                 const chunks = [];
-                const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6000000 });
+                const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: canvasPath ? Math.min(12000000, Math.max(4000000, Math.round(w * h * 5))) : 6000000 });
                 rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
                 const stopped = new Promise((resolve) => { rec.onstop = resolve; });
                 v.currentTime = start;
                 await waitForEvent(v, 'seeked', 8000, 'Could not jump to the start of the clip.');
+                let drawing = false;
+                if (canvasPath) {
+                    const draw = () => { try { ctx2d.drawImage(v, 0, 0, w, h); vtrack.requestFrame(); } catch (e) { /* frame not ready */ } };
+                    draw();
+                    drawing = true;
+                    let lastMediaTime = -1;
+                    const onFrame = (_now, meta) => {
+                        if (!drawing) return;
+                        // Only a genuinely new video frame is recorded; repeats would show up as a hitch.
+                        if (!meta || meta.mediaTime !== lastMediaTime) { lastMediaTime = meta ? meta.mediaTime : -1; draw(); }
+                        v.requestVideoFrameCallback(onFrame);
+                    };
+                    v.requestVideoFrameCallback(onFrame);
+                }
                 rec.start(250);
                 await v.play();
                 await new Promise((resolve) => {
@@ -2683,6 +2715,7 @@
                         if (isCancelled() || v.currentTime >= end || v.ended) { clearInterval(timer); resolve(); }
                     }, 120);
                 });
+                drawing = false;
                 v.pause();
                 if (rec.state !== 'inactive') rec.stop();
                 await stopped;

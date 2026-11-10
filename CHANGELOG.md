@@ -2,6 +2,11 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.1.3] - 2026-11-10
+
+### Fixed
+- **WebM exports could look choppy.** The export recorded the clip by sampling a hidden, 2-pixel video on the recorder's own clock, which repeats and skips frames unevenly (a 24 fps clip came out as an uneven 30 fps, for example) and lets the browser throttle a video nobody can see. Exports now copy each decoded frame to a canvas exactly once and record that, with the clip rendered at full size behind the page, repeated frames skipped, and the bitrate scaled to the clip's resolution (larger clips use VP8, which keeps up in real time). Browsers without frame callbacks use the old method. Keep the tab in front while a WebM is exporting.
+
 ## [1.1.2] - 2026-11-10
 
 ### Changed
