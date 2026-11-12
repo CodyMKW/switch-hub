@@ -971,6 +971,7 @@
         let currentAlbumId = null; // album currently filtering the local gallery
         let selectMode = false;
         const selectedKeys = new Set();
+        const selectedObjs = new Set(); // exact files: two captures can share a mediaKey, so the picture you tap is tracked by itself
         let captions = {};         // "hash|timestamp" -> caption text on MY screenshots
         let mediaReactions = {};   // "hash|timestamp" -> [{ emoji, from }] friends left on MY screenshots
         let searchQuery = '';
@@ -4465,7 +4466,7 @@
                 check.className = 'select-check';
                 container.appendChild(check);
                 const setVisual = () => {
-                    const on = selectedKeys.has(mediaKey(media));
+                    const on = selectedObjs.has(media);
                     container.classList.toggle('selected', on);
                     check.textContent = on ? '✓' : '';
                 };
@@ -4473,7 +4474,7 @@
                 container.__setVisual = setVisual;
                 container.addEventListener('click', () => {
                     const k = mediaKey(media);
-                    if (selectedKeys.has(k)) selectedKeys.delete(k); else selectedKeys.add(k);
+                    if (selectedObjs.has(media)) { selectedObjs.delete(media); if (!allMediaFiles.some(o => selectedObjs.has(o) && mediaKey(o) === k)) selectedKeys.delete(k); } else { selectedObjs.add(media); selectedKeys.add(k); }
                     setVisual();
                     updateSelectBar();
                 });
@@ -4545,6 +4546,12 @@
             ctx.lineTo(x2 - head * Math.cos(ang + 0.45), y2 - head * Math.sin(ang + 0.45));
             ctx.closePath(); ctx.fill();
         }
+        // Size of a text op's (unrotated) box in image pixels.
+        function textBox(ctx, op) {
+            ctx.save(); ctx.font = `800 ${op.fs}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+            const lines = String(op.text).split('\n'); const w = Math.max(1, ...lines.map(l => ctx.measureText(l).width));
+            ctx.restore(); return { w, h: lines.length * op.fs * 1.2 };
+        }
         function applyEditorOp(ctx, op, base) {
             ctx.save();
             ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -4564,6 +4571,8 @@
                 ctx.font = `800 ${op.fs}px system-ui, -apple-system, "Segoe UI", sans-serif`;
                 ctx.textBaseline = 'top';
                 ctx.lineWidth = Math.max(2, op.fs / 8); ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+                const tb = textBox(ctx, op);
+                if (op.rot) { ctx.translate(op.x1 + tb.w / 2, op.y1 + tb.h / 2); ctx.rotate(op.rot); ctx.translate(-(op.x1 + tb.w / 2), -(op.y1 + tb.h / 2)); }
                 op.text.split('\n').forEach((line, i) => { ctx.strokeText(line, op.x1, op.y1 + i * op.fs * 1.2); ctx.fillText(line, op.x1, op.y1 + i * op.fs * 1.2); });
             }
             ctx.restore();
@@ -4589,14 +4598,36 @@
             let ops = [], redo = [], tool = 'pixel', color = '#ff3b30', size = 3, drawing = null;
             const lw = () => Math.max(2, Math.round(size * W / 500));
             const fs = () => Math.round(W / 32 * (0.6 + size * 0.3));
-            const rebuild = () => { cctx.drawImage(bmp, 0, 0, W, H); ops.forEach(o => applyEditorOp(cctx, o)); };
-            const paint = () => { vctx.drawImage(committed, 0, 0); if (drawing) applyEditorOp(vctx, drawing); };
+            // A "mod" entry records a move / resize / rotate / re-word of a text op, so Undo and Redo handle it like any other step.
+            const eff = (o) => { let r = o; for (const m of ops) if (m.type === 'mod' && m.target === o) r = { ...r, ...m.to }; return r; };
+            let sel = null, gesture = null, base = null, editing = null, lastTap = null;
+            const rebuild = () => { cctx.drawImage(bmp, 0, 0, W, H); ops.forEach(o => { if (o.type !== 'mod' && o !== editing) applyEditorOp(cctx, eff(o)); }); };
+            const hs = () => view.getBoundingClientRect().width ? W / view.getBoundingClientRect().width : 1; // image px per screen px
+            const geom = (o) => { const tb = textBox(cctx, o); return { cx: o.x1 + tb.w / 2, cy: o.y1 + tb.h / 2, w: tb.w, h: tb.h, rot: o.rot || 0 }; };
+            const toLocal = (g, x, y) => { const dx = x - g.cx, dy = y - g.cy, c = Math.cos(-g.rot), s = Math.sin(-g.rot); return [dx * c - dy * s, dx * s + dy * c]; };
+            const handles = (g) => { const k = hs(); return { rot: [0, -g.h / 2 - 34 * k], size: [g.w / 2 + 8 * k, g.h / 2 + 8 * k], r: 13 * k }; };
+            const hitText = (x, y) => { for (let i = ops.length - 1; i >= 0; i--) { const o = ops[i]; if (o.type !== 'text') continue; const e = eff(o), g = geom(e), [lx, ly] = toLocal(g, x, y), pad = 8 * hs(); if (Math.abs(lx) <= g.w / 2 + pad && Math.abs(ly) <= g.h / 2 + pad) return o; } return null; };
+            const paint = () => {
+                vctx.drawImage(gesture && base ? base : committed, 0, 0);
+                if (gesture) applyEditorOp(vctx, gesture.live);
+                if (drawing) applyEditorOp(vctx, drawing);
+                if (sel && tool === 'text' && ops.includes(sel)) {
+                    const e = gesture ? gesture.live : eff(sel), g = geom(e), h = handles(g), k = hs();
+                    vctx.save(); vctx.translate(g.cx, g.cy); vctx.rotate(g.rot);
+                    vctx.lineWidth = 2 * k; vctx.strokeStyle = '#00c3e3'; vctx.setLineDash([8 * k, 6 * k]);
+                    vctx.strokeRect(-g.w / 2 - 6 * k, -g.h / 2 - 4 * k, g.w + 12 * k, g.h + 8 * k); vctx.setLineDash([]);
+                    vctx.beginPath(); vctx.moveTo(0, -g.h / 2 - 4 * k); vctx.lineTo(h.rot[0], h.rot[1]); vctx.stroke();
+                    vctx.fillStyle = '#00c3e3'; vctx.beginPath(); vctx.arc(h.rot[0], h.rot[1], h.r, 0, Math.PI * 2); vctx.fill();
+                    vctx.fillStyle = '#fff'; vctx.fillRect(h.size[0] - h.r, h.size[1] - h.r, h.r * 2, h.r * 2); vctx.strokeRect(h.size[0] - h.r, h.size[1] - h.r, h.r * 2, h.r * 2);
+                    vctx.restore();
+                }
+            };
             const refreshButtons = () => { undoBtn.disabled = !ops.length; redoBtn.disabled = !redo.length; };
 
             const bar = el('div', 'tool-bar');
             const toolDefs = [['pixel', '🔲 Blur'], ['box', '⬛ Black box'], ['pen', '✏️ Pen'], ['arrow', '➡️ Arrow'], ['ellipse', '⭕ Circle'], ['rect', '▭ Box'], ['text', '🔤 Text']];
             const toolBtns = {};
-            toolDefs.forEach(([id, label]) => { const b = toolBtn(label, () => { tool = id; Object.entries(toolBtns).forEach(([k, v]) => v.classList.toggle('active', k === id)); cancelText(); }); toolBtns[id] = b; bar.appendChild(b); });
+            toolDefs.forEach(([id, label]) => { const b = toolBtn(label, () => { tool = id; sel = null; Object.entries(toolBtns).forEach(([k, v]) => v.classList.toggle('active', k === id)); cancelText(); paint(); }); toolBtns[id] = b; bar.appendChild(b); });
             toolBtns.pixel.classList.add('active');
             bar.appendChild(el('div', 'tool-sep'));
             const colorIn = document.createElement('input'); colorIn.type = 'color'; colorIn.value = color; colorIn.title = 'Colour'; colorIn.addEventListener('input', () => { color = colorIn.value; });
@@ -4606,7 +4637,7 @@
             bar.appendChild(el('div', 'tool-sep'));
             const undoBtn = toolBtn('↶ Undo', () => { if (!ops.length) return; redo.push(ops.pop()); rebuild(); paint(); refreshButtons(); });
             const redoBtn = toolBtn('↷ Redo', () => { if (!redo.length) return; ops.push(redo.pop()); rebuild(); paint(); refreshButtons(); });
-            const clearBtn = toolBtn('Reset', () => { ops = []; redo = []; rebuild(); paint(); refreshButtons(); }, 'tool-btn danger');
+            const clearBtn = toolBtn('Reset', () => { ops = []; redo = []; sel = null; rebuild(); paint(); refreshButtons(); }, 'tool-btn danger');
             bar.appendChild(undoBtn); bar.appendChild(redoBtn); bar.appendChild(clearBtn);
             card.appendChild(bar);
             card.appendChild(stage);
@@ -4616,16 +4647,22 @@
             let textInput = null;
             const cancelText = () => { if (textInput) { const t = textInput; textInput = null; t.remove(); } };
             const commitOp = (op) => { ops.push(op); redo = []; rebuild(); drawing = null; paint(); refreshButtons(); };
-            const startText = (px, py, cssX, cssY) => {
+            const startText = (px, py, cssX, cssY, existing) => {
                 cancelText();
                 const input = document.createElement('input'); input.className = 'editor-text'; input.type = 'text'; input.placeholder = 'Type, then Enter';
-                input.style.left = cssX + 'px'; input.style.top = cssY + 'px'; input.style.fontSize = '16px'; input.style.color = color;
-                stage.appendChild(input); textInput = input; input.focus();
+                input.style.left = cssX + 'px'; input.style.top = cssY + 'px'; input.style.fontSize = '16px'; input.style.color = existing ? eff(existing).color : color;
+                if (existing) { input.value = eff(existing).text; editing = existing; rebuild(); paint(); }
+                stage.appendChild(input); textInput = input; input.focus(); if (existing) input.select();
                 const done = (save) => {
                     if (textInput !== input) return;
                     textInput = null;
                     const text = input.value.trim(); input.remove();
-                    if (save && text) commitOp({ type: 'text', x1: px, y1: py, x2: px, y2: py, color, lw: lw(), fs: fs(), text });
+                    if (existing) {
+                        editing = null;
+                        if (save && text && text !== eff(existing).text) { ops.push({ type: 'mod', target: existing, to: { text } }); redo = []; }
+                        rebuild(); paint(); refreshButtons(); return;
+                    }
+                    if (save && text) { commitOp({ type: 'text', x1: px, y1: py, x2: px, y2: py, color, lw: lw(), fs: fs(), text, rot: 0 }); sel = ops[ops.length - 1]; paint(); }
                 };
                 input.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') done(true); else if (e.key === 'Escape') done(false); });
                 input.addEventListener('blur', () => done(true));
@@ -4636,6 +4673,26 @@
                 if (tool === 'text') {
                     const sr = stage.getBoundingClientRect();
                     e.preventDefault();
+                    if (textInput) { textInput.blur(); } // commits what was typed
+                    // handles of the selected text first, then any text under the pointer
+                    let target = null, mode = 'move';
+                    if (sel && ops.includes(sel)) {
+                        const g = geom(eff(sel)), h = handles(g), [lx, ly] = toLocal(g, x, y);
+                        if (Math.hypot(lx - h.rot[0], ly - h.rot[1]) <= h.r * 1.6) { target = sel; mode = 'rotate'; }
+                        else if (Math.abs(lx - h.size[0]) <= h.r * 1.6 && Math.abs(ly - h.size[1]) <= h.r * 1.6) { target = sel; mode = 'resize'; }
+                    }
+                    if (!target) target = hitText(x, y);
+                    if (target) {
+                        const dbl = lastTap && lastTap.target === target && e.timeStamp - lastTap.t < 450; lastTap = { target, t: e.timeStamp };
+                        if (dbl && mode === 'move') { sel = target; const g = geom(eff(target)); const r = view.getBoundingClientRect(); startText(0, 0, r.left - sr.left + (g.cx - g.w / 2) / hs(), r.top - sr.top + (g.cy - g.h / 2) / hs(), target); return; }
+                        sel = target;
+                        const start = eff(target), g = geom(start);
+                        base = document.createElement('canvas'); base.width = W; base.height = H; const bc = base.getContext('2d');
+                        bc.drawImage(bmp, 0, 0, W, H); ops.forEach(o => { if (o.type !== 'mod' && o !== target) applyEditorOp(bc, eff(o)); });
+                        gesture = { target, mode, start, g, x0: x, y0: y, live: { ...start }, moved: false };
+                        view.setPointerCapture(e.pointerId); paint(); return;
+                    }
+                    sel = null; paint();
                     startText(x, y, e.clientX - sr.left, e.clientY - sr.top);
                     return;
                 }
@@ -4644,6 +4701,13 @@
                 paint();
             });
             view.addEventListener('pointermove', (e) => {
+                if (gesture) {
+                    const [x, y] = toImg(e), G = gesture, s = G.start, g = G.g; G.moved = true;
+                    if (G.mode === 'move') { G.live = { ...s, x1: s.x1 + (x - G.x0), y1: s.y1 + (y - G.y0) }; }
+                    else if (G.mode === 'rotate') { const a0 = Math.atan2(G.y0 - g.cy, G.x0 - g.cx), a1 = Math.atan2(y - g.cy, x - g.cx); let r = (s.rot || 0) + (a1 - a0); if (e.shiftKey) r = Math.round(r / (Math.PI / 12)) * (Math.PI / 12); G.live = { ...s, rot: r }; }
+                    else { const d0 = Math.hypot(G.x0 - g.cx, G.y0 - g.cy) || 1, d1 = Math.hypot(x - g.cx, y - g.cy); const nfs = Math.max(8, Math.min(W / 2, s.fs * d1 / d0)); const probe = { ...s, fs: nfs }, tb = textBox(cctx, probe); G.live = { ...probe, x1: g.cx - tb.w / 2, y1: g.cy - tb.h / 2, lw: Math.max(2, nfs / 8) }; }
+                    paint(); return;
+                }
                 if (!drawing) return;
                 const [x, y] = toImg(e);
                 drawing.x2 = x; drawing.y2 = y;
@@ -4651,6 +4715,11 @@
                 paint();
             });
             const finish = (e) => {
+                if (gesture) {
+                    const G = gesture; gesture = null; base = null;
+                    if (G.moved) { const to = {}; ['x1', 'y1', 'fs', 'rot', 'lw'].forEach(k => { if (G.live[k] !== G.start[k]) to[k] = G.live[k]; }); if (Object.keys(to).length) { ops.push({ type: 'mod', target: G.target, to }); redo = []; } }
+                    rebuild(); paint(); refreshButtons(); return;
+                }
                 if (!drawing) return;
                 const d = drawing;
                 const tiny = d.type !== 'pen' && Math.abs(d.x2 - d.x1) < 4 && Math.abs(d.y2 - d.y1) < 4;
@@ -4658,7 +4727,7 @@
                 commitOp(d);
             };
             view.addEventListener('pointerup', finish);
-            view.addEventListener('pointercancel', () => { drawing = null; paint(); });
+            view.addEventListener('pointercancel', () => { drawing = null; if (gesture) { gesture = null; base = null; rebuild(); } paint(); });
             const onKey = (e) => {
                 if (!document.body.contains(modal)) { document.removeEventListener('keydown', onKey, true); return; }
                 if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); e.stopPropagation(); (e.shiftKey ? redoBtn : undoBtn).click(); }
@@ -4987,7 +5056,7 @@
         }
         document.getElementById('sel-reel').addEventListener('click', () => { const m = selectedMedia(); openReelMaker(m); });
         document.getElementById('btn-reel').addEventListener('click', () => {
-            if (selectMode && selectedKeys.size) { openReelMaker(selectedMedia()); return; }
+            if (selectMode && selectedObjs.size) { openReelMaker(selectedMedia()); return; }
             if (currentSource !== 'local') { showToast('Reels are made from your own screenshots and clips. Switch to your gallery first.', 'yellow'); return; }
             setSelectMode(true);
             showToast('Pick the screenshots and clips for your reel, then hit "🎬 Make a reel".', 'purple', 5000);
@@ -5670,14 +5739,14 @@
             document.getElementById('btn-select-mode').textContent = selectMode ? '☑️ Exit Select' : '☑️ Select';
         }
 
-        function selectedMedia() { return allMediaFiles.filter(m => selectedKeys.has(mediaKey(m))); }
+        function selectedMedia() { return allMediaFiles.filter(m => selectedObjs.has(m)); }
 
         function updateSelectBar() {
             const bar = document.getElementById('select-bar');
             const on = selectMode && currentSource === 'local';
             bar.classList.toggle('active', on);
             if (!on) return;
-            const n = selectedKeys.size;
+            const n = selectedObjs.size;
             document.getElementById('select-count').textContent = `${n} selected`;
             ['sel-album', 'sel-send', 'sel-zip'].forEach(id => { document.getElementById(id).disabled = n === 0; });
             document.getElementById('sel-unalbum').disabled = n === 0 || !currentAlbumId;
@@ -5685,7 +5754,7 @@
 
         function setSelectMode(on) {
             selectMode = !!on;
-            if (!selectMode) selectedKeys.clear();
+            if (!selectMode) { selectedKeys.clear(); selectedObjs.clear(); }
             renderView();
         }
 
@@ -5697,7 +5766,7 @@
         }
         document.getElementById('sel-all').addEventListener('click', () => {
             // Update the tiles that are already on screen instead of rebuilding the whole grid.
-            currentSortedList.forEach(m => selectedKeys.add(mediaKey(m)));
+            currentSortedList.forEach(m => { selectedKeys.add(mediaKey(m)); selectedObjs.add(m); });
             refreshSelectVisuals();
         });
         document.getElementById('btn-new-album').addEventListener('click', () => {
@@ -6165,7 +6234,7 @@
 
             let sourceList = currentSource === 'local' ? allMediaFiles : remoteMediaFiles;
             updateTopBar();
-            if (currentSource !== 'local') { selectMode = false; selectedKeys.clear(); }
+            if (currentSource !== 'local') { selectMode = false; selectedKeys.clear(); selectedObjs.clear(); }
             renderAlbumsList();
             updateSelectBar();
 
