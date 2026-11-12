@@ -2,6 +2,20 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.3.0] - 2026-11-12
+
+### Added
+- **Redact tool.** Before you send a screenshot (or from the lightbox), blur or pixelate parts of it, like a friend code or a name. Drag a box and it's pixelated for real in the pixels, so it can't be undone from the file.
+- **Annotate.** Draw arrows, boxes, freehand and text on a screenshot before sending. Same editor as redact, with undo.
+- **Guess the game.** Pick a screenshot, hide its caption and filename, and your friend guesses the game. Scores are kept for the session.
+- **Vote on the best shot.** Start a vote from the session album; everyone taps their favourite and a "Best of" list is kept in this browser.
+- **Highlight reel maker.** Select screenshots and clips, and Hub stitches them into one WebM reel. It renders in real time, so keep the tab in front while it runs.
+- **Play-time journal.** A per-game journal with captures, tracked play time and your own notes, a timeline view and a Markdown export. Play time is only tracked while Hub is open and an NSA ID is set in Settings.
+- **Shareable Year in Review card.** A 1080x1350 post or 1080x1920 story PNG with your top games and stats. Games marked as spoilers are left out. Save it or send it straight to a friend.
+
+### Changed
+- Stats now shows tracked time played.
+
 ## [1.2.1] - 2026-11-10
 
 ### Fixed
