@@ -2,6 +2,15 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.4.0] - 2026-11-12
+
+### Changed
+- **Guess the game clues are blurred.** The cropped clue is now also softened, so names and HUD text can't be read but shapes and colours still give hints. The full, sharp screenshot still shows when the round is revealed.
+- **A tidier sidebar.** Tools are now a compact two-column grid instead of a long stack of buttons. Discover and Albums & tools can be collapsed with the arrow beside their heading (Hub remembers which you closed). In Peer Activity, Watch together, Voice call, Session album and a new **Games** menu share a grid; Vote on the best shot and Guess the game live inside Games, so new games can be added there without making the sidebar longer.
+
+### Fixed
+- **Highlight reel is sturdier on long renders.** If the tab goes to the background while a reel renders, it now pauses and continues when you come back (before, the browser's throttling could make it fail). Hub also keeps the screen awake while rendering, asks before you refresh or close the tab mid-render, and frees each clip's video memory as soon as that clip is done.
+
 ## [1.3.2] - 2026-11-12
 
 ### Fixed
