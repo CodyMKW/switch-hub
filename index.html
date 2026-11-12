@@ -112,6 +112,24 @@
         }
         .btn-discover:hover { color: white; background: rgba(255,255,255,0.05); }
         .nav-container { padding: 0 0.75rem; display: flex; flex-direction: column; gap: 0.25rem; }
+        /* compact tool grid + collapsible sections, so the sidebar doesn't grow with every new feature */
+        .tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; padding: 0 0.75rem; }
+        .tool-chip { padding: 0.5rem 0.55rem; border-radius: 0.4rem; background: transparent; border: 1px solid rgba(77,77,77,0.35); color: var(--switch-muted); font-size: 0.74rem; font-weight: 600; cursor: pointer; transition: 0.2s; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+        .tool-chip:hover { color: white; background: rgba(255,255,255,0.05); }
+        .tool-chip.wide { grid-column: 1 / -1; }
+        .collapse-toggle { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
+        .collapse-toggle:hover { color: white; }
+        .collapse-toggle .chev { font-size: 0.7rem; transition: transform 0.2s; }
+        .collapse-toggle.collapsed .chev { transform: rotate(-90deg); }
+        .collapse-body.collapsed { display: none !important; }
+        #albums-list { max-height: 9rem; overflow-y: auto; }
+        .peer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; margin-top: 0.5rem; }
+        .peer-chip { padding: 0.4rem 0.4rem; border: 1px solid #a855f7; color: #a855f7; background: transparent; border-radius: 0.3rem; font-size: 0.72rem; font-weight: 700; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+        .peer-chip:hover:not(:disabled) { background: rgba(168,85,247,0.12); }
+        .peer-chip:disabled { opacity: 0.5; cursor: default; }
+        .peer-chip.wide { grid-column: 1 / -1; }
+        .peer-sub { display: none; grid-template-columns: 1fr 1fr; gap: 0.35rem; margin-top: 0.35rem; padding: 0.4rem; border-radius: 0.4rem; background: rgba(168,85,247,0.07); }
+        .peer-sub.open { display: grid; }
         .nav-item {
             width: 100%; text-align: left; padding: 0.6rem 0.9rem; border-radius: 0.3rem; color: var(--switch-muted);
             background: transparent; border: none; border-left: 3px solid transparent; font-size: 0.8rem; font-weight: 500;
@@ -550,23 +568,25 @@
             <button class="nav-item" data-sort="game">Sort by Game</button>
         </nav>
 
-        <div class="nav-section-title" id="discover-title">Discover</div>
-        <div style="padding: 0 0.75rem; display: flex; flex-direction: column; gap: 0.4rem;" id="discover-buttons">
-            <button id="btn-random" class="btn-discover">🎲 Random Screenshot</button>
-            <button id="btn-on-this-day" class="btn-discover">📅 On This Day</button>
-            <button id="btn-install-app" class="btn-discover" style="display:none;">⬇️ Install as an app</button>
+        <div class="nav-section-title collapse-toggle" id="discover-title" data-collapse="discover"><span>Discover</span><span class="chev">▾</span></div>
+        <div class="tool-grid collapse-body" id="discover-buttons">
+            <button id="btn-random" class="tool-chip" title="Random screenshot">🎲 Random</button>
+            <button id="btn-on-this-day" class="tool-chip" title="On this day">📅 On this day</button>
+            <button id="btn-install-app" class="tool-chip wide" style="display:none;">⬇️ Install as an app</button>
         </div>
 
         <div id="local-tools" style="display: none;">
-            <div class="nav-section-title">Albums</div>
-            <div id="albums-list" style="padding: 0 0.75rem; display: flex; flex-direction: column; gap: 0.25rem;"></div>
-            <div style="padding: 0.4rem 0.75rem; display: flex; flex-direction: column; gap: 0.4rem;">
-                <button id="btn-new-album" class="btn-discover">➕ New Album</button>
-                <button id="btn-select-mode" class="btn-discover">☑️ Select</button>
-                <button id="btn-find-dupes" class="btn-discover">🧹 Find Duplicates</button>
-                <button id="btn-stats" class="btn-discover">📊 Stats &amp; Year in Review</button>
-                <button id="btn-reel" class="btn-discover">🎬 Highlight reel</button>
-                <button id="btn-journal" class="btn-discover">📓 Play-time journal</button>
+            <div class="nav-section-title collapse-toggle" data-collapse="tools"><span>Albums &amp; tools</span><span class="chev">▾</span></div>
+            <div class="collapse-body">
+                <div id="albums-list" style="padding: 0 0.75rem 0.4rem; display: flex; flex-direction: column; gap: 0.25rem;"></div>
+                <div class="tool-grid">
+                    <button id="btn-new-album" class="tool-chip" title="Make a new album">➕ New album</button>
+                    <button id="btn-select-mode" class="tool-chip" title="Pick several screenshots to album, send or zip">☑️ Select</button>
+                    <button id="btn-find-dupes" class="tool-chip" title="Find duplicate files">🧹 Duplicates</button>
+                    <button id="btn-stats" class="tool-chip" title="Stats and Year in Review">📊 Stats</button>
+                    <button id="btn-reel" class="tool-chip" title="Highlight reel maker">🎬 Reel</button>
+                    <button id="btn-journal" class="tool-chip" title="Play-time journal">📓 Journal</button>
+                </div>
             </div>
         </div>
 
@@ -580,11 +600,16 @@
             <div id="peer-loading-bar-wrap" class="hidden" style="margin-top: 0.4rem; height: 4px; background: rgba(255,255,255,0.1); border-radius: 9999px; overflow: hidden;">
                 <div id="peer-loading-bar" style="height: 100%; width: 0%; background: #a855f7; transition: width 0.2s;"></div>
             </div>
-            <button id="btn-watch-together" style="margin-top: 0.5rem; width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #a855f7; color: #a855f7; background: transparent; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">🎬 Watch together</button>
-            <button id="btn-session-album" style="margin-top: 0.4rem; width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #a855f7; color: #a855f7; background: transparent; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">🗂️ Session album (0)</button>
-            <button id="btn-vote" style="margin-top: 0.4rem; width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #a855f7; color: #a855f7; background: transparent; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">🗳️ Vote on the best shot</button>
-            <button id="btn-guess" style="margin-top: 0.4rem; width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #a855f7; color: #a855f7; background: transparent; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">🎯 Guess the game</button>
-            <button id="btn-voice-call" style="margin-top: 0.4rem; width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #a855f7; color: #a855f7; background: transparent; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">📞 Voice call</button>
+            <div class="peer-grid">
+                <button id="btn-watch-together" class="peer-chip" title="Browse screenshots together">🎬 Watch together</button>
+                <button id="btn-voice-call" class="peer-chip" title="Start a voice call">📞 Voice call</button>
+                <button id="btn-session-album" class="peer-chip" title="Shared album for tonight">🗂️ Session album (0)</button>
+                <button id="btn-games" class="peer-chip" title="Games to play with your friend">🎮 Games ▾</button>
+            </div>
+            <div class="peer-sub" id="games-sub">
+                <button id="btn-vote" class="peer-chip" title="Vote on the best shot">🗳️ Best shot vote</button>
+                <button id="btn-guess" class="peer-chip" title="Guess the game from a blurred crop">🎯 Guess the game</button>
+            </div>
             <button id="btn-jump-peer-viewing" style="display:none; margin-top: 0.5rem; width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #a855f7; color: #a855f7; background: rgba(168,85,247,0.08); border-radius: 0.25rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.03em; cursor: pointer;">▶ Jump to what they're viewing</button>
             <label style="display: flex; align-items: center; gap: 0.4rem; margin-top: 0.6rem; font-size: 0.7rem; color: var(--switch-muted); cursor: pointer;">
                 <input type="checkbox" id="setting-autofollow" style="width: 1rem; height: 1rem; accent-color: #a855f7;">
@@ -4917,8 +4942,13 @@
                         await new Promise((resolve, reject) => {
                             let last = -1, finished = false, lastCb = performance.now();
                             const onEnded = () => stop(); v.addEventListener('ended', onEnded, { once: true }); // a clip played to its very end sends no more frame callbacks
-                            const watchdog = setInterval(() => { if (!finished && v.ended) { stop(); return; } if (!finished && performance.now() - lastCb > 5000) { finished = true; clearInterval(watchdog); reject(new Error('Rendering stalled. Keep this tab in front while a clip is being rendered.')); } }, 1000);
-                            const stop = () => { finished = true; clearInterval(watchdog); v.removeEventListener('ended', onEnded); resolve(); };
+                            const onVis = () => { if (!document.hidden && !finished && v.paused && !v.ended) { lastCb = performance.now(); opts.onNote && opts.onNote(''); v.play().catch(() => {}); } };
+                            document.addEventListener('visibilitychange', onVis);
+                            const watchdog = setInterval(() => { if (!finished && v.ended) { stop(); return; }
+                                if (!finished && document.hidden) { // browsers freeze frames in background tabs: wait for the person to come back instead of failing
+                                    lastCb = performance.now(); if (!v.paused) v.pause(); opts.onNote && opts.onNote('Paused. This tab went to the background, so come back to it and rendering will continue.'); return;
+                                } if (!finished && performance.now() - lastCb > 5000) { finished = true; clearInterval(watchdog); document.removeEventListener('visibilitychange', onVis); reject(new Error('Rendering stalled. Keep this tab in front while a clip is being rendered.')); } }, 1000);
+                            const stop = () => { finished = true; clearInterval(watchdog); document.removeEventListener('visibilitychange', onVis); v.removeEventListener('ended', onEnded); resolve(); };
                             const onFrame = async (_n, meta) => {
                                 if (finished) return;
                                 lastCb = performance.now();
@@ -4934,12 +4964,12 @@
                                 v.requestVideoFrameCallback(onFrame);
                             };
                             v.requestVideoFrameCallback(onFrame);
-                            v.play().catch((e) => { finished = true; clearInterval(watchdog); reject(e); });
+                            v.play().catch((e) => { finished = true; clearInterval(watchdog); document.removeEventListener('visibilitychange', onVis); reject(e); });
                         });
                         v.pause();
                         // If the clip ran out a little early, hold its last frame so the rest of the reel (and the sound) stays in step.
                         if (!opts.isCancelled()) for (let tt = lastRel + 1 / fps; tt < seg.d - 0.5 / fps; tt += 1 / fps) { finishFrame(seg, tt); await pushFrame(seg.start + tt); }
-                    } finally { v.remove(); }
+                    } finally { try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} v.remove(); }
                 }
             }
             if (opts.isCancelled()) { try { venc.close(); } catch (e) {} return null; }
@@ -5039,16 +5069,20 @@
                 if (busy) return;
                 if (refreshSum() > REEL_MAX_SECONDS) { showToast('That reel is longer than 3 minutes. Remove or shorten some items.', 'yellow'); return; }
                 busy = true; cancelled = false; outBlob = null; preview.style.display = 'none'; renderBtn.disabled = true; cancelBtn.textContent = 'Cancel render';
+                const leaveGuard = (ev) => { ev.preventDefault(); ev.returnValue = ''; };
+                window.addEventListener('beforeunload', leaveGuard); // refreshing or closing mid-render asks first
+                let wake = null; try { if (navigator.wakeLock) wake = await navigator.wakeLock.request('screen'); } catch (e) {}
+                const releaseGuards = () => { window.removeEventListener('beforeunload', leaveGuard); try { wake && wake.release(); } catch (e) {} };
                 prog.style.display = 'block'; progFill.style.width = '0%'; status.textContent = 'Rendering... (clips render in real time)';
                 try {
-                    const blob = await renderHighlightReel(items.map(it => ({ ...it })), { title: titleIn.value.trim(), captions: capChk.checked, fade: fadeChk.checked, height: +resSel.value, onProgress: (p) => { progFill.style.width = Math.round(p * 100) + '%'; }, isCancelled: () => cancelled });
+                    const blob = await renderHighlightReel(items.map(it => ({ ...it })), { title: titleIn.value.trim(), captions: capChk.checked, fade: fadeChk.checked, height: +resSel.value, onNote: (n) => { if (busy) status.textContent = n || 'Rendering... (clips render in real time)'; }, onProgress: (p) => { progFill.style.width = Math.round(p * 100) + '%'; }, isCancelled: () => cancelled });
                     if (blob) {
                         outBlob = blob; progFill.style.width = '100%'; status.textContent = `Done: ${(blob.size / 1048576).toFixed(1)} MB. Preview it below.`;
                         preview.src = URL.createObjectURL(blob); preview.style.display = 'block';
                         saveBtn.disabled = false; sendBtn.disabled = false;
                     } else status.textContent = 'Cancelled.';
                 } catch (e) { console.error(e); status.textContent = 'Could not render: ' + (e && e.message ? e.message : e); }
-                busy = false; renderBtn.disabled = false; cancelBtn.textContent = 'Close';
+                releaseGuards(); busy = false; renderBtn.disabled = false; cancelBtn.textContent = 'Close';
             }, 'tool-btn primary');
             const saveBtn = toolBtn('⬇ Save video', () => { if (outBlob) downloadBlob(outBlob, `highlight-reel-${new Date().toISOString().slice(0, 10)}.webm`); });
             const sendBtn = toolBtn('💬 Send to chat', () => { if (outBlob) { const f = new File([outBlob], `highlight-reel-${new Date().toISOString().slice(0, 10)}.webm`, { type: 'video/webm' }); close(); stageFileForFriend(f, 'Highlight reel'); } });
@@ -5267,8 +5301,12 @@
                 // avoid the very edges (HUD text often sits there) most of the time
                 const x = Math.round((bmp.width - cw) * (0.1 + Math.random() * 0.8)), y = Math.round((bmp.height - ch) * (0.1 + Math.random() * 0.8));
                 const outW = 420, outH = Math.round(outW * ch / cw);
+                // Shrink hard, then stretch back with smoothing: a soft blur that works in every browser. The names, faces and HUD text turn to mush but shapes and colours stay.
+                const s1 = document.createElement('canvas'); s1.width = Math.max(8, Math.round(outW / 7)); s1.height = Math.max(8, Math.round(outH / 7));
+                const g1 = s1.getContext('2d'); g1.imageSmoothingQuality = 'high'; g1.drawImage(bmp, x, y, cw, ch, 0, 0, s1.width, s1.height);
                 const c = document.createElement('canvas'); c.width = outW; c.height = outH;
-                c.getContext('2d').drawImage(bmp, x, y, cw, ch, 0, 0, outW, outH);
+                const g = c.getContext('2d'); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+                g.drawImage(s1, 0, 0, s1.width, s1.height, 0, 0, outW, outH);
                 return c.toDataURL('image/jpeg', 0.72);
             } finally { try { bmp.close(); } catch (e) {} }
         }
@@ -5659,6 +5697,27 @@
             await draw();
         }
 
+
+        // ---- Sidebar: collapsible sections and the Games menu ----
+        (function setupSidebarMenus() {
+            let saved = {}; try { saved = JSON.parse(localStorage.getItem('switch_hub_sidebar') || '{}') || {}; } catch (e) {}
+            const save = () => { try { localStorage.setItem('switch_hub_sidebar', JSON.stringify(saved)); } catch (e) {} };
+            document.querySelectorAll('.collapse-toggle[data-collapse]').forEach(h => {
+                const key = h.dataset.collapse; const body = h.nextElementSibling; if (!body) return;
+                const apply = (c) => { h.classList.toggle('collapsed', c); body.classList.toggle('collapsed', c); h.setAttribute('aria-expanded', String(!c)); };
+                h.tabIndex = 0; h.setAttribute('role', 'button'); apply(!!saved[key]);
+                const flip = () => { saved[key] = !h.classList.contains('collapsed'); apply(saved[key]); save(); };
+                h.addEventListener('click', flip);
+                h.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
+            });
+            const gb = document.getElementById('btn-games'), sub = document.getElementById('games-sub');
+            if (gb && sub) {
+                const setOpen = (o) => { sub.classList.toggle('open', o); gb.textContent = o ? '🎮 Games ▴' : '🎮 Games ▾'; };
+                gb.addEventListener('click', () => setOpen(!sub.classList.contains('open')));
+                sub.addEventListener('click', (e) => { if (e.target.closest('button')) setOpen(false); });
+            }
+        })();
+
         // ============================================================
         // ALBUMS, SELECT MODE, ZIP, DUPLICATES (my own screenshots)
         // ============================================================
@@ -5739,7 +5798,7 @@
                 row.appendChild(btn); row.appendChild(edit); row.appendChild(del);
                 list.appendChild(row);
             });
-            document.getElementById('btn-select-mode').textContent = selectMode ? '☑️ Exit Select' : '☑️ Select';
+            document.getElementById('btn-select-mode').textContent = selectMode ? '☑️ Done' : '☑️ Select';
         }
 
         function selectedMedia() { return allMediaFiles.filter(m => selectedObjs.has(m)); }
