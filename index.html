@@ -2805,27 +2805,32 @@
                 if (!cur || (b.track === 1 && b.key && b.t > cur.t0) || b.t - cur.t0 > 20000) { cur = { t0: Math.max(0, Math.round(b.t)), blocks: [] }; clusters.push(cur); }
                 cur.blocks.push(b);
             }
-            const clusterBytes = [], cues = [];
-            let pos = info.length + tracks.length;
+            // Built as a list of pieces handed straight to a Blob, so a long video is never copied into one giant array
+            // (that used to take several times the file's size in memory and could crash the tab).
+            const clusterParts = [], cues = [];
+            let pos = info.length + tracks.length, segLen = info.length + tracks.length;
+            const idSeg = Uint8Array.of(0x1F, 0x43, 0xB6, 0x75);
             for (const c of clusters) {
-                const parts = [ebmlUint([0xE7], c.t0)];
+                const tsEl = ebmlUint([0xE7], c.t0);
+                const pieces = [tsEl]; let inner = tsEl.length;
                 for (const b of c.blocks) {
                     const rel = Math.max(-32768, Math.min(32767, Math.round(b.t) - c.t0));
                     const hdr = Uint8Array.of(0x80 | b.track, (rel >> 8) & 255, rel & 255, b.key ? 0x80 : 0);
-                    parts.push(ebmlEl([0xA3], ebmlCat([hdr, b.data])));
+                    const bl = hdr.length + b.data.length, size = ebmlSize(bl);
+                    pieces.push(Uint8Array.of(0xA3), size, hdr, b.data); inner += 1 + size.length + bl;
                 }
-                const bytes = ebmlEl([0x1F, 0x43, 0xB6, 0x75], ebmlCat(parts));
+                const sz = ebmlSize(inner), total = idSeg.length + sz.length + inner;
                 cues.push(ebmlEl([0xBB], ebmlCat([ebmlUint([0xB3], c.t0), ebmlEl([0xB7], ebmlCat([ebmlUint([0xF7], 1), ebmlUint([0xF1], pos)]))])));
-                pos += bytes.length;
-                clusterBytes.push(bytes);
+                pos += total; segLen += total;
+                clusterParts.push(idSeg, sz, ...pieces);
             }
             const cuesEl = ebmlEl([0x1C, 0x53, 0xBB, 0x6B], ebmlCat(cues));
-            const segPayload = ebmlCat([info, tracks, ...clusterBytes, cuesEl]);
+            segLen += cuesEl.length;
             const header = ebmlEl([0x1A, 0x45, 0xDF, 0xA3], ebmlCat([
                 ebmlUint([0x42, 0x86], 1), ebmlUint([0x42, 0xF7], 1), ebmlUint([0x42, 0xF2], 4), ebmlUint([0x42, 0xF3], 8),
                 ebmlStr([0x42, 0x82], 'webm'), ebmlUint([0x42, 0x87], 4), ebmlUint([0x42, 0x85], 2)
             ]));
-            return new Blob([header, ebmlEl([0x18, 0x53, 0x80, 0x67], segPayload)], { type: 'video/webm' });
+            return new Blob([header, Uint8Array.of(0x18, 0x53, 0x80, 0x67), ebmlSize(segLen), info, tracks, ...clusterParts, cuesEl], { type: 'video/webm' });
         }
 
         function webCodecsExportAvailable(v) {
@@ -4833,7 +4838,7 @@
             return packets.length ? { channels, rate: 48000, preSkip, head, packets } : null;
         }
         async function pickVideoEncoderConfig(w, h, fps) {
-            const bitrate = Math.min(14000000, Math.max(4000000, Math.round(w * h * 6)));
+            const bitrate = Math.min(7000000, Math.max(3000000, Math.round(w * h * 3))); // game footage looks fine here, and long reels stay a sensible size
             for (const [codec, id] of [['vp09.00.40.08', 'V_VP9'], ['vp8', 'V_VP8']]) {
                 const cfg = { codec, width: w, height: h, bitrate, framerate: fps, latencyMode: 'quality' };
                 let ok = false; try { ok = (await VideoEncoder.isConfigSupported(cfg)).supported; } catch (e) {}
@@ -4902,7 +4907,10 @@
                 const vf = new VideoFrame(cv, { timestamp: Math.round(tSec * 1e6) });
                 const key = tSec - lastKey >= 2; if (key) lastKey = tSec;
                 venc.encode(vf, { keyFrame: key }); vf.close(); frameCount++;
-                if (venc.encodeQueueSize > 8) await new Promise(r => setTimeout(r, 0));
+                // Wait for the encoder to catch up. Without this, still images (which draw instantly) piled up hundreds of raw frames and the tab ran out of memory.
+                let guard = 0;
+                while (venc.encodeQueueSize > 4 && guard++ < 400) await new Promise(r => { const done = () => { venc.removeEventListener('dequeue', done); r(); }; venc.addEventListener('dequeue', done); setTimeout(done, 40); });
+                if (encError) throw encError;
                 if (frameCount % 15 === 0) await new Promise(r => setTimeout(r, 0));
             };
             const fadeAlpha = (t, d) => { // 1 = fully black

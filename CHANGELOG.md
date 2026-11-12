@@ -2,6 +2,14 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.4.1] - 2026-11-12
+
+### Fixed
+- **Long highlight reels crashed the tab (black screen).** Two memory problems, both worst on long or 1080p reels:
+  - Still images are drawn instantly, so the encoder fell behind and hundreds of raw video frames piled up waiting. Hub now waits for the encoder to catch up (a 160-second 1080p test reel went from crashing at 5.9 GB of browser memory to finishing at about 1 GB).
+  - Finishing the file used to build several full copies of the video in memory. It is now assembled piece by piece, which also helps the clip trimmer.
+- Reels are encoded at a slightly lower bitrate (still sharp for game footage), so long reels make smaller files that are easier to send.
+
 ## [1.4.0] - 2026-11-12
 
 ### Changed
