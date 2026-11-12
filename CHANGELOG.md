@@ -2,6 +2,11 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.3.2] - 2026-11-12
+
+### Fixed
+- **Highlight reel stalled with "Rendering stalled" on long clips.** A clip set to play all the way to its last frame stopped sending frame updates once it ended, so the stall check fired even though nothing was wrong (it showed up right at the end of the first clip). Clips are now ended by the video's own "finished" signal, and if a clip runs out a moment early its last frame is held so the rest of the reel and its sound stay in step. A 30 second clip played in full now renders to exactly 30 seconds. The tab still needs to stay in front while a reel renders.
+
 ## [1.3.1] - 2026-11-12
 
 ### Fixed
