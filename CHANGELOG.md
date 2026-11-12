@@ -2,6 +2,14 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.3.1] - 2026-11-12
+
+### Fixed
+- **The highlight reel showed pictures you didn't pick.** Two captures of the same game with the same file time were treated as one, so ticking one also pulled in its twins. Selection now tracks the exact picture you tapped, so the reel lists only what you selected.
+
+### Changed
+- **Annotate text can be moved, resized and rotated.** Tap a piece of text to select it, drag it to move, drag the square corner handle to resize, drag the round handle above it to rotate (hold Shift to snap to 15 degrees), and double-click to change the words. Every change can be undone and redone. Clicking away while typing now keeps the text instead of dropping it.
+
 ## [1.3.0] - 2026-11-12
 
 ### Added
