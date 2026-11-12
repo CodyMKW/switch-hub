@@ -4910,14 +4910,15 @@
                         }
                     } finally { try { bmp.close(); } catch (e) {} }
                 } else {
-                    const v = await openWorkVideo(seg.media.url, true);
+                    const v = await openWorkVideo(seg.media.url, true); let lastRel = -1 / fps;
                     try {
                         if (typeof v.requestVideoFrameCallback !== 'function') throw new Error("This browser can't read clip frames (try a recent Chrome or Edge).");
                         v.currentTime = seg.vstart; await waitForEvent(v, 'seeked', 8000, 'Could not jump into a clip.');
                         await new Promise((resolve, reject) => {
                             let last = -1, finished = false, lastCb = performance.now();
-                            const watchdog = setInterval(() => { if (!finished && performance.now() - lastCb > 5000) { finished = true; clearInterval(watchdog); reject(new Error('Rendering stalled. Keep this tab in front while a clip is being rendered.')); } }, 1000);
-                            const stop = () => { if (!finished) { finished = true; } clearInterval(watchdog); resolve(); };
+                            const onEnded = () => stop(); v.addEventListener('ended', onEnded, { once: true }); // a clip played to its very end sends no more frame callbacks
+                            const watchdog = setInterval(() => { if (!finished && v.ended) { stop(); return; } if (!finished && performance.now() - lastCb > 5000) { finished = true; clearInterval(watchdog); reject(new Error('Rendering stalled. Keep this tab in front while a clip is being rendered.')); } }, 1000);
+                            const stop = () => { finished = true; clearInterval(watchdog); v.removeEventListener('ended', onEnded); resolve(); };
                             const onFrame = async (_n, meta) => {
                                 if (finished) return;
                                 lastCb = performance.now();
@@ -4927,7 +4928,7 @@
                                     last = mt;
                                     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
                                     fitContain(ctx, v, v.videoWidth, v.videoHeight, W, H, 1);
-                                    finishFrame(seg, Math.max(0, rel)); await pushFrame(seg.start + Math.max(0, rel));
+                                    finishFrame(seg, Math.max(0, rel)); await pushFrame(seg.start + Math.max(0, rel)); lastRel = Math.max(0, rel);
                                     report(seg.start + rel);
                                 }
                                 v.requestVideoFrameCallback(onFrame);
@@ -4936,6 +4937,8 @@
                             v.play().catch((e) => { finished = true; clearInterval(watchdog); reject(e); });
                         });
                         v.pause();
+                        // If the clip ran out a little early, hold its last frame so the rest of the reel (and the sound) stays in step.
+                        if (!opts.isCancelled()) for (let tt = lastRel + 1 / fps; tt < seg.d - 0.5 / fps; tt += 1 / fps) { finishFrame(seg, tt); await pushFrame(seg.start + tt); }
                     } finally { v.remove(); }
                 }
             }
