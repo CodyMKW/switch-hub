@@ -285,6 +285,50 @@
         .album-row .nav-item { flex: 1; text-align: left; }
         .album-row .album-mini { background: none; border: none; color: var(--switch-muted); cursor: pointer; font-size: 0.8rem; padding: 0.2rem; }
         .album-row .album-mini:hover { color: white; }
+        /* ---- Creative tools (editor, reel, vote, guess, journal) ---- */
+        .tool-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 88; display: flex; align-items: center; justify-content: center; padding: 0.75rem; }
+        .tool-card { background: var(--switch-darker); border: 1px solid rgba(77,77,77,0.35); border-radius: 0.75rem; padding: 1rem; max-width: 100%; max-height: 96vh; overflow: auto; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 0.6rem; }
+        .tool-bar { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+        .tool-bar button, .tool-btn { padding: 0.35rem 0.75rem; border-radius: 9999px; border: 1px solid rgba(77,77,77,0.5); background: var(--switch-light); color: white; font-size: 0.78rem; font-weight: 700; cursor: pointer; }
+        .tool-bar button.active, .tool-btn.active { background: var(--switch-cyan); color: #04222b; border-color: var(--switch-cyan); }
+        .tool-bar button:disabled, .tool-btn:disabled { opacity: 0.4; cursor: default; }
+        .tool-btn.primary { background: #22c55e; border-color: #22c55e; color: #04200d; }
+        .tool-btn.danger { background: rgba(230,0,18,0.2); border-color: var(--switch-red); }
+        .tool-sep { width: 1px; align-self: stretch; background: rgba(255,255,255,0.15); margin: 0 0.15rem; }
+        .tool-bar input[type=color] { width: 2rem; height: 1.8rem; padding: 0; border: 1px solid rgba(255,255,255,0.3); border-radius: 0.3rem; background: none; cursor: pointer; }
+        .tool-bar input[type=range] { width: 6rem; }
+        .tool-title { font-size: 1rem; font-weight: 800; color: white; }
+        .tool-hint { font-size: 0.75rem; color: var(--switch-muted); line-height: 1.4; }
+        .editor-stage { position: relative; display: flex; justify-content: center; align-items: center; background: #000; border-radius: 0.5rem; overflow: hidden; touch-action: none; }
+        .editor-stage canvas { max-width: min(88vw, 1100px); max-height: 62vh; cursor: crosshair; display: block; touch-action: none; }
+        .editor-stage input.editor-text { position: absolute; background: rgba(0,0,0,0.75); color: #fff; border: 1px dashed var(--switch-cyan); border-radius: 0.3rem; padding: 0.15rem 0.4rem; font-weight: 800; outline: none; min-width: 6rem; z-index: 3; }
+        .reel-list { display: flex; flex-direction: column; gap: 0.4rem; max-height: 38vh; overflow: auto; }
+        .reel-row { display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 0.5rem; padding: 0.35rem 0.5rem; font-size: 0.78rem; color: white; }
+        .reel-row img, .reel-row .reel-ph { width: 64px; height: 36px; object-fit: cover; border-radius: 0.25rem; background: #000; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .reel-row .reel-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .reel-row input[type=number] { width: 4rem; background: var(--switch-light); color: white; border: 1px solid rgba(77,77,77,0.6); border-radius: 0.3rem; padding: 0.15rem 0.3rem; }
+        .reel-row button { padding: 0.15rem 0.5rem; border-radius: 0.3rem; border: 1px solid rgba(77,77,77,0.5); background: var(--switch-light); color: white; cursor: pointer; }
+        .vote-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 0.5rem; max-height: 52vh; overflow: auto; }
+        .vote-tile { position: relative; border-radius: 0.5rem; overflow: hidden; border: 2px solid transparent; cursor: pointer; background: #000; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; color: white; }
+        .vote-tile img { width: 100%; height: 100%; object-fit: cover; }
+        .vote-tile.picked { border-color: #22c55e; box-shadow: 0 0 0 2px rgba(34,197,94,0.35); }
+        .vote-tile.winner { border-color: #facc15; box-shadow: 0 0 0 3px rgba(250,204,21,0.5); }
+        .vote-tile .vote-tag { position: absolute; left: 0.25rem; bottom: 0.25rem; display: flex; gap: 0.2rem; font-size: 0.65rem; font-weight: 800; }
+        .vote-tile .vote-tag span { background: rgba(0,0,0,0.75); border-radius: 9999px; padding: 0.05rem 0.4rem; }
+        .guess-img { width: min(80vw, 460px); border-radius: 0.6rem; background: #000; display: block; margin: 0 auto; }
+        .guess-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+        .guess-choices button { padding: 0.6rem 0.7rem; border-radius: 0.6rem; border: 1px solid rgba(77,77,77,0.6); background: var(--switch-light); color: white; font-size: 0.82rem; font-weight: 700; cursor: pointer; text-align: left; }
+        .guess-choices button.right { background: #22c55e; border-color: #22c55e; color: #04200d; }
+        .guess-choices button.wrong { background: rgba(230,0,18,0.3); border-color: var(--switch-red); }
+        .guess-choices button.mine { outline: 2px solid var(--switch-cyan); }
+        .guess-score { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 800; color: white; }
+        .journal-row { display: flex; gap: 0.7rem; background: rgba(255,255,255,0.05); border-radius: 0.6rem; padding: 0.55rem; }
+        .journal-row img, .journal-row .journal-ph { width: 96px; height: 54px; object-fit: cover; border-radius: 0.35rem; background: #000; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .journal-row .j-name { font-weight: 800; color: white; font-size: 0.9rem; }
+        .journal-row .j-meta { font-size: 0.72rem; color: var(--switch-muted); margin: 0.1rem 0 0.3rem; }
+        .journal-row textarea { width: 100%; background: var(--switch-light); color: white; border: 1px solid rgba(77,77,77,0.6); border-radius: 0.4rem; padding: 0.3rem 0.5rem; font-size: 0.78rem; resize: vertical; min-height: 2.2rem; font-family: inherit; }
+        .progress-line { height: 6px; background: rgba(255,255,255,0.12); border-radius: 9999px; overflow: hidden; }
+        .progress-line > div { height: 100%; width: 0%; background: var(--switch-cyan); transition: width 0.15s; }
         .stats-tabs { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
         .stats-tabs button { padding: 0.3rem 0.8rem; border-radius: 9999px; border: 1px solid rgba(77,77,77,0.5); background: var(--switch-light); color: white; font-size: 0.78rem; font-weight: 600; cursor: pointer; }
         .stats-tabs button.active { background: var(--switch-cyan); color: #04222b; border-color: var(--switch-cyan); }
@@ -521,6 +565,8 @@
                 <button id="btn-select-mode" class="btn-discover">☑️ Select</button>
                 <button id="btn-find-dupes" class="btn-discover">🧹 Find Duplicates</button>
                 <button id="btn-stats" class="btn-discover">📊 Stats &amp; Year in Review</button>
+                <button id="btn-reel" class="btn-discover">🎬 Highlight reel</button>
+                <button id="btn-journal" class="btn-discover">📓 Play-time journal</button>
             </div>
         </div>
 
@@ -536,6 +582,8 @@
             </div>
             <button id="btn-watch-together" style="margin-top: 0.5rem; width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #a855f7; color: #a855f7; background: transparent; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">🎬 Watch together</button>
             <button id="btn-session-album" style="margin-top: 0.4rem; width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #a855f7; color: #a855f7; background: transparent; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">🗂️ Session album (0)</button>
+            <button id="btn-vote" style="margin-top: 0.4rem; width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #a855f7; color: #a855f7; background: transparent; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">🗳️ Vote on the best shot</button>
+            <button id="btn-guess" style="margin-top: 0.4rem; width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #a855f7; color: #a855f7; background: transparent; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">🎯 Guess the game</button>
             <button id="btn-voice-call" style="margin-top: 0.4rem; width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #a855f7; color: #a855f7; background: transparent; border-radius: 0.3rem; font-size: 0.75rem; font-weight: 700; cursor: pointer;">📞 Voice call</button>
             <button id="btn-jump-peer-viewing" style="display:none; margin-top: 0.5rem; width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #a855f7; color: #a855f7; background: rgba(168,85,247,0.08); border-radius: 0.25rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.03em; cursor: pointer;">▶ Jump to what they're viewing</button>
             <label style="display: flex; align-items: center; gap: 0.4rem; margin-top: 0.6rem; font-size: 0.7rem; color: var(--switch-muted); cursor: pointer;">
@@ -663,6 +711,7 @@
                 <button id="btn-send-to-chat" class="btn-icon" title="Send to Chat" style="color: var(--switch-cyan);">💬</button>
                 <button id="btn-add-session" class="btn-icon" title="Add to the shared session album" style="display:none;">🗂️</button>
                 <button id="btn-clip-tools" class="btn-icon" title="Trim this clip or make a GIF" style="display:none;">✂️</button>
+                <button id="btn-edit-media" class="btn-icon" title="Redact or annotate a copy of this screenshot" style="display:none;">🖍️</button>
                 <button id="btn-star-media" class="btn-icon btn-star-media" style="display:none;" title="Star this for your peer">⭐</button>
                 <button id="btn-close-lightbox" class="btn-icon">
                     <svg style="width: 1.5rem; height: 1.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -701,6 +750,7 @@
         <button id="sel-send">💬 Send to chat</button>
         <button id="sel-session">🗂️ Add to session</button>
         <button id="sel-zip">📦 Download zip</button>
+        <button id="sel-reel">🎬 Make a reel</button>
         <button id="sel-cancel">Done</button>
     </div>
 
@@ -1110,6 +1160,7 @@
             if (myProfile.nsaId) ids.add(myProfile.nsaId);
             friends.forEach(f => { if (f.presenceNsaId) ids.add(f.presenceNsaId); });
             await Promise.all([...ids].filter(Boolean).map(fetchPresence));
+            try { journalFromPresenceCache(); } catch (e) { /* journal not ready yet */ }
             renderPresenceList();
             renderMyProfileCard();
             renderFriendList();
@@ -1656,6 +1707,8 @@
                 peerTyping = false;
                 resetWatchState();
                 resetCallState();
+                resetVoteState();
+                resetGuessState();
                 sessionPile = [];
                 updateSessionButton();
                 showToast(`${friend.name} went offline`);
@@ -1753,6 +1806,8 @@
             }
             else if (typeof data.type === 'string' && data.type.startsWith('call_')) { handleCallMessage(data, friend); }
             else if (typeof data.type === 'string' && data.type.startsWith('wt_')) { handleWtMessage(data, friend); }
+            else if (typeof data.type === 'string' && data.type.startsWith('vote_')) { handleVoteMessage(data, friend); }
+            else if (typeof data.type === 'string' && data.type.startsWith('guess_')) { handleGuessMessage(data, friend); }
             else if (data.type === 'sess_add') {
                 const thumb = (typeof data.thumb === 'string' && data.thumb.startsWith('data:image/') && data.thumb.length < 200000) ? data.thumb : '';
                 const entry = {
@@ -2405,6 +2460,12 @@
             }
             const actions = document.createElement('div');
             actions.className = 'modal-actions';
+            if (sessionPile.length >= 2) {
+                const vb = document.createElement('button'); vb.className = 'btn-save'; vb.textContent = '🗳️ Start a vote';
+                vb.addEventListener('click', () => { modal.remove(); startVote(); });
+                actions.appendChild(vb);
+            }
+            { const bb = document.createElement('button'); bb.className = 'btn-cancel'; bb.textContent = '🏆 Best of'; bb.addEventListener('click', () => { modal.remove(); showBestOfModal(); }); actions.appendChild(bb); }
             if (sessionPile.length) {
                 const clear = document.createElement('button');
                 clear.className = 'btn-cancel';
@@ -2774,33 +2835,7 @@
                         const off = new OfflineAudioContext(channels, Math.ceil(dur * 48000), 48000);
                         const src = off.createBufferSource(); src.buffer = decoded; src.connect(off.destination); src.start(0, start, dur);
                         const pcm = await off.startRendering();
-                        const acfg = { codec: 'opus', sampleRate: 48000, numberOfChannels: channels, bitrate: 128000 };
-                        if (!(await AudioEncoder.isConfigSupported(acfg)).supported) throw new Error('no opus');
-                        const packets = []; let head = null;
-                        aenc = new AudioEncoder({
-                            output: (chunk, meta) => {
-                                const d = new Uint8Array(chunk.byteLength); chunk.copyTo(d);
-                                packets.push({ t: chunk.timestamp / 1000, data: d });
-                                if (!head && meta && meta.decoderConfig && meta.decoderConfig.description) { const dsc = meta.decoderConfig.description; head = new Uint8Array(dsc instanceof ArrayBuffer ? dsc : dsc.buffer.slice(dsc.byteOffset, dsc.byteOffset + dsc.byteLength)); }
-                            },
-                            error: (e) => console.error('audio encoder', e)
-                        });
-                        aenc.configure(acfg);
-                        const FR = 960; // 20 ms
-                        for (let o = 0; o < pcm.length; o += FR) {
-                            const n = Math.min(FR, pcm.length - o);
-                            const planar = new Float32Array(n * channels);
-                            for (let c = 0; c < channels; c++) planar.set(pcm.getChannelData(c).subarray(o, o + n), c * n);
-                            const ad = new AudioData({ format: 'f32-planar', sampleRate: 48000, numberOfFrames: n, numberOfChannels: channels, timestamp: Math.round(o / 48000 * 1e6), data: planar });
-                            aenc.encode(ad); ad.close();
-                            if (aenc.encodeQueueSize > 20) await new Promise(r => setTimeout(r, 0));
-                        }
-                        await aenc.flush();
-                        if (!head) { // build a standard OpusHead if the encoder didn't supply one
-                            head = new Uint8Array(19); head.set([0x4F, 0x70, 0x75, 0x73, 0x48, 0x65, 0x61, 0x64, 1, channels, 312 & 255, 312 >> 8, 0x80, 0xBB, 0, 0, 0, 0, 0]);
-                        }
-                        const preSkip = head[10] | (head[11] << 8);
-                        if (packets.length) audio = { channels, rate: 48000, preSkip, head, packets };
+                        audio = await encodeOpusPcm(pcm, channels);
                     } catch (e) { console.warn('Exporting without audio:', e); audio = null; }
                     if (aenc) { try { aenc.close(); } catch (e) {} aenc = null; }
                 }
@@ -3254,6 +3289,11 @@
         function updateLightboxFooter() {
             const sessBtn = document.getElementById('btn-add-session');
             if (sessBtn) sessBtn.style.display = (activeConnection && activeConnection.open) ? 'flex' : 'none';
+            const editBtn = document.getElementById('btn-edit-media');
+            if (editBtn) {
+                const cur = activeMediaList[currentLightboxIndex];
+                editBtn.style.display = (cur && cur.type === 'image' && isLightboxOpen() && (cur.isRemote ? !!cur._loadedBlob : !!cur.file)) ? 'flex' : 'none';
+            }
             const clipBtn = document.getElementById('btn-clip-tools');
             if (clipBtn) {
                 const cur = activeMediaList[currentLightboxIndex];
@@ -3453,6 +3493,13 @@
                 <button id="btn-remove-pending-attachment" title="Remove">✕</button>
             `;
             document.getElementById('btn-remove-pending-attachment').addEventListener('click', clearPendingAttachment);
+            if (pendingAttachment.isImage) {
+                const editB = document.createElement('button');
+                editB.id = 'btn-edit-pending-attachment'; editB.title = 'Redact or annotate before sending'; editB.textContent = '🖍️';
+                editB.style.cssText = 'background:none;border:none;color:white;cursor:pointer;font-size:1.1rem;padding:0 0.4rem;';
+                editB.addEventListener('click', () => openImageEditor(pendingAttachment.file, { name: pendingAttachment.file.name, replacePending: true }));
+                document.getElementById('btn-remove-pending-attachment').before(editB);
+            }
         }
 
         function updateSendButtonState() {
@@ -4440,6 +4487,1107 @@
         // GALLERY: the core rendering engine (sort, filter, paginate, group)
         // ============================================================
         // ============================================================
+        // CREATIVE TOOLS: shared helpers
+        // ============================================================
+        function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+        function toolBtn(label, onClick, cls) { const b = el('button', cls || 'tool-btn', label); b.type = 'button'; if (onClick) b.addEventListener('click', onClick); return b; }
+        function openToolModal(id, width) {
+            const old = document.getElementById(id); if (old) old.remove();
+            const modal = el('div', 'tool-modal'); modal.id = id;
+            const card = el('div', 'tool-card'); if (width) card.style.width = width;
+            modal.appendChild(card);
+            document.body.appendChild(modal);
+            return { modal, card, close: () => modal.remove() };
+        }
+        // Puts a file into the chat composer for a friend (picking the friend if needed), the same way "Send to chat" does.
+        function stageFileForFriend(file, label) {
+            const proceed = (friend) => {
+                if (!friend) return;
+                if (activeFriendId !== friend.id) {
+                    activeFriendId = friend.id;
+                    if (connectedFriendId !== friend.id) connectToFriend(friend);
+                    renderFriendList();
+                }
+                stageAttachment(file, label);
+                switchView('chat');
+                showToast('Ready in the chat. Add a note and hit send!', 'purple');
+            };
+            if (friends.length === 0) { showToast("You don't have any friends added yet, so there's nobody to send to.", 'yellow'); return false; }
+            if (activeFriendId) proceed(friends.find(f => f.id === activeFriendId));
+            else if (friends.length === 1) proceed(friends[0]);
+            else showFriendPickerModal(proceed);
+            return true;
+        }
+        function canvasToBlob(canvas, type, q) { return new Promise((res) => canvas.toBlob(res, type, q)); }
+
+        // ============================================================
+        // REDACT + ANNOTATE EDITOR
+        // ============================================================
+        // Draws a pixelated version of a region (strong enough that text underneath can't be read back).
+        function pixelateRegion(ctx, src, x, y, w, h) {
+            x = Math.max(0, Math.round(x)); y = Math.max(0, Math.round(y));
+            w = Math.min(src.width - x, Math.round(w)); h = Math.min(src.height - y, Math.round(h));
+            if (w < 2 || h < 2) return;
+            const block = Math.max(12, Math.min(90, Math.round(Math.min(w, h) / 3)));
+            const tw = Math.max(1, Math.ceil(w / block)), th = Math.max(1, Math.ceil(h / block));
+            const tmp = document.createElement('canvas'); tmp.width = tw; tmp.height = th;
+            const t = tmp.getContext('2d'); t.imageSmoothingEnabled = true;
+            t.drawImage(src, x, y, w, h, 0, 0, tw, th);
+            ctx.save(); ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(tmp, 0, 0, tw, th, x, y, w, h);
+            ctx.restore();
+        }
+        function drawArrow(ctx, x1, y1, x2, y2, lw) {
+            const ang = Math.atan2(y2 - y1, x2 - x1), head = Math.max(lw * 4, 14);
+            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - Math.cos(ang) * head * 0.6, y2 - Math.sin(ang) * head * 0.6); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(x2, y2);
+            ctx.lineTo(x2 - head * Math.cos(ang - 0.45), y2 - head * Math.sin(ang - 0.45));
+            ctx.lineTo(x2 - head * Math.cos(ang + 0.45), y2 - head * Math.sin(ang + 0.45));
+            ctx.closePath(); ctx.fill();
+        }
+        function applyEditorOp(ctx, op, base) {
+            ctx.save();
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+            ctx.strokeStyle = op.color; ctx.fillStyle = op.color; ctx.lineWidth = op.lw;
+            const x = Math.min(op.x1, op.x2), y = Math.min(op.y1, op.y2), w = Math.abs(op.x2 - op.x1), h = Math.abs(op.y2 - op.y1);
+            if (op.type === 'pixel') pixelateRegion(ctx, ctx.canvas, x, y, w, h);
+            else if (op.type === 'box') { ctx.fillStyle = '#000'; ctx.fillRect(x, y, w, h); }
+            else if (op.type === 'rect') ctx.strokeRect(x, y, w, h);
+            else if (op.type === 'ellipse') { ctx.beginPath(); ctx.ellipse(x + w / 2, y + h / 2, Math.max(1, w / 2), Math.max(1, h / 2), 0, 0, Math.PI * 2); ctx.stroke(); }
+            else if (op.type === 'arrow') drawArrow(ctx, op.x1, op.y1, op.x2, op.y2, op.lw);
+            else if (op.type === 'pen' && op.pts.length) {
+                ctx.beginPath(); ctx.moveTo(op.pts[0][0], op.pts[0][1]);
+                for (let i = 1; i < op.pts.length; i++) ctx.lineTo(op.pts[i][0], op.pts[i][1]);
+                if (op.pts.length === 1) ctx.lineTo(op.pts[0][0] + 0.1, op.pts[0][1]);
+                ctx.stroke();
+            } else if (op.type === 'text' && op.text) {
+                ctx.font = `800 ${op.fs}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+                ctx.textBaseline = 'top';
+                ctx.lineWidth = Math.max(2, op.fs / 8); ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+                op.text.split('\n').forEach((line, i) => { ctx.strokeText(line, op.x1, op.y1 + i * op.fs * 1.2); ctx.fillText(line, op.x1, op.y1 + i * op.fs * 1.2); });
+            }
+            ctx.restore();
+        }
+
+        // opts: { name, replacePending }
+        async function openImageEditor(blob, opts) {
+            opts = opts || {};
+            let bmp;
+            try { bmp = await createImageBitmap(blob); } catch (e) { showToast("Couldn't open that image for editing.", 'yellow'); return; }
+            const scale = Math.min(1, 3200 / Math.max(bmp.width, bmp.height));
+            const W = Math.round(bmp.width * scale), H = Math.round(bmp.height * scale);
+            const { modal, card, close } = openToolModal('editor-modal');
+            card.appendChild(el('div', 'tool-title', '🖍️ Redact & annotate'));
+            card.appendChild(el('div', 'tool-hint', 'Blur hides things like friend codes and names for good (it pixelates what is underneath). Your original is never changed: you send or save a copy.'));
+
+            const committed = document.createElement('canvas'); committed.width = W; committed.height = H;
+            const cctx = committed.getContext('2d');
+            const view = document.createElement('canvas'); view.width = W; view.height = H;
+            const vctx = view.getContext('2d');
+            const stage = el('div', 'editor-stage'); stage.appendChild(view);
+
+            let ops = [], redo = [], tool = 'pixel', color = '#ff3b30', size = 3, drawing = null;
+            const lw = () => Math.max(2, Math.round(size * W / 500));
+            const fs = () => Math.round(W / 32 * (0.6 + size * 0.3));
+            const rebuild = () => { cctx.drawImage(bmp, 0, 0, W, H); ops.forEach(o => applyEditorOp(cctx, o)); };
+            const paint = () => { vctx.drawImage(committed, 0, 0); if (drawing) applyEditorOp(vctx, drawing); };
+            const refreshButtons = () => { undoBtn.disabled = !ops.length; redoBtn.disabled = !redo.length; };
+
+            const bar = el('div', 'tool-bar');
+            const toolDefs = [['pixel', '🔲 Blur'], ['box', '⬛ Black box'], ['pen', '✏️ Pen'], ['arrow', '➡️ Arrow'], ['ellipse', '⭕ Circle'], ['rect', '▭ Box'], ['text', '🔤 Text']];
+            const toolBtns = {};
+            toolDefs.forEach(([id, label]) => { const b = toolBtn(label, () => { tool = id; Object.entries(toolBtns).forEach(([k, v]) => v.classList.toggle('active', k === id)); cancelText(); }); toolBtns[id] = b; bar.appendChild(b); });
+            toolBtns.pixel.classList.add('active');
+            bar.appendChild(el('div', 'tool-sep'));
+            const colorIn = document.createElement('input'); colorIn.type = 'color'; colorIn.value = color; colorIn.title = 'Colour'; colorIn.addEventListener('input', () => { color = colorIn.value; });
+            bar.appendChild(colorIn);
+            const sizeIn = document.createElement('input'); sizeIn.type = 'range'; sizeIn.min = '1'; sizeIn.max = '8'; sizeIn.value = String(size); sizeIn.title = 'Thickness / text size'; sizeIn.addEventListener('input', () => { size = +sizeIn.value; });
+            bar.appendChild(sizeIn);
+            bar.appendChild(el('div', 'tool-sep'));
+            const undoBtn = toolBtn('↶ Undo', () => { if (!ops.length) return; redo.push(ops.pop()); rebuild(); paint(); refreshButtons(); });
+            const redoBtn = toolBtn('↷ Redo', () => { if (!redo.length) return; ops.push(redo.pop()); rebuild(); paint(); refreshButtons(); });
+            const clearBtn = toolBtn('Reset', () => { ops = []; redo = []; rebuild(); paint(); refreshButtons(); }, 'tool-btn danger');
+            bar.appendChild(undoBtn); bar.appendChild(redoBtn); bar.appendChild(clearBtn);
+            card.appendChild(bar);
+            card.appendChild(stage);
+
+            // pointer -> image coordinates
+            const toImg = (e) => { const r = view.getBoundingClientRect(); return [(e.clientX - r.left) * W / r.width, (e.clientY - r.top) * H / r.height]; };
+            let textInput = null;
+            const cancelText = () => { if (textInput) { const t = textInput; textInput = null; t.remove(); } };
+            const commitOp = (op) => { ops.push(op); redo = []; rebuild(); drawing = null; paint(); refreshButtons(); };
+            const startText = (px, py, cssX, cssY) => {
+                cancelText();
+                const input = document.createElement('input'); input.className = 'editor-text'; input.type = 'text'; input.placeholder = 'Type, then Enter';
+                input.style.left = cssX + 'px'; input.style.top = cssY + 'px'; input.style.fontSize = '16px'; input.style.color = color;
+                stage.appendChild(input); textInput = input; input.focus();
+                const done = (save) => {
+                    if (textInput !== input) return;
+                    textInput = null;
+                    const text = input.value.trim(); input.remove();
+                    if (save && text) commitOp({ type: 'text', x1: px, y1: py, x2: px, y2: py, color, lw: lw(), fs: fs(), text });
+                };
+                input.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') done(true); else if (e.key === 'Escape') done(false); });
+                input.addEventListener('blur', () => done(true));
+            };
+            view.addEventListener('pointerdown', (e) => {
+                if (e.button !== undefined && e.button > 0) return;
+                const [x, y] = toImg(e);
+                if (tool === 'text') {
+                    const sr = stage.getBoundingClientRect();
+                    e.preventDefault();
+                    startText(x, y, e.clientX - sr.left, e.clientY - sr.top);
+                    return;
+                }
+                view.setPointerCapture(e.pointerId);
+                drawing = { type: tool, x1: x, y1: y, x2: x, y2: y, color, lw: lw(), pts: [[x, y]] };
+                paint();
+            });
+            view.addEventListener('pointermove', (e) => {
+                if (!drawing) return;
+                const [x, y] = toImg(e);
+                drawing.x2 = x; drawing.y2 = y;
+                if (drawing.type === 'pen') drawing.pts.push([x, y]);
+                paint();
+            });
+            const finish = (e) => {
+                if (!drawing) return;
+                const d = drawing;
+                const tiny = d.type !== 'pen' && Math.abs(d.x2 - d.x1) < 4 && Math.abs(d.y2 - d.y1) < 4;
+                if (tiny) { drawing = null; paint(); return; }
+                commitOp(d);
+            };
+            view.addEventListener('pointerup', finish);
+            view.addEventListener('pointercancel', () => { drawing = null; paint(); });
+            const onKey = (e) => {
+                if (!document.body.contains(modal)) { document.removeEventListener('keydown', onKey, true); return; }
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); e.stopPropagation(); (e.shiftKey ? redoBtn : undoBtn).click(); }
+                else if (e.key === 'Escape' && !textInput) { e.stopPropagation(); closeAll(); }
+            };
+            document.addEventListener('keydown', onKey, true);
+            const closeAll = () => { document.removeEventListener('keydown', onKey, true); cancelText(); close(); try { bmp.close(); } catch (e) {} };
+
+            const finalName = () => {
+                const base = String(opts.name || 'screenshot').replace(/\.[^.]+$/, '').replace(/^edited_/, '');
+                return `edited_${base}.jpg`;
+            };
+            const exportFile = async () => {
+                cancelText();
+                rebuild();
+                const out = await canvasToBlob(committed, 'image/jpeg', 0.92);
+                return new File([out], finalName(), { type: 'image/jpeg' });
+            };
+            const actions = el('div', 'tool-bar');
+            actions.appendChild(toolBtn(opts.replacePending ? '✔ Use this version' : '💬 Send to chat', async () => {
+                const f = await exportFile();
+                closeAll();
+                if (opts.replacePending) { stageAttachment(f, 'Edited copy'); showToast('Updated. Hit send when you are ready.', 'purple'); }
+                else { closeLightbox && isLightboxOpen() && closeLightbox(); stageFileForFriend(f, 'Edited copy'); }
+            }, 'tool-btn primary'));
+            actions.appendChild(toolBtn('⬇ Save a copy', async () => { const f = await exportFile(); downloadBlob(f, f.name); showToast('Saved a copy to your downloads.', 'purple'); }));
+            actions.appendChild(toolBtn('Close', closeAll));
+            card.appendChild(actions);
+            modal.addEventListener('click', (e) => { if (e.target === modal) closeAll(); });
+
+            rebuild(); paint(); refreshButtons();
+            return { ops: () => ops, exportFile, close: closeAll };
+        }
+
+        async function editCurrentLightboxImage() {
+            const media = activeMediaList[currentLightboxIndex];
+            if (!media || media.type !== 'image') return;
+            const blob = media.isRemote ? media._loadedBlob : media.file;
+            if (!blob) { showToast('Wait for the full image to finish loading, then try again.', 'yellow'); return; }
+            openImageEditor(blob, { name: media.file ? media.file.name : `${gameKey(media.hash)}_${media.dateStr}.jpg` });
+        }
+        document.getElementById('btn-edit-media').addEventListener('click', editCurrentLightboxImage);
+
+        // ============================================================
+        // HIGHLIGHT REEL MAKER
+        // Stitches screenshots and clips into one WebM. Images and title cards are drawn frame by frame;
+        // clips are captured as they play; every frame keeps an exact timestamp (same encoder as the trimmer).
+        // ============================================================
+        // Encodes an AudioBuffer (48 kHz) to Opus packets for the WebM writer. Returns null when it can't.
+        async function encodeOpusPcm(pcm, channels) {
+            if (typeof AudioEncoder === 'undefined' || typeof AudioData === 'undefined') return null;
+            const acfg = { codec: 'opus', sampleRate: 48000, numberOfChannels: channels, bitrate: 128000 };
+            if (!(await AudioEncoder.isConfigSupported(acfg)).supported) return null;
+            const packets = []; let head = null;
+            const aenc = new AudioEncoder({
+                output: (chunk, meta) => {
+                    const d = new Uint8Array(chunk.byteLength); chunk.copyTo(d);
+                    packets.push({ t: chunk.timestamp / 1000, data: d });
+                    if (!head && meta && meta.decoderConfig && meta.decoderConfig.description) { const dsc = meta.decoderConfig.description; head = new Uint8Array(dsc instanceof ArrayBuffer ? dsc : dsc.buffer.slice(dsc.byteOffset, dsc.byteOffset + dsc.byteLength)); }
+                },
+                error: (e) => console.error('audio encoder', e)
+            });
+            try {
+                aenc.configure(acfg);
+                const FR = 960; // 20 ms
+                for (let o = 0; o < pcm.length; o += FR) {
+                    const n = Math.min(FR, pcm.length - o);
+                    const planar = new Float32Array(n * channels);
+                    for (let c = 0; c < channels; c++) planar.set(pcm.getChannelData(c).subarray(o, o + n), c * n);
+                    const ad = new AudioData({ format: 'f32-planar', sampleRate: 48000, numberOfFrames: n, numberOfChannels: channels, timestamp: Math.round(o / 48000 * 1e6), data: planar });
+                    aenc.encode(ad); ad.close();
+                    if (aenc.encodeQueueSize > 20) await new Promise(r => setTimeout(r, 0));
+                }
+                await aenc.flush();
+            } finally { try { aenc.close(); } catch (e) {} }
+            if (!head) { head = new Uint8Array(19); head.set([0x4F, 0x70, 0x75, 0x73, 0x48, 0x65, 0x61, 0x64, 1, channels, 312 & 255, 312 >> 8, 0x80, 0xBB, 0, 0, 0, 0, 0]); }
+            const preSkip = head[10] | (head[11] << 8);
+            return packets.length ? { channels, rate: 48000, preSkip, head, packets } : null;
+        }
+        async function pickVideoEncoderConfig(w, h, fps) {
+            const bitrate = Math.min(14000000, Math.max(4000000, Math.round(w * h * 6)));
+            for (const [codec, id] of [['vp09.00.40.08', 'V_VP9'], ['vp8', 'V_VP8']]) {
+                const cfg = { codec, width: w, height: h, bitrate, framerate: fps, latencyMode: 'quality' };
+                let ok = false; try { ok = (await VideoEncoder.isConfigSupported(cfg)).supported; } catch (e) {}
+                if (ok) return { cfg, id };
+            }
+            return null;
+        }
+
+        const REEL_MAX_SECONDS = 180;
+        function reelItemLabel(m) {
+            const g = String(gameKey(m.hash) || '');
+            const when = describeCaptured(m) || m.dateStr;
+            return (!g || /^(unsorted|unknown)?$/i.test(g) || /^[A-F0-9]{16,32}$/i.test(g)) ? when : `${g} · ${when}`;
+        }
+
+        function fitContain(ctx, src, sw, sh, W, H, zoom) {
+            const k = Math.min(W / sw, H / sh) * (zoom || 1);
+            const dw = sw * k, dh = sh * k;
+            ctx.drawImage(src, (W - dw) / 2, (H - dh) / 2, dw, dh);
+        }
+        function drawLowerThird(ctx, W, H, text, alpha) {
+            if (!text || alpha <= 0) return;
+            ctx.save(); ctx.globalAlpha = Math.min(1, alpha);
+            const fs = Math.round(H * 0.04); ctx.font = `700 ${fs}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+            const tw = ctx.measureText(text).width, padX = fs * 0.8, bh = fs * 1.9, x = H * 0.04, y = H - H * 0.07 - bh;
+            ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(x, y, tw + padX * 2, bh);
+            ctx.fillStyle = '#e60012'; ctx.fillRect(x, y, fs * 0.25, bh);
+            ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'; ctx.fillText(text, x + padX, y + bh / 2);
+            ctx.restore();
+        }
+        function drawTitleCard(ctx, W, H, title, sub, t, d) {
+            const g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#12121a'); g.addColorStop(1, '#2a0a12');
+            ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+            ctx.fillStyle = '#e60012'; ctx.fillRect(W * 0.1, H * 0.46, W * 0.06, H * 0.012);
+            ctx.fillStyle = '#fff'; ctx.textBaseline = 'alphabetic';
+            const fs = Math.round(H * 0.09); ctx.font = `800 ${fs}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+            // shrink long titles to fit
+            let size = fs; while (ctx.measureText(title).width > W * 0.8 && size > 20) { size -= 2; ctx.font = `800 ${size}px system-ui, sans-serif`; }
+            const slide = Math.min(1, t / 0.6); ctx.save(); ctx.globalAlpha = slide; ctx.fillText(title, W * 0.1, H * 0.46 + size * 1.25 - (1 - slide) * 20);
+            ctx.font = `600 ${Math.round(H * 0.04)}px system-ui, sans-serif`; ctx.fillStyle = 'rgba(255,255,255,0.7)'; ctx.fillText(sub || '', W * 0.1, H * 0.46 + size * 1.25 + H * 0.08);
+            ctx.restore();
+        }
+
+        // items: [{ kind, media, duration?, start?, len? }]; opts: { title, captions, fade, height, onProgress(0..1), isCancelled() }
+        async function renderHighlightReel(items, opts) {
+            if (typeof VideoEncoder === 'undefined' || typeof VideoFrame === 'undefined') throw new Error("This browser can't encode video here (try a recent Chrome or Edge).");
+            const H = opts.height === 1080 ? 1080 : 720, W = Math.round(H * 16 / 9), fps = 30, FADE = opts.fade ? 0.4 : 0;
+            const segs = []; let total = 0;
+            if (opts.title) { segs.push({ kind: 'title', d: 2.5, start: 0 }); total += 2.5; }
+            items.forEach(it => { const d = it.kind === 'video' ? it.len : it.duration; segs.push({ ...it, d, start: total }); total += d; });
+            if (total > REEL_MAX_SECONDS) throw new Error(`That reel is ${Math.round(total)} seconds long. The limit is ${REEL_MAX_SECONDS / 60} minutes.`);
+            if (!segs.length) throw new Error('Add at least one item.');
+            const enc = await pickVideoEncoderConfig(W, H, fps);
+            if (!enc) throw new Error("This browser can't encode video here (try a recent Chrome or Edge).");
+
+            const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+            const ctx = cv.getContext('2d', { alpha: false });
+            const frames = []; let encError = null;
+            const venc = new VideoEncoder({
+                output: (chunk) => { const d = new Uint8Array(chunk.byteLength); chunk.copyTo(d); frames.push({ t: chunk.timestamp / 1000, data: d, key: chunk.type === 'key' }); },
+                error: (e) => { encError = e; }
+            });
+            venc.configure(enc.cfg);
+            let frameCount = 0, lastKey = -999;
+            const pushFrame = async (tSec) => {
+                const vf = new VideoFrame(cv, { timestamp: Math.round(tSec * 1e6) });
+                const key = tSec - lastKey >= 2; if (key) lastKey = tSec;
+                venc.encode(vf, { keyFrame: key }); vf.close(); frameCount++;
+                if (venc.encodeQueueSize > 8) await new Promise(r => setTimeout(r, 0));
+                if (frameCount % 15 === 0) await new Promise(r => setTimeout(r, 0));
+            };
+            const fadeAlpha = (t, d) => { // 1 = fully black
+                if (!FADE) return 0;
+                return Math.max(0, 1 - t / FADE, 1 - (d - t) / FADE);
+            };
+            const finishFrame = (seg, t) => {
+                if (opts.captions && seg.kind !== 'title' && seg.media) drawLowerThird(ctx, W, H, reelItemLabel(seg.media), Math.min(1, t / 0.4, (3.2 - t) / 0.4));
+                const a = fadeAlpha(t, seg.d);
+                if (a > 0) { ctx.save(); ctx.globalAlpha = Math.min(1, a); ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); ctx.restore(); }
+            };
+            const report = (t) => opts.onProgress && opts.onProgress(Math.min(1, (t) / total) * 0.9);
+
+            // ---- video frames ----
+            for (const seg of segs) {
+                if (opts.isCancelled()) return null;
+                if (seg.kind === 'title') {
+                    const sub = `${items.length} moment${items.length === 1 ? '' : 's'}`;
+                    for (let f = 0; f < Math.round(seg.d * fps); f++) { const t = f / fps; drawTitleCard(ctx, W, H, opts.title, sub, t, seg.d); finishFrame(seg, t); await pushFrame(seg.start + t); }
+                } else if (seg.kind === 'image') {
+                    const bmp = await createImageBitmap(seg.media.file);
+                    try {
+                        for (let f = 0; f < Math.round(seg.d * fps); f++) {
+                            const t = f / fps;
+                            ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+                            fitContain(ctx, bmp, bmp.width, bmp.height, W, H, 1 + 0.05 * (t / seg.d)); // slow push-in so stills feel alive
+                            finishFrame(seg, t); await pushFrame(seg.start + t);
+                            if (f % 10 === 0) report(seg.start + t);
+                            if (opts.isCancelled()) return null;
+                        }
+                    } finally { try { bmp.close(); } catch (e) {} }
+                } else {
+                    const v = await openWorkVideo(seg.media.url, true);
+                    try {
+                        if (typeof v.requestVideoFrameCallback !== 'function') throw new Error("This browser can't read clip frames (try a recent Chrome or Edge).");
+                        v.currentTime = seg.vstart; await waitForEvent(v, 'seeked', 8000, 'Could not jump into a clip.');
+                        await new Promise((resolve, reject) => {
+                            let last = -1, finished = false, lastCb = performance.now();
+                            const watchdog = setInterval(() => { if (!finished && performance.now() - lastCb > 5000) { finished = true; clearInterval(watchdog); reject(new Error('Rendering stalled. Keep this tab in front while a clip is being rendered.')); } }, 1000);
+                            const stop = () => { if (!finished) { finished = true; } clearInterval(watchdog); resolve(); };
+                            const onFrame = async (_n, meta) => {
+                                if (finished) return;
+                                lastCb = performance.now();
+                                const mt = meta.mediaTime, rel = mt - seg.vstart;
+                                if (opts.isCancelled() || rel >= seg.d - 0.0005 || v.ended) { stop(); return; }
+                                if (mt !== last && rel >= -0.001) {
+                                    last = mt;
+                                    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+                                    fitContain(ctx, v, v.videoWidth, v.videoHeight, W, H, 1);
+                                    finishFrame(seg, Math.max(0, rel)); await pushFrame(seg.start + Math.max(0, rel));
+                                    report(seg.start + rel);
+                                }
+                                v.requestVideoFrameCallback(onFrame);
+                            };
+                            v.requestVideoFrameCallback(onFrame);
+                            v.play().catch((e) => { finished = true; clearInterval(watchdog); reject(e); });
+                        });
+                        v.pause();
+                    } finally { v.remove(); }
+                }
+            }
+            if (opts.isCancelled()) { try { venc.close(); } catch (e) {} return null; }
+            await venc.flush(); try { venc.close(); } catch (e) {}
+            if (encError) throw encError;
+            if (!frames.length) throw new Error('No frames were produced.');
+            frames.sort((a, b) => a.t - b.t);
+
+            // ---- audio: lay every clip's sound onto one timeline (with the same fades) ----
+            let audio = null;
+            const vids = segs.filter(s => s.kind === 'video');
+            if (vids.length && typeof OfflineAudioContext !== 'undefined') {
+                try {
+                    const off = new OfflineAudioContext(2, Math.ceil(total * 48000), 48000);
+                    const dctx = new (window.AudioContext || window.webkitAudioContext)();
+                    let any = false;
+                    try {
+                        for (const seg of vids) {
+                            if (opts.isCancelled()) return null;
+                            let decoded; try { decoded = await dctx.decodeAudioData(await (await fetch(seg.media.url)).arrayBuffer()); } catch (e) { continue; } // clip without sound
+                            const src = off.createBufferSource(); src.buffer = decoded;
+                            const g = off.createGain();
+                            g.gain.setValueAtTime(FADE ? 0 : 1, seg.start);
+                            if (FADE) { g.gain.linearRampToValueAtTime(1, seg.start + FADE); g.gain.setValueAtTime(1, Math.max(seg.start + FADE, seg.start + seg.d - FADE)); g.gain.linearRampToValueAtTime(0, seg.start + seg.d); }
+                            src.connect(g).connect(off.destination); src.start(seg.start, seg.vstart, seg.d); any = true;
+                        }
+                    } finally { try { dctx.close(); } catch (e) {} }
+                    if (any) { const pcm = await off.startRendering(); audio = await encodeOpusPcm(pcm, 2); }
+                } catch (e) { console.warn('Reel audio skipped:', e); audio = null; }
+            }
+            opts.onProgress && opts.onProgress(0.97);
+            return writeWebm({ codec: enc.id, width: W, height: H, frames }, audio, total * 1000);
+        }
+
+        async function openReelMaker(media) {
+            const mediaList = (media || []).slice(0, 40);
+            if (!mediaList.length) { showToast('Pick some screenshots and clips first (Select), then hit "Make a reel".', 'yellow'); return; }
+            const { card, close, modal } = openToolModal('reel-modal', 'min(760px, 96vw)');
+            card.appendChild(el('div', 'tool-title', '🎬 Highlight reel'));
+            card.appendChild(el('div', 'tool-hint', 'Screenshots hold for a few seconds with a slow zoom; clips play from the point you choose. Everything is rendered in your browser and saved as a WebM video. Clips are captured as they play, so keep this tab in front while it renders.'));
+            let items = mediaList.slice().sort((a, b) => mediaSortTime(a) - mediaSortTime(b)).map(m => ({ kind: m.type === 'video' ? 'video' : 'image', media: m, duration: 3, vstart: 0, len: 6, vdur: 0 }));
+            const list = el('div', 'reel-list'); card.appendChild(list);
+            const sumLine = el('div', 'tool-hint'); card.appendChild(sumLine);
+            const opt = el('div', 'tool-bar');
+            const titleIn = document.createElement('input'); titleIn.type = 'text'; titleIn.placeholder = 'Title card (optional)'; titleIn.maxLength = 60;
+            titleIn.style.cssText = 'flex:1;min-width:12rem;background:var(--switch-light);color:white;border:1px solid rgba(77,77,77,0.6);border-radius:0.4rem;padding:0.35rem 0.6rem;font-size:0.8rem;';
+            opt.appendChild(titleIn);
+            const mkChk = (label, checked) => { const l = el('label', 'tool-hint'); l.style.cssText = 'display:flex;align-items:center;gap:0.3rem;color:white;'; const c = document.createElement('input'); c.type = 'checkbox'; c.checked = checked; l.appendChild(c); l.appendChild(document.createTextNode(label)); opt.appendChild(l); return c; };
+            const capChk = mkChk('Game & date captions', true), fadeChk = mkChk('Fade between', true);
+            const resSel = document.createElement('select'); resSel.style.cssText = 'background:var(--switch-light);color:white;border:1px solid rgba(77,77,77,0.6);border-radius:0.4rem;padding:0.3rem;font-size:0.8rem;';
+            resSel.innerHTML = '<option value="720">720p</option><option value="1080">1080p</option>'; opt.appendChild(resSel);
+            card.appendChild(opt);
+            const prog = el('div', 'progress-line'); const progFill = document.createElement('div'); prog.appendChild(progFill); prog.style.display = 'none'; card.appendChild(prog);
+            const status = el('div', 'tool-hint'); card.appendChild(status);
+            const preview = document.createElement('video'); preview.controls = true; preview.style.cssText = 'width:100%;max-height:40vh;background:#000;border-radius:0.5rem;display:none;'; card.appendChild(preview);
+            const actions = el('div', 'tool-bar'); card.appendChild(actions);
+            let cancelled = false, busy = false, outBlob = null;
+
+            const durationOf = (it) => it.kind === 'video' ? it.len : it.duration;
+            const refreshSum = () => { const t = items.reduce((s, it) => s + durationOf(it), 0) + (titleIn.value.trim() ? 2.5 : 0); sumLine.textContent = `${items.length} item${items.length === 1 ? '' : 's'} · about ${Math.round(t)} seconds${t > REEL_MAX_SECONDS ? ' (too long: the limit is 3 minutes)' : ''}`; return t; };
+            const renderList = () => {
+                list.innerHTML = '';
+                items.forEach((it, i) => {
+                    const row = el('div', 'reel-row');
+                    if (it.kind === 'image') { const img = document.createElement('img'); img.src = it.media.url; img.loading = 'lazy'; row.appendChild(img); }
+                    else row.appendChild(el('div', 'reel-ph', '🎬'));
+                    row.appendChild(el('div', 'reel-name', reelItemLabel(it.media)));
+                    const num = (label, key, min, max, step) => {
+                        const w = el('label'); w.style.cssText = 'display:flex;align-items:center;gap:0.25rem;color:var(--switch-muted);'; w.appendChild(document.createTextNode(label));
+                        const n = document.createElement('input'); n.type = 'number'; n.min = min; n.max = max; n.step = step; n.value = String(Math.round(it[key] * 10) / 10);
+                        n.addEventListener('change', () => { let v = parseFloat(n.value); if (!(v >= min)) v = min; if (v > max) v = max; it[key] = v; n.value = String(v); if (it.kind === 'video' && it.vdur) { if (it.vstart + it.len > it.vdur) it.len = Math.max(0.5, it.vdur - it.vstart); renderList(); } refreshSum(); });
+                        w.appendChild(n); return w;
+                    };
+                    if (it.kind === 'image') row.appendChild(num('sec', 'duration', 1, 15, 0.5));
+                    else { row.appendChild(num('from', 'vstart', 0, Math.max(0, (it.vdur || 600) - 0.5), 0.5)); row.appendChild(num('for', 'len', 0.5, Math.max(0.5, Math.min(60, it.vdur ? it.vdur - it.vstart : 60)), 0.5)); }
+                    const up = el('button', '', '↑'), down = el('button', '', '↓'), rm = el('button', '', '✕');
+                    up.disabled = i === 0; down.disabled = i === items.length - 1;
+                    up.addEventListener('click', () => { [items[i - 1], items[i]] = [items[i], items[i - 1]]; renderList(); });
+                    down.addEventListener('click', () => { [items[i + 1], items[i]] = [items[i], items[i + 1]]; renderList(); });
+                    rm.addEventListener('click', () => { items.splice(i, 1); renderList(); });
+                    row.appendChild(up); row.appendChild(down); row.appendChild(rm);
+                    list.appendChild(row);
+                });
+                refreshSum();
+            };
+            renderList();
+            titleIn.addEventListener('input', refreshSum);
+            // find how long each clip is so "from/for" can't run past the end
+            items.filter(it => it.kind === 'video').forEach(async (it) => {
+                try {
+                    const v = await openWorkVideo(it.media.url, true); it.vdur = v.duration || 0; v.remove();
+                    if (it.vdur) it.len = Math.min(6, it.vdur); renderList();
+                } catch (e) { /* leave defaults */ }
+            });
+
+            const renderBtn = toolBtn('🎞️ Render reel', async () => {
+                if (busy) return;
+                if (refreshSum() > REEL_MAX_SECONDS) { showToast('That reel is longer than 3 minutes. Remove or shorten some items.', 'yellow'); return; }
+                busy = true; cancelled = false; outBlob = null; preview.style.display = 'none'; renderBtn.disabled = true; cancelBtn.textContent = 'Cancel render';
+                prog.style.display = 'block'; progFill.style.width = '0%'; status.textContent = 'Rendering... (clips render in real time)';
+                try {
+                    const blob = await renderHighlightReel(items.map(it => ({ ...it })), { title: titleIn.value.trim(), captions: capChk.checked, fade: fadeChk.checked, height: +resSel.value, onProgress: (p) => { progFill.style.width = Math.round(p * 100) + '%'; }, isCancelled: () => cancelled });
+                    if (blob) {
+                        outBlob = blob; progFill.style.width = '100%'; status.textContent = `Done: ${(blob.size / 1048576).toFixed(1)} MB. Preview it below.`;
+                        preview.src = URL.createObjectURL(blob); preview.style.display = 'block';
+                        saveBtn.disabled = false; sendBtn.disabled = false;
+                    } else status.textContent = 'Cancelled.';
+                } catch (e) { console.error(e); status.textContent = 'Could not render: ' + (e && e.message ? e.message : e); }
+                busy = false; renderBtn.disabled = false; cancelBtn.textContent = 'Close';
+            }, 'tool-btn primary');
+            const saveBtn = toolBtn('⬇ Save video', () => { if (outBlob) downloadBlob(outBlob, `highlight-reel-${new Date().toISOString().slice(0, 10)}.webm`); });
+            const sendBtn = toolBtn('💬 Send to chat', () => { if (outBlob) { const f = new File([outBlob], `highlight-reel-${new Date().toISOString().slice(0, 10)}.webm`, { type: 'video/webm' }); close(); stageFileForFriend(f, 'Highlight reel'); } });
+            saveBtn.disabled = true; sendBtn.disabled = true;
+            const cancelBtn = toolBtn('Close', () => { if (busy) { cancelled = true; return; } if (preview.src) URL.revokeObjectURL(preview.src); close(); });
+            actions.appendChild(renderBtn); actions.appendChild(saveBtn); actions.appendChild(sendBtn); actions.appendChild(cancelBtn);
+            return { items: () => items, render: () => renderBtn.click() };
+        }
+        document.getElementById('sel-reel').addEventListener('click', () => { const m = selectedMedia(); openReelMaker(m); });
+        document.getElementById('btn-reel').addEventListener('click', () => {
+            if (selectMode && selectedKeys.size) { openReelMaker(selectedMedia()); return; }
+            if (currentSource !== 'local') { showToast('Reels are made from your own screenshots and clips. Switch to your gallery first.', 'yellow'); return; }
+            setSelectMode(true);
+            showToast('Pick the screenshots and clips for your reel, then hit "🎬 Make a reel".', 'purple', 5000);
+        });
+
+        // ============================================================
+        // VOTE ON THE BEST SHOT
+        // Both of you pick a favourite from the session album. Picks stay hidden until both are locked in;
+        // a split vote is settled by a coin flip that both sides work out the same way from the vote's id.
+        // Winners are kept in a "Best of" list (and in a "Best of" album when the shot is yours).
+        // ============================================================
+        let vote = null; // { id, items, initiator, phase: 'waiting'|'voting'|'locked'|'result', mine, theirs, result }
+        let bestOf = [];
+        try { bestOf = JSON.parse(localStorage.getItem('switch_hub_bestof') || '[]'); } catch (e) { bestOf = []; }
+        function saveBestOf() { try { localStorage.setItem('switch_hub_bestof', JSON.stringify(bestOf.slice(0, 100))); } catch (e) {} }
+        const VOTE_MAX_ITEMS = 24;
+        function voteKeyOf(e) { return `${e.hash}|${e.timestamp}`; }
+        function hashString(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+
+        function startVote() {
+            if (!(activeConnection && activeConnection.open)) { showToast('Connect to a friend first to vote together.', 'yellow'); return; }
+            if (vote) { renderVoteModal(); return; }
+            if (sessionPile.length < 2) { showToast('Add at least 2 shots to the session album first (🗂️), then start a vote.', 'yellow', 5000); return; }
+            const pile = sessionPile.slice(-VOTE_MAX_ITEMS);
+            const id = uid();
+            vote = { id, items: pile.map(e => ({ key: voteKeyOf(e), hash: e.hash, timestamp: e.timestamp, thumb: e.thumb || '', mtype: e.mtype, dateStr: e.dateStr || '', owner: e.owner })), initiator: true, phase: 'waiting', mine: null, theirs: null, result: null };
+            sendToConn({ type: 'vote_invite', id, items: vote.items.map(i => ({ hash: i.hash, timestamp: i.timestamp, thumb: i.thumb, mtype: i.mtype, dateStr: i.dateStr, owner: i.owner })) });
+            vote.timer = setTimeout(() => { if (vote && vote.id === id && vote.phase === 'waiting') { sendToConn({ type: 'vote_cancel', id }); closeVote(); showToast('No answer to your vote invite.', 'yellow'); } }, 60000);
+            renderVoteModal();
+        }
+        function closeVote() {
+            if (vote && vote.timer) clearTimeout(vote.timer);
+            vote = null;
+            const m = document.getElementById('vote-modal'); if (m) m.remove();
+            closePrompt('vote-invite');
+        }
+        function resetVoteState() { closeVote(); }
+
+        function voteResultFor(v) {
+            if (v.mine === v.theirs) return { key: v.mine, tie: false };
+            const keys = [v.mine, v.theirs].sort();
+            return { key: keys[hashString(v.id) % 2], tie: true };
+        }
+        function maybeFinishVote() {
+            if (!vote || vote.mine === null || vote.theirs === null || vote.phase === 'result') return;
+            vote.result = voteResultFor(vote);
+            vote.phase = 'result';
+            const item = vote.items.find(i => i.key === vote.result.key);
+            const friend = friends.find(f => f.id === connectedFriendId);
+            if (item) {
+                bestOf.unshift({ key: item.key, hash: item.hash, timestamp: item.timestamp, thumb: item.thumb, mtype: item.mtype, dateStr: item.dateStr, owner: item.owner, decidedAt: Date.now(), withName: friend ? friend.name : '', tie: vote.result.tie });
+                bestOf = bestOf.filter((b, i, arr) => arr.findIndex(x => x.key === b.key) === i).slice(0, 100);
+                saveBestOf();
+                if (item.owner === 'me') addToBestOfAlbum(item.key);
+            }
+            renderVoteModal();
+        }
+        function addToBestOfAlbum(key) {
+            try {
+                let id = Object.keys(albums).find(k => albums[k].name === '🏆 Best of');
+                if (!id) id = createAlbum('🏆 Best of');
+                if (!albums[id].keys.includes(key)) { albums[id].keys.push(key); saveAlbums(); renderAlbumsList(); }
+            } catch (e) { console.warn('Best of album', e); }
+        }
+
+        function handleVoteMessage(data, friend) {
+            const id = String(data.id || '');
+            if (data.type === 'vote_invite') {
+                if (vote || !Array.isArray(data.items)) { sendToConn({ type: 'vote_decline', id, busy: true }); return; }
+                const items = data.items.slice(0, VOTE_MAX_ITEMS).map(i => {
+                    const thumb = (typeof i.thumb === 'string' && i.thumb.startsWith('data:image/') && i.thumb.length < 200000) ? i.thumb : '';
+                    const e = { hash: String(i.hash || ''), timestamp: Number(i.timestamp) || 0, thumb, mtype: i.mtype === 'video' ? 'video' : 'image', dateStr: String(i.dateStr || '').slice(0, 10), owner: i.owner === 'me' ? 'them' : 'me' };
+                    return { ...e, key: voteKeyOf(e) };
+                });
+                if (items.length < 2) { sendToConn({ type: 'vote_decline', id }); return; }
+                vote = { id, items, initiator: false, phase: 'invited', mine: null, theirs: null, result: null };
+                showPrompt('vote-invite', {
+                    title: `🗳️ ${friend.name} wants to vote on the best shot`, text: `${items.length} shots from the session album. You each pick a favourite, then it's revealed.`,
+                    acceptLabel: 'Vote', declineLabel: 'Not now', timeoutMs: 60000,
+                    onAccept: () => { if (vote && vote.id === id) { vote.phase = 'voting'; sendToConn({ type: 'vote_accept', id }); renderVoteModal(); } },
+                    onDecline: () => { if (vote && vote.id === id) { sendToConn({ type: 'vote_decline', id }); vote = null; } },
+                    onExpire: () => { if (vote && vote.id === id && vote.phase === 'invited') { sendToConn({ type: 'vote_decline', id, expired: true }); vote = null; } }
+                });
+            } else if (data.type === 'vote_accept') {
+                if (vote && vote.id === id && vote.initiator && vote.phase === 'waiting') { clearTimeout(vote.timer); vote.phase = 'voting'; renderVoteModal(); showToast(`${friend.name} joined the vote 🗳️`, 'purple'); }
+            } else if (data.type === 'vote_decline') {
+                if (vote && vote.id === id && vote.initiator) { closeVote(); showToast(data.busy ? `${friend.name} is already in a vote.` : (data.expired ? `${friend.name} didn't answer.` : `${friend.name} isn't up for voting right now.`), 'yellow'); }
+            } else if (data.type === 'vote_cast') {
+                if (vote && vote.id === id && typeof data.key === 'string' && vote.items.some(i => i.key === data.key)) { vote.theirs = data.key; if (vote.phase !== 'result') renderVoteModal(); maybeFinishVote(); }
+            } else if (data.type === 'vote_cancel') {
+                if (vote && vote.id === id) { const wasPrompt = vote.phase === 'invited'; closeVote(); showToast(wasPrompt ? `${friend.name} cancelled the vote.` : `${friend.name} ended the vote.`); }
+            }
+        }
+
+        function renderVoteModal() {
+            if (!vote || vote.phase === 'invited') return;
+            const friend = friends.find(f => f.id === connectedFriendId);
+            const name = friend ? friend.name : 'your friend';
+            const { card, modal } = openToolModal('vote-modal', 'min(720px, 96vw)');
+            card.appendChild(el('div', 'tool-title', '🗳️ Vote on the best shot'));
+            const v = vote;
+            const tag = (item) => { const t = el('div', 'vote-tag'); if (v.phase === 'result') { if (v.mine === item.key) t.appendChild(el('span', '', 'You')); if (v.theirs === item.key) t.appendChild(el('span', '', name)); } return t; };
+            const tile = (item, cls) => {
+                const t = el('div', 'vote-tile' + (cls ? ' ' + cls : ''));
+                if (item.thumb) { const img = document.createElement('img'); img.src = item.thumb; img.alt = ''; t.appendChild(img); } else t.textContent = item.mtype === 'video' ? '🎬' : '🖼️';
+                t.appendChild(tag(item));
+                t.dataset.key = item.key;
+                return t;
+            };
+            if (v.phase === 'waiting') {
+                card.appendChild(el('div', 'tool-hint', `Waiting for ${name} to join...`));
+            } else if (v.phase === 'voting' || v.phase === 'locked') {
+                card.appendChild(el('div', 'tool-hint', v.phase === 'voting' ? 'Tap your favourite, then lock it in. Nobody sees the other pick until you have both locked in.' : (v.theirs !== null ? 'Revealing...' : `You're locked in. Waiting for ${name}...`)));
+                const grid = el('div', 'vote-grid');
+                v.items.forEach(item => {
+                    const t = tile(item, v.mine === item.key ? 'picked' : '');
+                    if (v.phase === 'voting') t.addEventListener('click', () => { v.mine = item.key; grid.querySelectorAll('.vote-tile').forEach(x => x.classList.toggle('picked', x.dataset.key === v.mine)); lockBtn.disabled = false; });
+                    grid.appendChild(t);
+                });
+                card.appendChild(grid);
+            } else if (v.phase === 'result') {
+                const item = v.items.find(i => i.key === v.result.key);
+                card.appendChild(el('div', 'tool-title', v.result.tie ? '🪙 Split vote: the coin flip chose' : (v.mine === v.result.key ? '🏆 You both picked the same shot!' : '🏆 Winner')));
+                const w = el('div', 'vote-grid'); w.style.gridTemplateColumns = 'minmax(220px, 420px)'; w.style.justifyContent = 'center';
+                if (item) w.appendChild(tile(item, 'winner')); card.appendChild(w);
+                if (v.result.tie) card.appendChild(el('div', 'tool-hint', `You picked ${v.mine === v.result.key ? 'this one' : 'a different shot'} and ${name} picked ${v.theirs === v.result.key ? 'this one' : 'a different one'}. Saved to Best of either way.`));
+                else card.appendChild(el('div', 'tool-hint', 'Saved to Best of.'));
+            }
+            const actions = el('div', 'tool-bar');
+            let lockBtn = null;
+            if (v.phase === 'voting') {
+                lockBtn = toolBtn('🔒 Lock in my vote', () => { if (v.mine === null) return; v.phase = 'locked'; sendToConn({ type: 'vote_cast', id: v.id, key: v.mine }); renderVoteModal(); maybeFinishVote(); }, 'tool-btn primary');
+                lockBtn.disabled = v.mine === null; actions.appendChild(lockBtn);
+            }
+            if (v.phase === 'result') {
+                const item = v.items.find(i => i.key === v.result.key);
+                if (item) actions.appendChild(toolBtn('Open it', () => { if (openSessionItem({ hash: item.hash, timestamp: item.timestamp, owner: item.owner })) closeVote(); }));
+                actions.appendChild(toolBtn('🏆 Best of', () => { closeVote(); showBestOfModal(); }));
+                actions.appendChild(toolBtn('Vote again', () => { closeVote(); startVote(); }, 'tool-btn primary'));
+            }
+            actions.appendChild(toolBtn(v.phase === 'result' ? 'Done' : 'Cancel vote', () => { if (v.phase !== 'result') sendToConn({ type: 'vote_cancel', id: v.id }); closeVote(); }, v.phase === 'result' ? 'tool-btn' : 'tool-btn danger'));
+            card.appendChild(actions);
+            modal.addEventListener('click', (e) => { if (e.target === modal && v.phase === 'result') closeVote(); });
+        }
+
+        function showBestOfModal() {
+            const { card, close } = openToolModal('bestof-modal', 'min(720px, 96vw)');
+            card.appendChild(el('div', 'tool-title', '🏆 Best of'));
+            card.appendChild(el('div', 'tool-hint', 'Every shot you and a friend have voted the best. Shots from your own library are also collected in a "🏆 Best of" album.'));
+            if (!bestOf.length) card.appendChild(el('div', 'tool-hint', 'Nothing yet. Add shots to the session album, then start a vote.'));
+            else {
+                const grid = el('div', 'vote-grid');
+                bestOf.forEach(b => {
+                    const t = el('div', 'vote-tile winner');
+                    if (b.thumb) { const img = document.createElement('img'); img.src = b.thumb; img.alt = ''; t.appendChild(img); } else t.textContent = b.mtype === 'video' ? '🎬' : '🖼️';
+                    const tg = el('div', 'vote-tag'); tg.appendChild(el('span', '', `${new Date(b.decidedAt).toLocaleDateString()}${b.withName ? ' · ' + b.withName : ''}${b.tie ? ' 🪙' : ''}`)); t.appendChild(tg);
+                    t.title = b.dateStr || '';
+                    grid.appendChild(t);
+                });
+                card.appendChild(grid);
+            }
+            const actions = el('div', 'tool-bar'); actions.appendChild(toolBtn('Close', close)); card.appendChild(actions);
+        }
+        document.getElementById('btn-vote').addEventListener('click', startVote);
+
+        // ============================================================
+        // GUESS THE GAME
+        // You take turns being the quizmaster: the app crops a piece of one of your screenshots and your friend
+        // picks which game it's from. Spoiler-marked games never appear. Scores run over all rounds.
+        // ============================================================
+        let guess = null; // { id, total, n, initiator, myScore, theirScore, role: 'master'|'guesser', cur: {img, choices, correct, answer, revealed, right, full}, used:Set, phase, history }
+        function isRealGameName(g) { g = String(g || ''); return !!g && !/^(unsorted|unknown)?$/i.test(g) && !/^[A-F0-9]{16,32}$/i.test(g); }
+        function guessPool() {
+            return allMediaFiles.filter(m => m.type === 'image' && m.file && !isGameSpoiled(m.hash) && isRealGameName(gameKey(m.hash)));
+        }
+        function guessEligible() { const pool = guessPool(); return pool.length >= 3; }
+        function shuffled(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+        function startGuessGame() {
+            if (!(activeConnection && activeConnection.open)) { showToast('Connect to a friend first to play.', 'yellow'); return; }
+            if (guess) { renderGuessModal(); return; }
+            if (!guessEligible()) { showToast('You need at least 3 screenshots from games Hub can name (and not marked as spoilers) to play.', 'yellow', 5500); return; }
+            showChoiceModal('Guess the game: how many rounds?', [{ label: '4 rounds (quick)', value: 4 }, { label: '6 rounds', value: 6 }, { label: '10 rounds', value: 10 }], (rounds) => {
+                if (guess) return;
+                const id = uid();
+                guess = { id, total: rounds, n: 0, initiator: true, myScore: 0, theirScore: 0, role: null, cur: null, used: new Set(), phase: 'waiting', history: [] };
+                sendToConn({ type: 'guess_invite', id, rounds });
+                guess.timer = setTimeout(() => { if (guess && guess.id === id && guess.phase === 'waiting') { sendToConn({ type: 'guess_cancel', id }); closeGuess(); showToast('No answer to your game invite.', 'yellow'); } }, 60000);
+                renderGuessModal();
+            });
+        }
+        function closeGuess() {
+            if (guess) { if (guess.timer) clearTimeout(guess.timer); if (guess.nextTimer) clearTimeout(guess.nextTimer); }
+            guess = null;
+            const m = document.getElementById('guess-modal'); if (m) m.remove();
+            closePrompt('guess-invite');
+        }
+        function resetGuessState() { closeGuess(); }
+
+        async function makeCrop(media, roundNo) {
+            const bmp = await createImageBitmap(media.file);
+            try {
+                const frac = Math.max(0.26, 0.5 - 0.035 * (roundNo - 1));
+                const cw = Math.round(bmp.width * frac), ch = Math.round(bmp.height * frac);
+                // avoid the very edges (HUD text often sits there) most of the time
+                const x = Math.round((bmp.width - cw) * (0.1 + Math.random() * 0.8)), y = Math.round((bmp.height - ch) * (0.1 + Math.random() * 0.8));
+                const outW = 420, outH = Math.round(outW * ch / cw);
+                const c = document.createElement('canvas'); c.width = outW; c.height = outH;
+                c.getContext('2d').drawImage(bmp, x, y, cw, ch, 0, 0, outW, outH);
+                return c.toDataURL('image/jpeg', 0.72);
+            } finally { try { bmp.close(); } catch (e) {} }
+        }
+        function guessChoicesFor(correct) {
+            const own = [...new Set(guessPool().map(m => gameKey(m.hash)))].filter(g => g !== correct);
+            let others = shuffled(own).slice(0, 3);
+            if (others.length < 3) {
+                const extra = shuffled([...new Set(Object.values(BUILTIN_GAME_DB).concat(Object.values(liveGameDb)))].filter(n => n && n.length > 2 && !/^Nintendo Switch/.test(n) && n !== correct && !others.includes(n)));
+                others = others.concat(extra.slice(0, 3 - others.length));
+            }
+            return shuffled([correct, ...others]);
+        }
+
+        // As quizmaster: pick a screenshot, send the cropped clue.
+        async function sendGuessRound(n) {
+            if (!guess) return;
+            const pool = guessPool().filter(m => !guess.used.has(mediaKey(m)));
+            const from = pool.length ? pool : guessPool();
+            if (!from.length) { sendToConn({ type: 'guess_cancel', id: guess.id, reason: 'pool' }); closeGuess(); showToast('Ran out of eligible screenshots.', 'yellow'); return; }
+            // spread rounds over different games where possible
+            const usedGames = new Set(guess.history.filter(h => h.master).map(h => h.game));
+            const fresh = from.filter(m => !usedGames.has(gameKey(m.hash)));
+            const media = (fresh.length ? fresh : from)[Math.floor(Math.random() * (fresh.length ? fresh.length : from.length))];
+            guess.used.add(mediaKey(media));
+            const correct = gameKey(media.hash);
+            const img = await makeCrop(media, n);
+            const choices = guessChoicesFor(correct);
+            if (!guess) return;
+            guess.n = n; guess.role = 'master';
+            guess.cur = { img, choices, correct, answer: null, revealed: false, right: false, full: '', media };
+            sendToConn({ type: 'guess_round', id: guess.id, n, total: guess.total, img, choices });
+            renderGuessModal();
+        }
+
+        function handleGuessMessage(data, friend) {
+            const id = String(data.id || '');
+            if (data.type === 'guess_invite') {
+                const rounds = [4, 6, 10].includes(+data.rounds) ? +data.rounds : 6;
+                if (guess) { sendToConn({ type: 'guess_decline', id, busy: true }); return; }
+                if (!guessEligible()) { sendToConn({ type: 'guess_decline', id, noPool: true }); showToast(`${friend.name} invited you to Guess the game, but you need 3+ nameable screenshots loaded to play.`, 'yellow', 6000); return; }
+                guess = { id, total: rounds, n: 0, initiator: false, myScore: 0, theirScore: 0, role: null, cur: null, used: new Set(), phase: 'invited', history: [] };
+                showPrompt('guess-invite', {
+                    title: `🎯 ${friend.name} wants to play Guess the game`, text: `${rounds} rounds. You take turns: you guess from their screenshots, they guess from yours.`,
+                    acceptLabel: 'Play', declineLabel: 'Not now', timeoutMs: 60000,
+                    onAccept: () => { if (guess && guess.id === id) { guess.phase = 'playing'; sendToConn({ type: 'guess_accept', id }); renderGuessModal(); } },
+                    onDecline: () => { if (guess && guess.id === id) { sendToConn({ type: 'guess_decline', id }); guess = null; } },
+                    onExpire: () => { if (guess && guess.id === id && guess.phase === 'invited') { sendToConn({ type: 'guess_decline', id, expired: true }); guess = null; } }
+                });
+            } else if (data.type === 'guess_accept') {
+                if (guess && guess.id === id && guess.initiator && guess.phase === 'waiting') { clearTimeout(guess.timer); guess.phase = 'playing'; showToast(`${friend.name} joined 🎯`, 'purple'); sendGuessRound(1); }
+            } else if (data.type === 'guess_decline') {
+                if (guess && guess.id === id && guess.initiator) { closeGuess(); showToast(data.noPool ? `${friend.name} doesn't have enough nameable screenshots loaded to play.` : data.busy ? `${friend.name} is already in a game.` : data.expired ? `${friend.name} didn't answer.` : `${friend.name} isn't up for it right now.`, 'yellow'); }
+            } else if (data.type === 'guess_cancel') {
+                if (guess && guess.id === id) { const was = guess.phase === 'invited'; closeGuess(); showToast(was ? `${friend.name} cancelled the invite.` : (data.reason === 'pool' ? `${friend.name} ran out of screenshots, so the game ended.` : `${friend.name} ended the game.`)); }
+            } else if (data.type === 'guess_round') {
+                if (!guess || guess.id !== id || guess.phase !== 'playing') return;
+                const choices = Array.isArray(data.choices) ? data.choices.slice(0, 4).map(c => String(c).slice(0, 120)) : [];
+                const img = (typeof data.img === 'string' && data.img.startsWith('data:image/') && data.img.length < 400000) ? data.img : '';
+                if (!img || choices.length < 2) return;
+                guess.n = Math.max(1, Math.min(guess.total, +data.n || 1)); guess.role = 'guesser';
+                guess.cur = { img, choices, correct: null, answer: null, revealed: false, right: false, full: '' };
+                renderGuessModal();
+            } else if (data.type === 'guess_answer') {
+                if (!guess || guess.id !== id || guess.role !== 'master' || !guess.cur || guess.cur.answer !== null || +data.n !== guess.n) return;
+                const choice = String(data.choice || '');
+                if (!guess.cur.choices.includes(choice)) return;
+                guess.cur.answer = choice; guess.cur.revealed = true; guess.cur.right = choice === guess.cur.correct;
+                if (guess.cur.right) guess.theirScore++;
+                (async () => {
+                    let full = ''; try { full = await createThumbnail(guess.cur.media.file); } catch (e) {}
+                    if (!guess) return;
+                    guess.cur.full = full;
+                    guess.history.push({ master: true, game: guess.cur.correct, right: guess.cur.right });
+                    sendToConn({ type: 'guess_reveal', id, n: guess.n, correct: guess.cur.correct, right: guess.cur.right, full });
+                    renderGuessModal();
+                    scheduleGuessNext();
+                })();
+            } else if (data.type === 'guess_reveal') {
+                if (!guess || guess.id !== id || guess.role !== 'guesser' || !guess.cur || +data.n !== guess.n) return;
+                guess.cur.revealed = true; guess.cur.correct = String(data.correct || '').slice(0, 120); guess.cur.right = !!data.right;
+                guess.cur.full = (typeof data.full === 'string' && data.full.startsWith('data:image/') && data.full.length < 200000) ? data.full : '';
+                if (guess.cur.right) guess.myScore++;
+                guess.history.push({ master: false, game: guess.cur.correct, right: guess.cur.right });
+                renderGuessModal();
+                scheduleGuessNext();
+            }
+        }
+        // After a reveal: the last round ends the game; otherwise the player who just guessed becomes the quizmaster.
+        function scheduleGuessNext() {
+            if (!guess) return;
+            const g = guess, n = g.n;
+            g.nextTimer = setTimeout(() => {
+                if (!guess || guess !== g || g.n !== n) return;
+                if (n >= g.total) { g.phase = 'final'; renderGuessModal(); return; }
+                if (g.role === 'guesser') sendGuessRound(n + 1); // I just guessed, so I ask next
+            }, 3800);
+        }
+
+        function renderGuessModal() {
+            if (!guess || guess.phase === 'invited') return;
+            const g = guess, friend = friends.find(f => f.id === connectedFriendId), name = friend ? friend.name : 'Friend';
+            const { card, modal } = openToolModal('guess-modal', 'min(560px, 96vw)');
+            card.appendChild(el('div', 'tool-title', '🎯 Guess the game'));
+            const score = el('div', 'guess-score'); score.appendChild(el('span', '', `You ${g.myScore}`)); score.appendChild(el('span', '', g.phase === 'final' ? 'Final' : `Round ${Math.max(1, g.n)} of ${g.total}`)); score.appendChild(el('span', '', `${name} ${g.theirScore}`)); card.appendChild(score);
+            if (g.phase === 'waiting') { card.appendChild(el('div', 'tool-hint', `Waiting for ${name} to join...`)); }
+            else if (g.phase === 'final') {
+                const draw = g.myScore === g.theirScore;
+                card.appendChild(el('div', 'tool-title', draw ? "🤝 It's a draw!" : (g.myScore > g.theirScore ? '🏆 You win!' : `🏆 ${name} wins!`)));
+                card.appendChild(el('div', 'tool-hint', `Final score: you ${g.myScore}, ${name} ${g.theirScore}.`));
+            } else if (g.cur) {
+                const c = g.cur;
+                card.appendChild(el('div', 'tool-hint', g.role === 'master' ? (c.revealed ? (c.right ? `${name} got it!` : `${name} missed it.`) : `Your screenshot: ${c.correct}. Waiting for ${name} to guess...`) : (c.revealed ? (c.right ? '✅ Correct!' : `❌ It was ${c.correct}.`) : 'Which game is this from?')));
+                const img = document.createElement('img'); img.className = 'guess-img'; img.src = c.revealed && c.full ? c.full : c.img; img.alt = 'Clue'; card.appendChild(img);
+                const grid = el('div', 'guess-choices');
+                c.choices.forEach(ch => {
+                    const b = el('button', '', ch); b.type = 'button';
+                    if (c.revealed) { b.disabled = true; if (ch === c.correct) b.classList.add('right'); else if (ch === c.answer) b.classList.add('wrong'); }
+                    else if (g.role === 'master') b.disabled = true;
+                    if (c.answer === ch) b.classList.add('mine');
+                    b.addEventListener('click', () => {
+                        if (g.role !== 'guesser' || c.answer !== null) return;
+                        c.answer = ch; sendToConn({ type: 'guess_answer', id: g.id, n: g.n, choice: ch });
+                        grid.querySelectorAll('button').forEach(x => { x.disabled = true; x.classList.toggle('mine', x.textContent === ch); });
+                    });
+                    grid.appendChild(b);
+                });
+                card.appendChild(grid);
+            }
+            const actions = el('div', 'tool-bar');
+            if (g.phase === 'final') actions.appendChild(toolBtn('Play again', () => { closeGuess(); startGuessGame(); }, 'tool-btn primary'));
+            actions.appendChild(toolBtn(g.phase === 'final' ? 'Close' : 'End game', () => { if (g.phase !== 'final') sendToConn({ type: 'guess_cancel', id: g.id }); closeGuess(); }, g.phase === 'final' ? 'tool-btn' : 'tool-btn danger'));
+            card.appendChild(actions);
+        }
+        document.getElementById('btn-guess').addEventListener('click', startGuessGame);
+
+        // ============================================================
+        // PLAY-TIME JOURNAL
+        // Per-game timeline built from two things: your captures (dates and times from the file names, always
+        // available) and play sessions Hub tracks from your own Switch presence while it is open.
+        // Notes and sessions live in this browser only.
+        // ============================================================
+        let journal = { sessions: [], notes: {} };
+        try { const j = JSON.parse(localStorage.getItem('switch_hub_journal') || 'null'); if (j && Array.isArray(j.sessions)) journal = { sessions: j.sessions, notes: j.notes || {} }; } catch (e) {}
+        let journalSaveTimer = null;
+        function saveJournal() { if (journalSaveTimer) return; journalSaveTimer = setTimeout(() => { journalSaveTimer = null; try { localStorage.setItem('switch_hub_journal', JSON.stringify({ sessions: journal.sessions.slice(-5000), notes: journal.notes })); } catch (e) {} }, 1500); }
+        window.addEventListener('pagehide', () => { try { localStorage.setItem('switch_hub_journal', JSON.stringify({ sessions: journal.sessions.slice(-5000), notes: journal.notes })); } catch (e) {} });
+        const JOURNAL_GAP_MS = 3 * 60 * 1000; // a session carries on if we see the same game again within this
+        function normGame(name) { return String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, ''); }
+        function fmtPlayTime(ms) {
+            if (!ms || ms < 60000) return ms ? '<1 min' : '0 min';
+            const mins = Math.round(ms / 60000);
+            if (mins < 60) return `${mins} min`;
+            const h = mins / 60; return `${h >= 10 ? Math.round(h) : (Math.round(h * 10) / 10)} h`;
+        }
+        // Call with the game you're playing right now (or null when you're not). Safe to call as often as you like.
+        function journalIngest(gameName, now) {
+            now = now || Date.now();
+            const last = journal.sessions[journal.sessions.length - 1];
+            if (!gameName) return;
+            const norm = normGame(gameName);
+            if (!norm) return;
+            if (last && last.norm === norm && now - last.end <= JOURNAL_GAP_MS) { if (now > last.end) { last.end = now; saveJournal(); } return; }
+            journal.sessions.push({ game: String(gameName).slice(0, 120), norm, start: now, end: now });
+            saveJournal();
+        }
+        function journalFromPresenceCache() {
+            if (!myProfile.nsaId) return;
+            const cached = presenceCache[myProfile.nsaId];
+            if (!cached || cached.error || !cached.data || !cached.data.friend) return;
+            const p = cached.data.friend.presence;
+            if (p && p.state === 'ONLINE' && p.game && p.game.name) journalIngest(p.game.name);
+        }
+        async function journalPoll() { if (!myProfile.nsaId) return; try { await fetchPresence(myProfile.nsaId); journalFromPresenceCache(); } catch (e) {} }
+        setInterval(journalPoll, 60 * 1000);
+        setTimeout(journalPoll, 5000);
+
+        function sessionMs(s) { return Math.max(0, (s.end || s.start) - s.start); }
+        function journalTrackedMs(fromMs, toMs) {
+            return journal.sessions.reduce((sum, s) => (s.start >= fromMs && s.start < toMs) ? sum + sessionMs(s) : sum, 0);
+        }
+        // One entry per game, merging library captures with tracked sessions.
+        function buildJournalEntries() {
+            const map = new Map();
+            const entry = (name) => { const k = normGame(name); if (!k) return null; let e = map.get(k); if (!e) { e = { key: k, name, captures: 0, first: 0, last: 0, trackedMs: 0, sessions: 0, lastPlayed: 0, cover: null, coverAt: 0, months: new Map() }; map.set(k, e); } return e; };
+            allMediaFiles.forEach(m => {
+                const g = gameKey(m.hash); if (!isRealGameName(g)) return;
+                const e = entry(g); if (!e) return;
+                const t = mediaSortTime(m);
+                e.captures++;
+                if (t) { if (!e.first || t < e.first) e.first = t; if (t > e.last) e.last = t; const d = new Date(t); const mk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; const mo = e.months.get(mk) || { captures: 0, ms: 0 }; mo.captures++; e.months.set(mk, mo); }
+                if (m.type === 'image' && m.url && t >= e.coverAt) { e.cover = m.url; e.coverAt = t; }
+            });
+            journal.sessions.forEach(s => {
+                const e = entry(s.game); if (!e) return;
+                const ms = sessionMs(s); e.trackedMs += ms; e.sessions++; if (s.end > e.lastPlayed) e.lastPlayed = s.end;
+                const d = new Date(s.start); const mk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; const mo = e.months.get(mk) || { captures: 0, ms: 0 }; mo.ms += ms; e.months.set(mk, mo);
+            });
+            return [...map.values()].sort((a, b) => Math.max(b.last, b.lastPlayed) - Math.max(a.last, a.lastPlayed));
+        }
+        function journalDateRange(e) {
+            if (!e.first) return '';
+            const a = formatDay(e.first), b = formatDay(e.last);
+            return a === b ? a : `${a} to ${b}`;
+        }
+        function journalMarkdown(entries) {
+            const lines = [`# Play-time journal`, `Exported ${formatDay(Date.now())}`, ''];
+            entries.forEach(e => {
+                lines.push(`## ${e.name}`);
+                lines.push(`- Captures: ${e.captures}${e.first ? ` (${journalDateRange(e)})` : ''}`);
+                if (e.trackedMs) lines.push(`- Time tracked: ${fmtPlayTime(e.trackedMs)} over ${e.sessions} session${e.sessions === 1 ? '' : 's'}`);
+                const note = journal.notes[e.key]; if (note) lines.push('', note);
+                lines.push('');
+            });
+            return lines.join('\n');
+        }
+
+        function showJournalModal(tab) {
+            tab = tab || 'games';
+            const entries = buildJournalEntries();
+            const { card, close } = openToolModal('journal-modal', 'min(760px, 96vw)');
+            card.appendChild(el('div', 'tool-title', '📓 Play-time journal'));
+            const totalMs = journal.sessions.reduce((s, x) => s + sessionMs(x), 0);
+            card.appendChild(el('div', 'tool-hint', `${entries.length} game${entries.length === 1 ? '' : 's'} · ${allMediaFiles.length.toLocaleString()} captures · ${fmtPlayTime(totalMs)} tracked`));
+            if (!myProfile.nsaId) card.appendChild(el('div', 'tool-hint', 'Tip: add your NSA ID in Settings and Hub will also track how long you play (it checks your Switch status every minute while Hub is open). Until then the journal is built from your captures.'));
+            else card.appendChild(el('div', 'tool-hint', 'Play time is tracked from your Switch status while Hub is open, so time played with Hub closed isn\'t counted.'));
+            const tabs = el('div', 'tool-bar');
+            [['games', 'Games'], ['timeline', 'Timeline']].forEach(([id, label]) => { const b = toolBtn(label, () => { close(); showJournalModal(id); }); if (id === tab) b.classList.add('active'); tabs.appendChild(b); });
+            card.appendChild(tabs);
+            const body = el('div', 'reel-list'); body.style.maxHeight = '54vh'; card.appendChild(body);
+            if (!entries.length) body.appendChild(el('div', 'tool-hint', 'Nothing here yet. Load your SD card folder so Hub can read your captures.'));
+            if (tab === 'games') {
+                const search = document.createElement('input'); search.type = 'text'; search.placeholder = 'Search games'; search.style.cssText = 'background:var(--switch-light);color:white;border:1px solid rgba(77,77,77,0.6);border-radius:0.4rem;padding:0.35rem 0.6rem;font-size:0.8rem;';
+                card.insertBefore(search, body);
+                const draw = () => {
+                    body.innerHTML = '';
+                    const q = normGame(search.value);
+                    entries.filter(e => !q || e.key.includes(q)).forEach(e => {
+                        const row = el('div', 'journal-row');
+                        if (e.cover) { const img = document.createElement('img'); img.src = e.cover; img.loading = 'lazy'; img.alt = ''; row.appendChild(img); } else row.appendChild(el('div', 'journal-ph', '🎮'));
+                        const col = el('div'); col.style.cssText = 'flex:1;min-width:0;';
+                        col.appendChild(el('div', 'j-name', e.name));
+                        const bits = [`${e.captures} capture${e.captures === 1 ? '' : 's'}`];
+                        if (e.first) bits.push(journalDateRange(e));
+                        if (e.trackedMs) bits.push(`${fmtPlayTime(e.trackedMs)} tracked`);
+                        col.appendChild(el('div', 'j-meta', bits.join(' · ')));
+                        const ta = document.createElement('textarea'); ta.placeholder = 'Notes (where you left off, goals, favourite moments...)'; ta.value = journal.notes[e.key] || ''; ta.maxLength = 2000;
+                        ta.addEventListener('input', () => { if (ta.value.trim()) journal.notes[e.key] = ta.value; else delete journal.notes[e.key]; saveJournal(); });
+                        col.appendChild(ta); row.appendChild(col); body.appendChild(row);
+                    });
+                };
+                search.addEventListener('input', draw); draw();
+            } else {
+                const months = new Map();
+                entries.forEach(e => e.months.forEach((v, mk) => { if (!months.has(mk)) months.set(mk, []); months.get(mk).push({ name: e.name, ...v }); }));
+                [...months.keys()].sort().reverse().forEach(mk => {
+                    const [y, m] = mk.split('-').map(Number);
+                    const box = el('div', 'journal-row'); box.style.flexDirection = 'column'; box.style.gap = '0.25rem';
+                    box.appendChild(el('div', 'j-name', `${MONTH_NAMES[m - 1]} ${y}`));
+                    months.get(mk).sort((a, b) => (b.ms - a.ms) || (b.captures - a.captures)).forEach(g => {
+                        const bits = []; if (g.captures) bits.push(`${g.captures} capture${g.captures === 1 ? '' : 's'}`); if (g.ms) bits.push(fmtPlayTime(g.ms));
+                        const line = el('div', 'tool-hint'); line.style.color = 'white'; line.textContent = `${g.name}: ${bits.join(' · ')}`; box.appendChild(line);
+                    });
+                    body.appendChild(box);
+                });
+            }
+            const actions = el('div', 'tool-bar');
+            actions.appendChild(toolBtn('⬇ Export (.md)', () => downloadBlob(new Blob([journalMarkdown(entries)], { type: 'text/markdown' }), 'play-time-journal.md')));
+            actions.appendChild(toolBtn('Close', close));
+            card.appendChild(actions);
+        }
+        document.getElementById('btn-journal').addEventListener('click', () => showJournalModal());
+
+        // ============================================================
+        // SHAREABLE YEAR IN REVIEW CARD (a PNG you can post or send)
+        // ============================================================
+        function cardRoundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+        function cardFitText(ctx, text, maxW, startSize, weight) {
+            let size = startSize; ctx.font = `${weight} ${size}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+            while (ctx.measureText(text).width > maxW && size > 14) { size -= 2; ctx.font = `${weight} ${size}px system-ui, -apple-system, "Segoe UI", sans-serif`; }
+            return size;
+        }
+        // view: a year number or 'all'; story: tall 9:16 layout
+        async function renderYearCard(view, story) {
+            const items = view === 'all' ? allMediaFiles : allMediaFiles.filter(m => m.dateStr.startsWith(view + '-'));
+            const s = computeStats(items);
+            const W = 1080, H = story ? 1920 : 1350;
+            const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+            const ctx = cv.getContext('2d');
+            const bg = ctx.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#0e0e14'); bg.addColorStop(0.6, '#171726'); bg.addColorStop(1, '#2a0a14');
+            ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+            ctx.fillStyle = '#e60012'; ctx.fillRect(0, 0, W, 14);
+            const FONT = 'system-ui, -apple-system, "Segoe UI", sans-serif';
+            const pad = 72;
+            ctx.textBaseline = 'alphabetic';
+            ctx.fillStyle = 'rgba(255,255,255,0.65)'; ctx.font = `700 30px ${FONT}`; ctx.fillText('SWITCH HUB', pad, 92);
+            const who = (myProfile.name || 'My').replace(/[<>]/g, '');
+            const title = view === 'all' ? `${who}'s captures, all time` : `${who}'s ${view} in Switch captures`;
+            ctx.fillStyle = '#fff'; const ts = cardFitText(ctx, title, W - pad * 2, 60, 800); ctx.fillText(title, pad, 92 + 24 + ts);
+            let y = 92 + 24 + ts + 40;
+
+            // photo collage (skips spoiler-marked games)
+            const games = s.games.filter(([g]) => !(spoilerGamesMap[g] === true)).filter(([g]) => !items.some(m => gameKey(m.hash) === g && isGameSpoiled(m.hash))).slice(0, story ? 5 : 3);
+            const bottomH = 150 + (games.length ? 26 + games.length * 96 + 10 : 0) + 150 + 110;
+            const avail = H - y - bottomH - 24;
+            const gap = 14, cols = 2, cellW0 = (W - pad * 2 - gap) / cols;
+            const fitRows = Math.max(1, Math.floor((avail + gap) / (cellW0 * 9 / 16 + gap)));
+            const imgs = items.filter(m => m.type === 'image' && m.file && !isGameSpoiled(m.hash));
+            const pick = []; const want = Math.min(story ? 8 : 6, fitRows * cols);
+            if (imgs.length) { const step = Math.max(1, Math.floor(imgs.length / want)); for (let i = 0; i < imgs.length && pick.length < want; i += step) pick.push(imgs[i]); }
+            const rows = Math.ceil(Math.max(pick.length, 1) / cols);
+            const cellW = cellW0, cellH = cellW * 9 / 16;
+            if (pick.length) {
+                for (let i = 0; i < pick.length; i++) {
+                    const cx = pad + (i % cols) * (cellW + gap), cy = y + Math.floor(i / cols) * (cellH + gap);
+                    try {
+                        const bmp = await createImageBitmap(pick[i].file);
+                        ctx.save(); cardRoundRect(ctx, cx, cy, cellW, cellH, 18); ctx.clip();
+                        const k = Math.max(cellW / bmp.width, cellH / bmp.height);
+                        ctx.drawImage(bmp, cx + (cellW - bmp.width * k) / 2, cy + (cellH - bmp.height * k) / 2, bmp.width * k, bmp.height * k);
+                        ctx.restore(); try { bmp.close(); } catch (e) {}
+                    } catch (e) { ctx.fillStyle = '#222'; cardRoundRect(ctx, cx, cy, cellW, cellH, 18); ctx.fill(); }
+                }
+                y += rows * (cellH + gap) + 24;
+            }
+            // headline numbers
+            ctx.fillStyle = '#fff'; ctx.font = `800 120px ${FONT}`; ctx.fillText(s.total.toLocaleString(), pad, y + 100);
+            const bigW = ctx.measureText(s.total.toLocaleString()).width;
+            ctx.fillStyle = 'rgba(255,255,255,0.75)'; ctx.font = `600 34px ${FONT}`;
+            ctx.fillText(s.total === 1 ? 'capture' : 'captures', pad + bigW + 22, y + 62);
+            ctx.font = `500 28px ${FONT}`; ctx.fillStyle = 'rgba(255,255,255,0.55)';
+            ctx.fillText(`${s.photos.toLocaleString()} photos · ${s.videos.toLocaleString()} clips · ${s.games.length} game${s.games.length === 1 ? '' : 's'}`, pad + bigW + 22, y + 100);
+            y += 150;
+            // top games (not spoilers)
+            if (games.length) {
+                ctx.fillStyle = '#e60012'; ctx.font = `800 26px ${FONT}`; ctx.fillText('TOP GAMES', pad, y); y += 26;
+                const max = games[0][1];
+                games.forEach(([g, n]) => {
+                    ctx.fillStyle = '#fff'; cardFitText(ctx, g, W - pad * 2 - 130, 34, 700); ctx.fillText(g, pad, y + 40);
+                    ctx.fillStyle = 'rgba(255,255,255,0.6)'; ctx.font = `700 30px ${FONT}`; ctx.textAlign = 'right'; ctx.fillText(String(n), W - pad, y + 40); ctx.textAlign = 'left';
+                    ctx.fillStyle = 'rgba(255,255,255,0.1)'; cardRoundRect(ctx, pad, y + 54, W - pad * 2, 14, 7); ctx.fill();
+                    ctx.fillStyle = '#e60012'; cardRoundRect(ctx, pad, y + 54, Math.max(14, (W - pad * 2) * n / max), 14, 7); ctx.fill();
+                    y += 96;
+                });
+                y += 10;
+            }
+            // stat chips
+            const chips = [];
+            if (s.days.length) chips.push([s.days[0][0], `Busiest day (${s.days[0][1]})`]);
+            chips.push([`${s.longestStreak} day${s.longestStreak === 1 ? '' : 's'}`, 'Longest streak']);
+            chips.push([s.activeDays.toLocaleString(), 'Days with captures']);
+            const from = view === 'all' ? 0 : new Date(view, 0, 1).getTime(), to = view === 'all' ? Infinity : new Date(view + 1, 0, 1).getTime();
+            const tracked = journalTrackedMs(from, to);
+            if (tracked >= 60000) chips.push([fmtPlayTime(tracked), 'Time played (tracked)']);
+            const chipW = (W - pad * 2 - gap * (chips.length - 1)) / chips.length, chipH = 150;
+            chips.forEach(([big, lbl], i) => {
+                const cx = pad + i * (chipW + gap);
+                ctx.fillStyle = 'rgba(255,255,255,0.07)'; cardRoundRect(ctx, cx, y, chipW, chipH, 20); ctx.fill();
+                ctx.fillStyle = '#fff'; cardFitText(ctx, big, chipW - 28, 40, 800); ctx.fillText(big, cx + 18, y + 70);
+                ctx.fillStyle = 'rgba(255,255,255,0.6)'; cardFitText(ctx, lbl, chipW - 28, 22, 600); ctx.fillText(lbl, cx + 18, y + 114);
+            });
+            y += chipH;
+            ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.font = `600 24px ${FONT}`; ctx.fillText('Made with Switch Hub', pad, H - 52);
+            ctx.textAlign = 'right'; ctx.fillText(formatDay(Date.now()), W - pad, H - 52); ctx.textAlign = 'left';
+            return { canvas: cv, used: y, items: items.length };
+        }
+
+        async function showYearCardModal(view) {
+            if (!allMediaFiles.length) { showToast('Load your SD card first.', 'yellow'); return; }
+            const { card, close } = openToolModal('yearcard-modal', 'min(620px, 96vw)');
+            card.appendChild(el('div', 'tool-title', '🖼️ Year in Review card'));
+            card.appendChild(el('div', 'tool-hint', 'A picture you can post or send. Games marked as spoilers are left out.'));
+            const holder = el('div'); holder.style.cssText = 'display:flex;justify-content:center;'; card.appendChild(holder);
+            const bar = el('div', 'tool-bar'); card.appendChild(bar);
+            let story = false, blob = null;
+            const draw = async () => {
+                holder.innerHTML = ''; holder.appendChild(el('div', 'tool-hint', 'Drawing...')); saveB.disabled = sendB.disabled = true;
+                const { canvas } = await renderYearCard(view, story);
+                blob = await canvasToBlob(canvas, 'image/png');
+                const img = document.createElement('img'); img.src = URL.createObjectURL(blob); img.style.cssText = 'max-height:62vh;max-width:100%;border-radius:0.6rem;'; img.alt = 'Year in Review card';
+                holder.innerHTML = ''; holder.appendChild(img); saveB.disabled = sendB.disabled = false;
+            };
+            const postB = toolBtn('Post (4:5)', () => { story = false; postB.classList.add('active'); storyB.classList.remove('active'); draw(); }); postB.classList.add('active');
+            const storyB = toolBtn('Story (9:16)', () => { story = true; storyB.classList.add('active'); postB.classList.remove('active'); draw(); });
+            const fname = () => `switch-hub-${view === 'all' ? 'all-time' : view}-${story ? 'story' : 'card'}.png`;
+            const saveB = toolBtn('⬇ Save PNG', () => { if (blob) downloadBlob(blob, fname()); }, 'tool-btn primary');
+            const sendB = toolBtn('💬 Send to chat', () => { if (blob) { const f = new File([blob], fname(), { type: 'image/png' }); close(); stageFileForFriend(f, 'Year in Review'); } });
+            bar.appendChild(postB); bar.appendChild(storyB); bar.appendChild(el('div', 'tool-sep')); bar.appendChild(saveB); bar.appendChild(sendB); bar.appendChild(toolBtn('Close', close));
+            await draw();
+        }
+
+        // ============================================================
         // ALBUMS, SELECT MODE, ZIP, DUPLICATES (my own screenshots)
         // ============================================================
         function showChoiceModal(title, choices, onPick) {
@@ -4962,6 +6110,8 @@
                 cards.appendChild(statCard(busyDay, `Busiest day (${busyN})`));
                 if (view !== 'all') cards.appendChild(statCard(MONTH_NAMES[s.busiestMonthIdx], `Busiest month (${s.byMonth[s.busiestMonthIdx]})`));
                 cards.appendChild(statCard(`${s.longestStreak} day${s.longestStreak === 1 ? '' : 's'}`, 'Longest streak'));
+                { const ms = view === 'all' ? journalTrackedMs(0, Infinity) : journalTrackedMs(new Date(view, 0, 1).getTime(), new Date(view + 1, 0, 1).getTime());
+                  if (ms >= 60000) cards.appendChild(statCard(fmtPlayTime(ms), 'Time played (tracked)')); }
                 cards.appendChild(statCard(s.activeDays.toLocaleString(), 'Days with captures'));
                 if (s.bytes) cards.appendChild(statCard(s.bytes >= 1073741824 ? (s.bytes / 1073741824).toFixed(1) + ' GB' : Math.round(s.bytes / 1048576) + ' MB', 'Total size'));
                 card.appendChild(cards);
@@ -4987,6 +6137,13 @@
 
             const actions = document.createElement('div');
             actions.className = 'modal-actions';
+            if (s.total > 0) {
+                const shareB = document.createElement('button');
+                shareB.className = 'btn-save';
+                shareB.textContent = '🖼️ Share card';
+                shareB.addEventListener('click', () => { modal.remove(); showYearCardModal(view); });
+                actions.appendChild(shareB);
+            }
             const close = document.createElement('button');
             close.className = 'btn-cancel';
             close.textContent = 'Close';
