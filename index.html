@@ -603,6 +603,7 @@
         <div id="peer-activity-box" class="stats-box hidden">
             <p style="color: #a855f7; font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem;">Peer Activity</p>
             <p id="peer-activity-text" style="color: var(--switch-muted); font-size: 0.8rem; line-height: 1.4;">Not connected.</p>
+            <p id="peer-browser-line" class="hidden" style="color: var(--switch-muted); font-size: 0.72rem; line-height: 1.4; margin-top: 0.3rem;"></p>
             <div id="peer-loading-bar-wrap" class="hidden" style="margin-top: 0.4rem; height: 4px; background: rgba(255,255,255,0.1); border-radius: 9999px; overflow: hidden;">
                 <div id="peer-loading-bar" style="height: 100%; width: 0%; background: #a855f7; transition: width 0.2s;"></div>
             </div>
@@ -871,6 +872,7 @@
                     <button id="btn-copy-peer-id" class="btn-save" style="padding: 0.5rem 0.8rem;">Copy</button>
                 </div>
                 <p style="color: var(--switch-muted); font-size: 0.72rem; margin-top: 0.4rem; line-height: 1.4;">This stays the same every time, so friends and invite links keep working.</p>
+                <p id="my-browser-line" style="color: var(--switch-muted); font-size: 0.72rem; margin-top: 0.3rem;"></p>
                 <div style="display:flex; align-items:center; gap: 0.75rem; margin-top: 0.5rem;">
                     <button id="btn-manual-connect-open" class="btn-cancel" style="padding: 0.3rem 0.5rem; font-size: 0.75rem; color: var(--switch-muted);">Connect manually</button>
                     <button id="btn-reset-peer-id" class="btn-cancel" style="padding: 0.3rem 0.5rem; font-size: 0.72rem; color: var(--switch-muted);">Reset my ID</button>
@@ -1699,8 +1701,36 @@
             }
         }
 
+        // Just the browser's name (Chrome, Firefox...), never the full user agent. It is shared with a connected friend so you both know what the other is using.
+        function detectBrowserName() {
+            const ua = String(navigator.userAgent || '');
+            if (/EdgA?\/|EdgiOS\//.test(ua)) return 'Edge';
+            if (/OPR\/|Opera|OPiOS/.test(ua)) return 'Opera';
+            if (/SamsungBrowser\//.test(ua)) return 'Samsung Internet';
+            if (/Vivaldi\//.test(ua)) return 'Vivaldi';
+            if (/DuckDuckGo\//.test(ua)) return 'DuckDuckGo';
+            if (/Firefox\/|FxiOS\//.test(ua)) return 'Firefox';
+            if (/Chrome\/|CriOS\//.test(ua)) return 'Chrome';
+            if (/Safari\//.test(ua)) return 'Safari';
+            return 'Unknown';
+        }
+        let myBrowser = detectBrowserName();
+        try { if (navigator.brave && navigator.brave.isBrave) navigator.brave.isBrave().then(b => { if (b) { myBrowser = 'Brave'; renderBrowserInfo(); } }).catch(() => {}); } catch (e) {}
+        const peerBrowsers = new Map(); // friend id -> browser name, only while connected
+        function cleanBrowserName(v) { const s = String(v || '').replace(/[^A-Za-z0-9 .+-]/g, '').trim().slice(0, 24); return s || ''; }
+        function renderBrowserInfo() {
+            const mine = document.getElementById('my-browser-line'); if (mine) mine.textContent = `Your browser: ${myBrowser}`;
+            const line = document.getElementById('peer-browser-line'); if (!line) return;
+            const f = connectedFriendId ? friends.find(x => x.id === connectedFriendId) : null;
+            if (!f || !(activeConnection && activeConnection.open)) { line.classList.add('hidden'); return; }
+            const theirs = peerBrowsers.get(f.id);
+            line.textContent = `🌐 You: ${myBrowser} · ${f.name}: ${theirs || 'unknown'}`;
+            line.title = theirs ? '' : 'They may be on an older version of Switch Hub that does not share this.';
+            line.classList.remove('hidden');
+        }
+        renderBrowserInfo();
         function myHelloPayload() {
-            return { type: 'hello', profile: { name: myProfile.name, avatar: myProfile.avatar, status: myProfile.status, nsaId: myProfile.nsaId || null } };
+            return { type: 'hello', profile: { name: myProfile.name, avatar: myProfile.avatar, status: myProfile.status, nsaId: myProfile.nsaId || null, browser: myBrowser } };
         }
 
         // WebRTC doesn't reliably tell you when the other side just vanishes
@@ -1730,6 +1760,7 @@
             // Show the connected-friend panel (watch together, calls, session album) right away,
             // instead of waiting for the first presence message to arrive.
             document.getElementById('peer-activity-box').classList.remove('hidden');
+            renderBrowserInfo();
             sendPresence();
             startPingLoop();
             renderFriendList();
@@ -1745,6 +1776,7 @@
                 // must not tear down the live one that replaced it.
                 if (activeConnection && activeConnection !== conn && activeConnection.open) return;
                 if (connectedFriendId === friend.id) { connectedFriendId = null; activeConnection = null; }
+                peerBrowsers.delete(friend.id); renderBrowserInfo();
                 remoteMediaFiles = [];
                 peerViewingTarget = null;
                 lastPeerPresence = null;
@@ -1789,6 +1821,7 @@
                     if (data.profile.name) friend.name = data.profile.name;
                     friend.avatar = data.profile.avatar || friend.avatar;
                     friend.status = data.profile.status || '';
+                    const theirBrowser = cleanBrowserName(data.profile.browser); if (theirBrowser) peerBrowsers.set(friend.id, theirBrowser); else peerBrowsers.delete(friend.id);
                     if (data.profile.nsaId && data.profile.nsaId !== friend.presenceNsaId) {
                         friend.presenceNsaId = data.profile.nsaId;
                         fetchPresence(data.profile.nsaId).then(() => { renderFriendList(); updateTopBar(); });
@@ -1799,6 +1832,9 @@
                 }
                 renderFriendList();
                 updateTopBar();
+                renderBrowserInfo();
+                // The other side may have said hello before we were listening (it happens), so answer once. `reply` stops this from ping-ponging.
+                if (!data.reply) sendToConn({ ...myHelloPayload(), reply: true });
             }
             else if (data.type === 'gallery_sync') {
                 const incoming = data.files.map(f => ({ ...f, isRemote: true }));
