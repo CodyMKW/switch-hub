@@ -136,6 +136,9 @@
             cursor: pointer; transition: color 0.2s, background-color 0.2s;
         }
         .nav-item:hover { color: white; }
+        #nav-filters { display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem; }
+        #nav-filters .nav-item { text-align: left; padding-left: 0.7rem; padding-right: 0.4rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+        #nav-filters .nav-item[data-sort="all"] { grid-column: 1 / -1; }
         .nav-item.active { background-color: var(--switch-light); border-left-color: var(--switch-red); color: white; }
 
         .settings-btn-container { margin-top: auto; padding: 1rem; border-top: 1px solid rgba(43,43,43,0.5); }
@@ -564,8 +567,11 @@
         <div class="nav-section-title" id="sort-title">Sort By</div>
         <nav class="nav-container" id="nav-filters">
             <button class="nav-item active" data-sort="all">All Media</button>
-            <button class="nav-item" data-sort="date">Sort by Date</button>
-            <button class="nav-item" data-sort="game">Sort by Game</button>
+            <button class="nav-item" data-sort="date">By Date</button>
+            <button class="nav-item" data-sort="game">By Game</button>
+            <button class="nav-item" data-sort="year">By Year</button>
+            <button class="nav-item" data-sort="month">By Month</button>
+            <button class="nav-item" data-sort="playtime">By Play Time</button>
         </nav>
 
         <div class="nav-section-title collapse-toggle" id="discover-title" data-collapse="discover"><span>Discover</span><span class="chev">▾</span></div>
@@ -985,6 +991,8 @@
         let remoteMediaFiles = [];
         let currentSource = 'local'; // 'local' or 'remote'
         let currentSort = 'all';
+        const SORT_LABELS = { all: 'All Media', date: 'Sorted by Date', game: 'Sorted by Game', year: 'Sorted by Year', month: 'Sorted by Month', playtime: 'Sorted by Play Time' };
+        const sortLabel = (s) => SORT_LABELS[s] || SORT_LABELS.all;
         let currentLightboxIndex = 0;
         let lightboxOpenFlag = false; // true from the moment it opens until the moment close starts (the fade-out takes 300ms)
         let activeMediaList = [];
@@ -1440,7 +1448,7 @@
 
             if (!friend) {
                 titleEl.textContent = 'My SD Card';
-                statusEl.textContent = currentSort === 'all' ? 'All Media' : (currentSort === 'date' ? 'Sorted by Date' : 'Sorted by Game');
+                statusEl.textContent = sortLabel(currentSort);
                 indicatorEl.style.background = 'var(--switch-cyan)';
                 return;
             }
@@ -1450,7 +1458,7 @@
             titleEl.textContent = friend.name;
 
             if (activeView === 'gallery') {
-                const sortSuffix = currentSort === 'all' ? 'All Media' : (currentSort === 'date' ? 'Sorted by Date' : 'Sorted by Game');
+                const sortSuffix = sortLabel(currentSort);
                 statusEl.textContent = (isConnected ? `${friend.name}'s Gallery` : 'Not connected') + ' • ' + sortSuffix;
             } else {
                 const linkedSummary = friend.presenceNsaId ? presenceSummary(friend.presenceNsaId) : null;
@@ -2108,7 +2116,7 @@
                 text.innerHTML = `👀 Looking at a ${data.viewing.type} from <strong style="color:white;">${data.viewing.game}</strong> in ${galleryLabel}`;
             } else {
                 const src = data.source === 'local' ? `their own SD Card` : `your shared gallery`;
-                const sortTxt = data.sort === 'all' ? 'all media' : (data.sort === 'date' ? 'sorted by date' : 'sorted by game');
+                const sortTxt = sortLabel(data.sort).toLowerCase();
                 text.textContent = `Browsing ${src} • ${sortTxt}`;
             }
         }
@@ -6383,6 +6391,24 @@
                 const gk = new Map();
                 currentSortedList.forEach(m => { let g = gk.get(m.hash); if (g === undefined) { g = gameKey(m.hash); gk.set(m.hash, g); } groupOf.set(m, g); });
                 currentSortedList.sort((a, b) => groupOf.get(a).localeCompare(groupOf.get(b)) || newestFirst(a, b));
+            } else if (currentSort === 'year' || currentSort === 'month') {
+                const monthly = currentSort === 'month';
+                const label = (m) => { const ds = String(m.dateStr || ''); if (!/^\d{4}-\d{2}/.test(ds)) return 'Unknown date'; return monthly ? `${MONTH_NAMES[+ds.slice(5, 7) - 1]} ${ds.slice(0, 4)}` : ds.slice(0, 4); };
+                const key = (m) => { const ds = String(m.dateStr || ''); return /^\d{4}-\d{2}/.test(ds) ? (monthly ? ds.slice(0, 7) : ds.slice(0, 4)) : ''; };
+                currentSortedList.forEach(m => groupOf.set(m, label(m)));
+                currentSortedList.sort((a, b) => { const ka = key(a), kb = key(b); return ka === kb ? newestFirst(a, b) : (ka < kb ? 1 : -1); });
+            } else if (currentSort === 'playtime') {
+                // most-played games first: Nintendo's total when Hub has seen it, otherwise what Hub tracked itself
+                const tracked = new Map(); journal.sessions.forEach(s => tracked.set(s.norm, (tracked.get(s.norm) || 0) + sessionMs(s) / 60000));
+                const minsOf = new Map(), caps = new Map(), gk = new Map();
+                currentSortedList.forEach(m => {
+                    let g = gk.get(m.hash); if (g === undefined) { g = gameKey(m.hash); gk.set(m.hash, g); }
+                    caps.set(g, (caps.get(g) || 0) + 1);
+                    if (!minsOf.has(g) && currentSource === 'local') { const n = normGame(g), o = journal.official[n]; minsOf.set(g, Math.max(o ? o.totalMin : 0, Math.round(tracked.get(n) || 0))); }
+                });
+                currentSortedList.forEach(m => { const g = gk.get(m.hash), mins = minsOf.get(g) || 0; groupOf.set(m, mins > 0 ? `${g} · ${fmtPlayTime(mins * 60000)}` : g); });
+                const rank = (m) => minsOf.get(gk.get(m.hash)) || 0;
+                currentSortedList.sort((a, b) => (rank(b) - rank(a)) || ((caps.get(gk.get(b.hash)) || 0) - (caps.get(gk.get(a.hash)) || 0)) || groupOf.get(a).localeCompare(groupOf.get(b)) || newestFirst(a, b));
             } else {
                 currentSortedList.sort(newestFirst);
             }
@@ -6417,14 +6443,14 @@
                         header.textContent = targetGroup;
                         titleWrapper.appendChild(header);
 
-                        if (currentSort === 'game' && !hashToGameMap[media.hash] && autoGameName(media.hash)) {
+                        if ((currentSort === 'game' || currentSort === 'playtime') && !hashToGameMap[media.hash] && autoGameName(media.hash)) {
                             const autoTag = document.createElement('span');
                             autoTag.title = "Identified automatically from a community game-ID database";
                             autoTag.style.cssText = "font-size: 0.6rem; font-weight: 700; color: var(--switch-cyan); background: rgba(0, 200, 255, 0.1); border: 1px solid var(--switch-cyan); padding: 0.1rem 0.35rem; border-radius: 0.25rem; letter-spacing: 0.04em; margin-left: 0.25rem;";
                             autoTag.textContent = "AUTO";
                             titleWrapper.appendChild(autoTag);
                         }
-                        if (currentSort === 'game') {
+                        if (currentSort === 'game' || currentSort === 'playtime') {
                             const editBtn = document.createElement('button');
                             editBtn.className = 'btn-edit-game';
                             editBtn.title = "Edit Game Name";

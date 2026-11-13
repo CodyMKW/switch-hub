@@ -2,6 +2,14 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.6.0] - 2026-11-12
+
+### Added
+- **Three new ways to sort your gallery.** **By Year** and **By Month** group your captures under 2025, or "March 2025", newest first (captures with no readable date go under "Unknown date"). **By Play Time** lists your most-played games first and shows the hours in each heading (for example "ABZU · 100 h"), using Nintendo's total play time when Hub has seen it and its own tracked time otherwise; games with no known play time come last, most captures first. You can still rename a game or mark it as a spoiler from the Play Time view, just like By Game. Play time comes from your own Switch status, so in a friend's gallery By Play Time just groups by game.
+
+### Changed
+- The Sort By list in the sidebar is now a compact two-column grid so the extra options don't make it longer. The top bar and "what your friend is browsing" text name the new sorts.
+
 ## [1.5.0] - 2026-11-12
 
 ### Changed
