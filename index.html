@@ -6346,6 +6346,12 @@
             paginationControls.classList.remove('flex');
 
             let sourceList = currentSource === 'local' ? allMediaFiles : remoteMediaFiles;
+            // Play time is only known for your own games, so that sort is only offered on your own gallery.
+            { const pb = document.querySelector('#nav-filters .nav-item[data-sort="playtime"]');
+              if (pb) pb.style.display = currentSource === 'local' ? '' : 'none';
+              if (currentSource !== 'local' && currentSort === 'playtime') {
+                  currentSort = 'all'; document.querySelectorAll('#nav-filters .nav-item').forEach(n => n.classList.toggle('active', n.dataset.sort === 'all'));
+              } }
             updateTopBar();
             if (currentSource !== 'local') { selectMode = false; selectedKeys.clear(); selectedObjs.clear(); }
             renderAlbumsList();
