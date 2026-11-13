@@ -482,6 +482,29 @@
         .msg-attachment-progress { font-size: 0.78rem; opacity: 0.85; display: flex; align-items: center; gap: 0.5rem; }
         .msg-attachment-progress .mini-bar { width: 90px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 9999px; overflow: hidden; }
         .msg-attachment-progress .mini-bar-fill { height: 100%; width: 0%; background: currentColor; transition: width 0.2s; }
+        #np-stack { position: fixed; top: 4.5rem; right: 1rem; z-index: 210; display: flex; flex-direction: column; gap: 0.5rem; width: min(340px, calc(100vw - 2rem)); pointer-events: none; }
+        .np-banner { pointer-events: auto; display: flex; align-items: center; gap: 0.7rem; background: var(--switch-light); color: white; border-left: 4px solid var(--switch-cyan); border-radius: 0.6rem; padding: 0.6rem 0.7rem; box-shadow: 0 6px 22px rgba(0,0,0,0.45); animation: npIn 0.28s ease; transition: opacity 0.3s, transform 0.3s; }
+        .np-banner.out { opacity: 0; transform: translateX(20px); }
+        .np-banner img, .np-emoji { width: 2.6rem; height: 2.6rem; border-radius: 0.5rem; object-fit: cover; flex-shrink: 0; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+        .np-body { flex: 1; min-width: 0; }
+        .np-title { font-size: 0.85rem; font-weight: 800; line-height: 1.25; }
+        .np-sub { font-size: 0.72rem; color: var(--switch-muted); margin-top: 0.1rem; }
+        .np-actions { margin-top: 0.4rem; display: flex; gap: 0.4rem; }
+        .np-actions button { background: var(--switch-cyan); color: #04222b; border: none; border-radius: 0.4rem; padding: 0.25rem 0.6rem; font-size: 0.75rem; font-weight: 800; cursor: pointer; }
+        .np-x { background: none; border: none; color: var(--switch-muted); cursor: pointer; align-self: flex-start; font-size: 0.8rem; }
+        @keyframes npIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+        #chat-view.game-themed { border-top: 3px solid var(--game-accent); }
+        #chat-view.game-themed .msg-row.mine .msg-bubble { background: var(--game-accent); color: #fff; }
+        #chat-view.game-themed .msg-row.mine .reply-quote { border-left-color: rgba(255,255,255,0.65); background: rgba(255,255,255,0.15); }
+        #chat-view.game-themed #btn-send:not(:disabled) { background: var(--game-accent); color: #fff; }
+        .game-shots { padding: 0.4rem 1rem 0.5rem; border-bottom: 1px solid rgba(31,31,31,0.8); background: rgba(0,0,0,0.12); flex-shrink: 0; }
+        .gs-head { display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; font-weight: 700; color: var(--switch-muted); margin-bottom: 0.3rem; }
+        .gs-x { background: none; border: none; color: var(--switch-muted); cursor: pointer; font-size: 0.75rem; }
+        .gs-row { display: flex; gap: 0.35rem; overflow-x: auto; align-items: center; }
+        .gs-thumb { flex: 0 0 auto; width: 3.6rem; height: 2.5rem; padding: 0; border: 1px solid rgba(77,77,77,0.6); border-radius: 0.35rem; overflow: hidden; background: #000; cursor: pointer; }
+        .gs-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .gs-thumb[data-owner="them"] { border-color: var(--game-accent, var(--switch-cyan)); }
+        .gs-sep { flex: 0 0 auto; font-size: 0.68rem; color: var(--switch-muted); padding: 0 0.3rem; border-left: 1px solid rgba(77,77,77,0.6); }
         .msg-sender { font-size: 0.68rem; font-weight: 700; margin: 0 0 0.15rem 0.3rem; }
         .msg-meta { display: flex; align-items: center; gap: 0.35rem; font-size: 0.65rem; color: var(--switch-muted); margin-top: 0.2rem; padding: 0 0.2rem; }
         .msg-meta .edited-tag { font-style: italic; }
@@ -719,6 +742,7 @@
                 <span class="pinned-text" id="pinned-text"></span>
                 <span class="pinned-count" id="pinned-count"></span>
             </div>
+            <div class="game-shots hidden" id="game-shots-strip"></div>
             <div class="messages-area" id="messages-area"></div>
             <div class="composer-area">
                 <div class="composer-row">
@@ -908,6 +932,22 @@
             <div class="toggle-row">
                 <label>🔊 Message sound</label>
                 <input type="checkbox" id="setting-sound" checked>
+            </div>
+            <div class="toggle-row" style="margin-top: 0.8rem;">
+                <label>🎮 Banner when someone starts a game</label>
+                <input type="checkbox" id="setting-np-banner" checked>
+            </div>
+            <div class="toggle-row">
+                <label>🎨 Colour the chat for the game they're playing</label>
+                <input type="checkbox" id="setting-np-theme" checked>
+            </div>
+            <div class="toggle-row">
+                <label>🤝 Tell me when we're in the same game</label>
+                <input type="checkbox" id="setting-np-same" checked>
+            </div>
+            <div class="toggle-row">
+                <label>📸 Show screenshots of the game they're playing</label>
+                <input type="checkbox" id="setting-np-shots" checked>
             </div>
 
             <div class="input-group" style="margin-top: 1.25rem;">
@@ -1236,6 +1276,7 @@
             friends.forEach(f => { if (f.presenceNsaId) ids.add(f.presenceNsaId); });
             await Promise.all([...ids].filter(Boolean).map(fetchPresence));
             try { journalFromPresenceCache(); } catch (e) { /* journal not ready yet */ }
+            try { checkNowPlaying(); } catch (e) { console.warn('now playing', e); }
             renderPresenceList();
             renderMyProfileCard();
             renderFriendList();
@@ -1488,6 +1529,7 @@
             const statusEl = document.getElementById('top-bar-status');
             const indicatorEl = document.getElementById('top-view-indicator');
             showGalleryTab(!isGroupId(activeFriendId));
+            if (typeof updateGameTheme === 'function') updateGameTheme();
             if (isGroupId(activeFriendId)) {
                 const g = groupById(activeFriendId);
                 if (g) {
@@ -1518,7 +1560,7 @@
             } else {
                 const linkedSummary = friend.presenceNsaId ? presenceSummary(friend.presenceNsaId) : null;
                 let text = isConnected ? 'Connected' : 'Not connected — click to reconnect';
-                if (isConnected && linkedSummary) text += ` • ${linkedSummary.label}`;
+                if (linkedSummary && (isConnected || /^Playing/.test(linkedSummary.label))) text += ` • ${linkedSummary.label}${typeof npDuration === 'function' && /^Playing/.test(linkedSummary.label) ? npDuration(npFriendGame(friend)) : ''}`;
                 if (isConnected && pingLastRtt) text += ` • ${pingLastRtt}ms`;
                 statusEl.textContent = text;
                 statusEl.style.cursor = isConnected ? 'default' : 'pointer';
@@ -6150,6 +6192,139 @@
         document.getElementById('btn-gdate').addEventListener('click', startGdate);
 
         // ============================================================
+        // NOW PLAYING
+        // Uses the Switch presence Hub already reads for you and your friends. When someone starts a game you get a
+        // banner, the chat takes on a colour for the game they are in, and a strip pulls up your screenshots (and
+        // theirs, while you're connected) from that game. If you are both in the same game, Hub points it out.
+        // Each part has its own switch in Settings.
+        // ============================================================
+        const np = { playing: {}, seen: new Set(), alerted: new Set(), hidden: new Set(), colors: new Map(), shotsSig: '' };
+        const npOn = (k) => myProfile[k] !== false;
+        function npNorm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ''); }
+        function npSame(a, b) { if (!a || !b) return false; if (a === b) return true; const [s, l] = a.length <= b.length ? [a, b] : [b, a]; return s.length >= 8 && l.includes(s); }
+        function npGameOf(nsaId) {
+            const cached = nsaId ? presenceCache[nsaId] : null;
+            if (!cached || cached.error || !cached.data || !cached.data.friend) return null;
+            const p = cached.data.friend.presence;
+            if (!p || p.state !== 'ONLINE' || !p.game || !p.game.name) return null;
+            const since = cached.data.title && cached.data.title.since ? Date.parse(cached.data.title.since) : NaN;
+            return { name: String(p.game.name).slice(0, 120), icon: typeof p.game.imageUri === 'string' && /^https?:/.test(p.game.imageUri) ? p.game.imageUri : '', norm: npNorm(p.game.name), since: isFinite(since) ? since : 0 };
+        }
+        function npFriendGame(friend) { return friend && friend.presenceNsaId ? np.playing[friend.id] || null : null; }
+        function npDuration(g) {
+            if (!g) return '';
+            const mins = Math.floor((Date.now() - (g.since || g.firstSeen || Date.now())) / 60000);
+            if (mins < 1) return ' · just started';
+            if (mins < 60) return ` · ${mins} min`;
+            return ` · ${Math.floor(mins / 60)} h ${mins % 60} min`;
+        }
+        function showNowPlayingBanner(o) {
+            let stack = document.getElementById('np-stack');
+            if (!stack) { stack = document.createElement('div'); stack.id = 'np-stack'; document.body.appendChild(stack); }
+            while (stack.children.length >= 3) stack.firstChild.remove();
+            const card = el('div', 'np-banner'); if (o.accent) card.style.borderLeftColor = o.accent;
+            if (o.icon) { const img = document.createElement('img'); img.src = o.icon; img.alt = ''; img.addEventListener('error', () => img.replaceWith(el('div', 'np-emoji', '🎮'))); card.appendChild(img); } else card.appendChild(el('div', 'np-emoji', o.emoji || '🎮'));
+            const body = el('div', 'np-body'); body.appendChild(el('div', 'np-title', o.title)); if (o.sub) body.appendChild(el('div', 'np-sub', o.sub));
+            if (o.actions && o.actions.length) { const row = el('div', 'np-actions'); o.actions.forEach(a => { const b = el('button', '', a.label); b.type = 'button'; b.addEventListener('click', () => { try { a.onClick(); } catch (e) {} card.remove(); }); row.appendChild(b); }); body.appendChild(row); }
+            card.appendChild(body);
+            const x = el('button', 'np-x', '✕'); x.type = 'button'; x.title = 'Dismiss'; x.addEventListener('click', () => card.remove()); card.appendChild(x);
+            stack.appendChild(card);
+            setTimeout(() => { card.classList.add('out'); setTimeout(() => card.remove(), 350); }, o.ms || 9000);
+            if (myProfile.sound && typeof playBlip === 'function') { try { playBlip(); } catch (e) {} }
+        }
+        function npOpenChat(friend) { if (!friend) return; activeView = 'chat'; selectFriend(friend.id); }
+        function checkNowPlaying() {
+            const people = [{ key: 'me', friend: null, nsaId: myProfile.nsaId }].concat(friends.filter(f => f.presenceNsaId).map(f => ({ key: f.id, friend: f, nsaId: f.presenceNsaId })));
+            const live = new Set(people.map(p => p.key)), seenBefore = new Set(np.seen);
+            Object.keys(np.playing).forEach(k => { if (!live.has(k)) delete np.playing[k]; });
+            people.forEach(p => {
+                const cached = p.nsaId ? presenceCache[p.nsaId] : null;
+                if (!cached || cached.error) return; // keep what we knew when the lookup failed
+                const g = npGameOf(p.nsaId), prev = np.playing[p.key], known = np.seen.has(p.key);
+                if (!g) { delete np.playing[p.key]; np.seen.add(p.key); return; }
+                if (!prev || prev.norm !== g.norm) {
+                    g.firstSeen = Date.now(); np.playing[p.key] = g;
+                    if (known && npOn('npBanner')) {
+                        showNowPlayingBanner(p.friend
+                            ? { icon: g.icon, title: `${p.friend.name} started ${g.name}`, sub: 'Now playing', actions: [{ label: 'Open chat', onClick: () => npOpenChat(p.friend) }] }
+                            : { icon: g.icon, title: `You started ${g.name}`, sub: 'Now playing' });
+                    }
+                } else { g.firstSeen = prev.firstSeen; np.playing[p.key] = g; }
+                np.seen.add(p.key);
+            });
+            // same game as a friend
+            const mine = np.playing.me, still = new Set();
+            if (mine) friends.forEach(f => {
+                const fg = np.playing[f.id]; if (!fg || !npSame(fg.norm, mine.norm)) return;
+                const id = f.id + ':' + mine.norm; still.add(id);
+                if (np.alerted.has(id)) return; np.alerted.add(id);
+                if (npOn('npSame') && seenBefore.has(f.id) && seenBefore.has('me')) showNowPlayingBanner({ icon: mine.icon || fg.icon, emoji: '🤝', title: `You're both playing ${mine.name}`, sub: `You and ${f.name}`, ms: 12000, accent: '#22c55e', actions: [{ label: 'Say hi', onClick: () => { npOpenChat(f); setTimeout(() => { if (composerInput && !composerInput.disabled && !composerInput.value) { composerInput.value = `Hey, I see we're both on ${mine.name}!`; composerInput.dispatchEvent(new Event('input')); } composerInput.focus(); }, 60); } }] });
+            });
+            [...np.alerted].forEach(id => { if (!still.has(id)) np.alerted.delete(id); });
+            updateGameTheme();
+        }
+
+        // ---- game colour for the chat ----
+        function npAccentFor(g) {
+            if (np.colors.has(g.norm)) return np.colors.get(g.norm);
+            let h = 0; for (let i = 0; i < g.norm.length; i++) h = (h * 31 + g.norm.charCodeAt(i)) >>> 0;
+            const fallback = `hsl(${h % 360} 58% 36%)`; np.colors.set(g.norm, fallback);
+            if (g.icon) {
+                const img = new Image(); img.crossOrigin = 'anonymous';
+                img.onload = () => { try {
+                    const c = document.createElement('canvas'); c.width = c.height = 12; const x = c.getContext('2d'); x.drawImage(img, 0, 0, 12, 12);
+                    const d = x.getImageData(0, 0, 12, 12).data; let r = 0, gr = 0, b = 0, w = 0;
+                    for (let i = 0; i < d.length; i += 4) { const mx = Math.max(d[i], d[i + 1], d[i + 2]), mn = Math.min(d[i], d[i + 1], d[i + 2]), wt = 0.05 + (mx - mn) / 255; r += d[i] * wt; gr += d[i + 1] * wt; b += d[i + 2] * wt; w += wt; }
+                    r /= w; gr /= w; b /= w;
+                    const mx = Math.max(r, gr, b) / 255, mn = Math.min(r, gr, b) / 255; let hh = 0; const dl = mx - mn;
+                    if (dl > 0) { hh = mx === r / 255 ? ((gr - b) / 255 / dl) % 6 : mx === gr / 255 ? (b - r) / 255 / dl + 2 : (r - gr) / 255 / dl + 4; hh = Math.round(hh * 60); if (hh < 0) hh += 360; }
+                    const sat = dl === 0 ? 0 : Math.max(45, Math.min(80, Math.round(dl / (1 - Math.abs(mx + mn - 1)) * 100)));
+                    np.colors.set(g.norm, `hsl(${hh} ${sat}% 36%)`); updateGameTheme();
+                } catch (e) { /* the icon's server doesn't allow reading pixels: keep the name-based colour */ } };
+                img.src = g.icon;
+            }
+            return fallback;
+        }
+        function updateGameTheme() {
+            const view = document.getElementById('chat-view'); if (!view) return;
+            const friend = activeFriendId && !isGroupId(activeFriendId) && activeView === 'chat' ? friends.find(f => f.id === activeFriendId) : null;
+            const g = friend ? npFriendGame(friend) : null;
+            if (g && npOn('npTheme')) { view.style.setProperty('--game-accent', npAccentFor(g)); view.classList.add('game-themed'); }
+            else { view.classList.remove('game-themed'); view.style.removeProperty('--game-accent'); }
+            renderGameShots();
+        }
+
+        // ---- the game's shots ----
+        function renderGameShots(force) {
+            const strip = document.getElementById('game-shots-strip'); if (!strip) return;
+            const friend = activeFriendId && !isGroupId(activeFriendId) && activeView === 'chat' ? friends.find(f => f.id === activeFriendId) : null;
+            const g = friend && npOn('npShots') ? npFriendGame(friend) : null, ownGame = false;
+            if (!g || np.hidden.has(g.norm)) { if (!strip.classList.contains('hidden')) strip.classList.add('hidden'); np.shotsSig = ''; return; }
+            const sort = (a, b) => (mediaSortTime(b) || 0) - (mediaSortTime(a) || 0);
+            const pick = (list) => list.filter(m => m.type === 'image' && !isGameSpoiled(m.hash) && npSame(npNorm(gameKey(m.hash)), g.norm)).sort(sort);
+            const mine = pick(allMediaFiles).slice(0, 8);
+            const theirs = friend && connectedFriendId === friend.id && activeConnection && activeConnection.open ? pick(remoteMediaFiles).slice(0, 8) : [];
+            const sig = [g.norm, mine.map(m => m.hash + m.timestamp).join(), theirs.map(m => m.hash + m.timestamp).join(), ownGame].join('|');
+            if (!force && sig === np.shotsSig && !strip.classList.contains('hidden')) return;
+            np.shotsSig = sig; strip.innerHTML = '';
+            if (!mine.length && !theirs.length) { strip.classList.add('hidden'); return; }
+            const head = el('div', 'gs-head'); head.appendChild(el('span', '', `📸 ${g.name}${ownGame ? ' (you\'re playing)' : ''}`));
+            const x = el('button', 'gs-x', '✕'); x.type = 'button'; x.title = 'Hide for this game'; x.addEventListener('click', () => { np.hidden.add(g.norm); renderGameShots(true); }); head.appendChild(x); strip.appendChild(head);
+            const row = el('div', 'gs-row');
+            const add = (arr, owner) => arr.forEach(m => {
+                const t = document.createElement('button'); t.type = 'button'; t.className = 'gs-thumb'; t.title = (owner === 'me' ? 'Yours' : `${friend.name}'s`) + (m.dateStr ? ' · ' + m.dateStr : '');
+                const src = owner === 'me' ? m.url : m.thumb; if (src) { const im = document.createElement('img'); im.src = src; im.alt = ''; im.loading = 'lazy'; t.appendChild(im); } else t.textContent = '🖼️';
+                t.dataset.owner = owner; t.addEventListener('click', () => openSessionItem({ hash: m.hash, timestamp: m.timestamp, owner }));
+                row.appendChild(t);
+            });
+            add(mine, 'me');
+            if (theirs.length) { row.appendChild(el('div', 'gs-sep', friend ? friend.name : '')); add(theirs, 'them'); }
+            strip.appendChild(row); strip.classList.remove('hidden');
+        }
+        setInterval(() => { if (activeView === 'chat' && activeFriendId) { try { renderGameShots(); updateTopBar(); } catch (e) {} } }, 30000);
+        setInterval(() => { if (activeView === 'chat') { try { renderGameShots(); } catch (e) {} } }, 4000);
+
+        // ============================================================
         // PLAY-TIME JOURNAL
         // Per-game timeline built from two things: your captures (dates and times from the file names, always
         // available) and play sessions Hub tracks from your own Switch presence while it is open.
@@ -7537,6 +7712,7 @@
             document.getElementById('setting-grid-size').value = myProfile.gridSize || 'comfortable';
             document.getElementById('setting-notifications').checked = myProfile.notifications;
             document.getElementById('setting-sound').checked = myProfile.sound;
+            [['npBanner', 'setting-np-banner'], ['npTheme', 'setting-np-theme'], ['npSame', 'setting-np-same'], ['npShots', 'setting-np-shots']].forEach(([k, id]) => { document.getElementById(id).checked = myProfile[k] !== false; });
             const datalist = document.getElementById('nsaid-list');
             datalist.innerHTML = presenceEntries.map(p => `<option value="${p.nsaId}">${p.name}</option>`).join('');
             populateAvatarPicker();
@@ -7553,6 +7729,8 @@
             myProfile.requestHiRes = document.getElementById('setting-hires').checked;
             myProfile.gridSize = document.getElementById('setting-grid-size').value;
             myProfile.sound = document.getElementById('setting-sound').checked;
+            [['npBanner', 'setting-np-banner'], ['npTheme', 'setting-np-theme'], ['npSame', 'setting-np-same'], ['npShots', 'setting-np-shots']].forEach(([k, id]) => { myProfile[k] = document.getElementById(id).checked; });
+            np.shotsSig = '';
             const wantsNotifications = document.getElementById('setting-notifications').checked;
 
             applyGridSize(myProfile.gridSize);
