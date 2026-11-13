@@ -646,7 +646,7 @@
             </div>
             <div class="top-bar-actions" id="gallery-search-wrap">
                 <div class="search-bar-wrap">
-                    <input type="text" id="search-input" class="search-input" placeholder="Search game or date...">
+                    <input type="text" id="search-input" class="search-input" placeholder="Search game, month or date...">
                     <button class="type-filter-btn active" data-type="all">All</button>
                     <button class="type-filter-btn" data-type="image" title="Photos only">📷</button>
                     <button class="type-filter-btn" data-type="video" title="Videos only">🎬</button>
@@ -990,6 +990,25 @@
         let allMediaFiles = [];
         let remoteMediaFiles = [];
         let currentSource = 'local'; // 'local' or 'remote'
+        // Search by month name: "march", "march 2024", "5 mar 2024". Needs a month name; a year and a day are optional.
+        function parseDateQuery(q) {
+            const names = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+            const toks = String(q || '').toLowerCase().replace(/[,.]/g, ' ').split(/\s+/).filter(Boolean);
+            let month = 0, year = 0, day = 0;
+            for (let tok of toks) {
+                if (/^(19|20)\d\d$/.test(tok) && !year) { year = +tok; continue; }
+                tok = tok.replace(/^(\d{1,2})(st|nd|rd|th)$/, '$1');
+                if (/^\d{1,2}$/.test(tok) && !day && +tok >= 1 && +tok <= 31) { day = +tok; continue; }
+                const i = tok.length >= 3 && !month ? names.findIndex(n => n.startsWith(tok) || (tok === 'sept' && n === 'september')) : -1;
+                if (i >= 0) { month = i + 1; continue; }
+                return null; // something that isn't a date word: leave it to the normal text search
+            }
+            return month ? { month, year, day } : null;
+        }
+        function dateMatchesQuery(dateStr, dq) {
+            const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(dateStr || '')); if (!m) return false;
+            return +m[2] === dq.month && (!dq.year || +m[1] === dq.year) && (!dq.day || +m[3] === dq.day);
+        }
         let currentSort = 'all';
         const SORT_LABELS = { all: 'All Media', date: 'Sorted by Date', game: 'Sorted by Game', year: 'Sorted by Year', month: 'Sorted by Month', playtime: 'Sorted by Play Time' };
         const sortLabel = (s) => SORT_LABELS[s] || SORT_LABELS.all;
@@ -6375,7 +6394,8 @@
             if (favoritesOnly) filteredList = filteredList.filter(m => favorites[`${m.hash}|${m.timestamp}`]);
             if (searchQuery.trim()) {
                 const q = searchQuery.trim().toLowerCase();
-                filteredList = filteredList.filter(m => gameKey(m.hash).toLowerCase().includes(q) || m.dateStr.includes(q));
+                const dq = parseDateQuery(q); // "march", "march 2024", "mar 5 2024"...
+                filteredList = filteredList.filter(m => gameKey(m.hash).toLowerCase().includes(q) || m.dateStr.includes(q) || (dq && dateMatchesQuery(m.dateStr, dq)));
             }
             if (filteredList.length === 0) {
                 mediaGrid.innerHTML = `<div style="color: var(--switch-muted); padding: 2rem; text-align: center; grid-column: 1/-1;">No results match your search or filters.</div>`;

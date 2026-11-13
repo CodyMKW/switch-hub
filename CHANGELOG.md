@@ -2,6 +2,11 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.7.0] - 2026-11-12
+
+### Added
+- **Search by month name.** Type a month in the gallery search to see everything from it: `march` shows every March, `march 2024` shows just March 2024, and `mar 5 2024` (or `5th March 2024`) narrows it to one day. Short forms like `mar` or `sept` work, any order works, and the existing searches (game names, `2024`, `2024-03`) are unchanged. The search box now says "Search game, month or date...".
+
 ## [1.6.1] - 2026-11-12
 
 ### Changed
