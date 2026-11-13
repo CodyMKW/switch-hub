@@ -482,6 +482,7 @@
         .msg-attachment-progress { font-size: 0.78rem; opacity: 0.85; display: flex; align-items: center; gap: 0.5rem; }
         .msg-attachment-progress .mini-bar { width: 90px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 9999px; overflow: hidden; }
         .msg-attachment-progress .mini-bar-fill { height: 100%; width: 0%; background: currentColor; transition: width 0.2s; }
+        .msg-sender { font-size: 0.68rem; font-weight: 700; margin: 0 0 0.15rem 0.3rem; }
         .msg-meta { display: flex; align-items: center; gap: 0.35rem; font-size: 0.65rem; color: var(--switch-muted); margin-top: 0.2rem; padding: 0 0.2rem; }
         .msg-meta .edited-tag { font-style: italic; }
         .msg-actions { display: flex; align-items: center; gap: 0.15rem; opacity: 0; transition: opacity 0.15s; }
@@ -563,6 +564,13 @@
         </div>
         <div class="friend-list" id="friend-list"></div>
         <p class="sidebar-empty-note" id="friends-empty-note">No friends yet — copy your invite link and send it over, or open a link a friend sent you.</p>
+
+        <div class="section-title">
+            <span>Groups</span>
+            <button id="btn-new-group">+ New</button>
+        </div>
+        <div class="friend-list" id="group-list"></div>
+        <p class="sidebar-empty-note" id="groups-empty-note">No groups yet — tap + New to start a chat with 2 or more friends.</p>
 
         <div class="nav-section-title" id="sort-title">Sort By</div>
         <nav class="nav-container" id="nav-filters">
@@ -655,6 +663,7 @@
                 </div>
             </div>
             <div class="top-bar-actions hidden" id="chat-actions-wrap">
+                <button class="btn-icon-sm" id="btn-group-info" title="Group info" style="display:none;">👥</button>
                 <button class="btn-icon-sm" id="btn-toggle-search" title="Search"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></button>
                 <button class="btn-icon-sm" id="btn-export-chat" title="Export conversation"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1M7 10l5 5 5-5M12 15V3"></path></svg></button>
                 <button class="btn-icon-sm danger" id="btn-clear-chat" title="Clear conversation"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
@@ -1149,6 +1158,16 @@
         function saveMediaReactions() { localStorage.setItem('switch_hub_media_reactions', JSON.stringify(mediaReactions)); }
         function mediaKey(m) { return `${m.hash}|${m.timestamp}`; }
 
+        // ---- Group chat state (declared early: the sidebar is drawn during start-up) ----
+        let groups = {}; // gid -> { id, name, members: [{ peerId, name }], ver, created, creator }
+        try { const g = JSON.parse(localStorage.getItem('switch_hub_groups') || 'null'); if (g && typeof g === 'object') groups = g; } catch (e) {}
+        const groupConns = new Map();     // peerId -> { conn, initiator }
+        const groupPending = new Set();   // peerIds we are connecting to right now
+        const groupLastTry = new Map();
+        const groupTyping = new Map();    // gid -> Map(peerId -> timeout)
+        const groupIncoming = new Map();  // "peerId:fileId" -> transfer in progress
+        function isGroupId(id) { return typeof id === 'string' && id.startsWith('g:'); }
+
         loadState();
 
         // ============================================================
@@ -1374,6 +1393,7 @@
         }
 
         function renderFriendList() {
+            if (typeof renderGroupList === 'function') renderGroupList();
             const list = document.getElementById('friend-list');
             const emptyNote = document.getElementById('friends-empty-note');
             list.innerHTML = '';
@@ -1415,6 +1435,7 @@
             activeFriendId = friendId;
             const friend = friends.find(f => f.id === friendId);
             if (!friend) return;
+            showGalleryTab(true);
 
             document.getElementById('welcome-view').classList.add('hidden');
             document.getElementById('view-tabs').classList.remove('hidden');
@@ -1465,6 +1486,18 @@
             const titleEl = document.getElementById('top-bar-title');
             const statusEl = document.getElementById('top-bar-status');
             const indicatorEl = document.getElementById('top-view-indicator');
+            showGalleryTab(!isGroupId(activeFriendId));
+            if (isGroupId(activeFriendId)) {
+                const g = groupById(activeFriendId);
+                if (g) {
+                    titleEl.textContent = g.name;
+                    const on = groupOnlineCount(g);
+                    statusEl.textContent = `${g.members.length} members • ${on} online`;
+                    statusEl.style.cursor = 'default'; statusEl.onclick = null;
+                    indicatorEl.style.background = on ? 'var(--cody-green)' : 'var(--switch-muted)';
+                    return;
+                }
+            }
             const friend = activeFriendId ? friends.find(f => f.id === activeFriendId) : null;
 
             if (!friend) {
@@ -1561,6 +1594,7 @@
                 if (!useTemporaryId) localStorage.setItem('switch_hub_peer_id', id);
                 document.getElementById('my-peer-id-display').value = id;
                 peerIdRetries = 0;
+                setTimeout(ensureGroupLinks, 300);
                 const invitedPeerId = getPeerIdFromUrl();
                 if (invitedPeerId) {
                     if (invitedPeerId !== id) autoConnectFromInvite(invitedPeerId);
@@ -1569,6 +1603,7 @@
             });
 
             peer.on('connection', (conn) => {
+                if (conn.metadata && conn.metadata.kind === 'group') { acceptGroupConn(conn); return; }
                 let friend = friends.find(f => f.peerId === conn.peer);
                 if (!friend) {
                     friend = { id: uid(), name: 'New Friend', peerId: conn.peer, avatar: null, status: '', presenceNsaId: null };
@@ -1605,6 +1640,8 @@
                         showToast('Your permanent ID is already in use (another tab open?). Using a temporary ID in this tab.');
                         initPeer(true);
                     }
+                } else if (err.type === 'peer-unavailable' && [...groupPending].some(pid => String(err.message || '').includes(pid))) {
+                    [...groupPending].forEach(pid => { if (String(err.message || '').includes(pid)) groupPending.delete(pid); });
                 } else if (err.type === 'peer-unavailable') {
                     if (!(activeConnection && activeConnection.open)) connectedFriendId = null;
                     renderFriendList();
@@ -1964,7 +2001,7 @@
             const thread = messagesByContact[activeFriendId] || [];
             let changed = false;
             thread.forEach(m => {
-                if (!m.mine && m.status !== 'seen' && !m.deleted) { m.status = 'seen'; sendToConn({ type: 'ack_seen', id: m.id }); changed = true; }
+                if (!m.mine && m.status !== 'seen' && !m.deleted) { m.status = 'seen'; if (m.g) groupAckSeen(m); else sendToConn({ type: 'ack_seen', id: m.id }); changed = true; }
             });
             if (changed) { saveMessages(); renderFriendList(); }
         }
@@ -3489,8 +3526,415 @@
         });
 
         function getActiveFriend() {
+            if (isGroupId(activeFriendId)) return groupAsContact(activeFriendId.slice(2));
             return activeFriendId ? friends.find(f => f.id === activeFriendId) : null;
         }
+        // ============================================================
+        // GROUP CHAT (3 or more people)
+        // Everyone links directly to everyone else (a mesh), over their own connections, so the
+        // one-to-one connection and everything built on it (gallery, calls, games) is untouched.
+        // Groups and their history live in each member's browser; a member who was away catches
+        // up from whoever is online when they reconnect.
+        // ============================================================
+        const GROUP_FILE_MAX = 50 * 1024 * 1024;
+        const GROUP_MAX_MEMBERS = 12;
+        function myPeerId() { return (peer && peer.id) || (() => { try { return localStorage.getItem('switch_hub_peer_id') || ''; } catch (e) { return ''; } })(); }
+        function saveGroups() { try { localStorage.setItem('switch_hub_groups', JSON.stringify(groups)); } catch (e) {} }
+        function groupById(contactId) { return isGroupId(contactId) ? groups[contactId.slice(2)] : null; }
+        function groupAsContact(gid) { const g = groups[gid]; return g ? { id: 'g:' + gid, name: g.name, avatar: '👥', status: '', presenceNsaId: null, peerId: null, isGroup: true } : null; }
+        function groupOthers(g) { const me = myPeerId(); return g.members.filter(m => m.peerId !== me); }
+        function groupMemberName(g, pid) {
+            if (pid === myPeerId()) return myProfile.name || 'You';
+            const m = g.members.find(x => x.peerId === pid); if (m && m.name) return m.name;
+            const f = friends.find(x => x.peerId === pid); return (f && f.name) || 'Someone';
+        }
+        function groupOnlineCount(g) { return groupOthers(g).filter(m => { const c = groupConns.get(m.peerId); return c && c.conn.open; }).length; }
+        function cleanText(v, max) { return String(v == null ? '' : v).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').slice(0, max); }
+        function gsend(conn, payload) { try { if (conn && conn.open) { conn.send(payload); return true; } } catch (e) { console.warn('group send failed', e); } return false; }
+        function groupBroadcast(gid, payload) {
+            const g = groups[gid]; if (!g) return 0; let n = 0;
+            groupOthers(g).forEach(m => { const c = groupConns.get(m.peerId); if (c && gsend(c.conn, { ...payload, gid })) n++; });
+            return n;
+        }
+        function groupSendTo(pid, gid, payload) { const c = groupConns.get(pid); return c ? gsend(c.conn, { ...payload, gid }) : false; }
+
+        // ---- connections ----
+        function ensureGroupLinks() {
+            if (!peer || peer.destroyed || peer.disconnected || !peer.open) return;
+            const me = myPeerId(); if (!me) return;
+            const need = new Set();
+            Object.values(groups).forEach(g => g.members.forEach(m => { if (m.peerId && m.peerId !== me) need.add(m.peerId); }));
+            need.forEach(pid => {
+                const cur = groupConns.get(pid);
+                if (cur && cur.conn.open) return;
+                if (groupPending.has(pid)) return;
+                if (Date.now() - (groupLastTry.get(pid) || 0) < 8000) return;
+                groupLastTry.set(pid, Date.now()); groupPending.add(pid);
+                let conn; try { conn = peer.connect(pid, { metadata: { kind: 'group' }, reliable: true }); } catch (e) { groupPending.delete(pid); return; }
+                conn.on('open', () => { groupPending.delete(pid); registerGroupConn(conn, me); });
+                conn.on('error', () => groupPending.delete(pid));
+                setTimeout(() => groupPending.delete(pid), 15000);
+            });
+        }
+        setInterval(ensureGroupLinks, 10000);
+        function registerGroupConn(conn, initiatorId) {
+            const pid = conn.peer, cur = groupConns.get(pid);
+            if (cur && cur.conn !== conn && cur.conn.open) {
+                // Both sides may dial at once. Both keep the connection started by the smaller id, so they agree.
+                if (!(initiatorId < cur.initiator)) { try { conn.close(); } catch (e) {} return; }
+                try { cur.conn.close(); } catch (e) {}
+            }
+            groupConns.set(pid, { conn, initiator: initiatorId });
+            const gone = () => { const c = groupConns.get(pid); if (c && c.conn === conn) { groupConns.delete(pid); groupLastTry.set(pid, Date.now()); groupUiRefresh(); } };
+            conn.on('data', (d) => { try { handleGroupData(d, conn); } catch (e) { console.error('group data', e); } });
+            conn.on('close', gone); conn.on('error', gone);
+            sendGroupSync(conn);
+            groupUiRefresh();
+        }
+        function acceptGroupConn(conn) {
+            const pid = conn.peer;
+            const known = Object.values(groups).some(g => g.members.some(m => m.peerId === pid)) || friends.some(f => f.peerId === pid);
+            if (!known) { try { conn.close(); } catch (e) {} return; } // strangers can't open group links
+            const go = () => registerGroupConn(conn, pid);
+            if (conn.open) go(); else conn.on('open', go);
+        }
+        function groupUiRefresh() { renderGroupList(); if (isGroupId(activeFriendId)) { updateTopBar(); renderGroupInfoIfOpen(); } }
+
+        // ---- membership ----
+        function groupMeta(g) { return { id: g.id, name: g.name, members: g.members.map(m => ({ peerId: m.peerId, name: m.name })), ver: g.ver, created: g.created, creator: g.creator }; }
+        function validMeta(m) {
+            if (!m || typeof m !== 'object' || !/^[A-Za-z0-9_-]{4,40}$/.test(String(m.id || ''))) return null;
+            if (!Array.isArray(m.members) || m.members.length < 2 || m.members.length > GROUP_MAX_MEMBERS) return null;
+            const members = []; const seen = new Set();
+            for (const x of m.members) { const peerId = cleanText(x && x.peerId, 80); if (!peerId || seen.has(peerId)) continue; seen.add(peerId); members.push({ peerId, name: cleanText(x.name, 40) }); }
+            if (members.length < 2) return null;
+            return { id: m.id, name: cleanText(m.name, 60).trim() || 'Group', members, ver: Math.max(1, Math.min(1e6, +m.ver || 1)), created: +m.created || Date.now(), creator: cleanText(m.creator, 80) };
+        }
+        function adoptGroupMeta(raw, fromPid) {
+            const meta = validMeta(raw); if (!meta) return;
+            const me = myPeerId(); const cur = groups[meta.id];
+            const iAmIn = meta.members.some(x => x.peerId === me);
+            if (!cur) {
+                if (!iAmIn || !friends.some(f => f.peerId === fromPid)) return; // only friends can add you to a group
+                groups[meta.id] = meta; saveGroups(); renderGroupList(); ensureGroupLinks();
+                showToast(`You were added to the group "${meta.name}"`, 'purple'); playBlip();
+                return;
+            }
+            if (meta.ver <= cur.ver) return;
+            if (!iAmIn) { removeGroupLocally(meta.id); showToast(`You are no longer in "${cur.name}"`, 'yellow'); return; }
+            const oldNames = new Map(cur.members.map(m => [m.peerId, m.name]));
+            cur.name = meta.name; cur.ver = meta.ver; cur.members = meta.members.map(m => ({ peerId: m.peerId, name: m.name || oldNames.get(m.peerId) || '' }));
+            saveGroups(); groupUiRefresh(); ensureGroupLinks();
+        }
+        function removeGroupLocally(gid) {
+            delete groups[gid]; delete messagesByContact['g:' + gid]; saveGroups(); saveMessages();
+            if (activeFriendId === 'g:' + gid) { activeFriendId = null; showWelcomeOrLocal(); renderMySdCardRow(); }
+            renderGroupList(); renderFriendList();
+        }
+        function sendGroupSync(conn) {
+            const pid = conn.peer;
+            const shared = Object.values(groups).filter(g => g.members.some(m => m.peerId === pid));
+            const have = {}; shared.forEach(g => { have[g.id] = (messagesByContact['g:' + g.id] || []).slice(-300).map(m => m.id); });
+            gsend(conn, { type: 'g_sync', name: cleanText(myProfile.name, 40), groups: shared.map(groupMeta), have });
+        }
+        function broadcastGroupMeta(g) { groupBroadcast(g.id, { type: 'g_meta', meta: groupMeta(g) }); }
+
+        // ---- history catch-up ----
+        function msgToWire(m) {
+            return { id: m.id, from: m.mine ? myPeerId() : m.from, text: m.deleted ? '' : m.text, ts: m.ts, edited: !!m.edited, deleted: !!m.deleted, pinned: !!m.pinned, greact: m.greact || {},
+                replyTo: m.replyTo ? { id: m.replyTo.id, whoId: m.replyTo.whoId, whoName: m.replyTo.whoName, snippet: m.replyTo.snippet } : null,
+                attachment: m.attachment ? { name: m.attachment.name, mime: m.attachment.mime } : null };
+        }
+        function wireToMsg(w, g) {
+            if (!w || typeof w !== 'object' || !/^[A-Za-z0-9_-]{4,40}$/.test(String(w.id || ''))) return null;
+            const from = cleanText(w.from, 80); if (!from || !g.members.some(x => x.peerId === from)) return null;
+            const me = myPeerId(); const mine = from === me;
+            const greact = {}; if (w.greact && typeof w.greact === 'object') Object.keys(w.greact).slice(0, 30).forEach(e => { if (e.length <= 8 && Array.isArray(w.greact[e])) { const l = w.greact[e].map(x => cleanText(x, 80)).filter(x => g.members.some(m => m.peerId === x)).slice(0, GROUP_MAX_MEMBERS); if (l.length) greact[e] = [...new Set(l)]; } });
+            let replyTo = null;
+            if (w.replyTo && w.replyTo.id) replyTo = { id: cleanText(w.replyTo.id, 40), whoId: cleanText(w.replyTo.whoId, 80), who: w.replyTo.whoId === me ? 'me' : 'them', whoName: cleanText(w.replyTo.whoName, 40), snippet: cleanText(w.replyTo.snippet, 140) };
+            const att = w.attachment && w.attachment.name ? { name: cleanText(w.attachment.name, 120), mime: cleanText(w.attachment.mime, 80), url: null, pending: false, progress: 100 } : null;
+            return { id: w.id, mine, from, senderName: groupMemberName(g, from), g: true, text: cleanText(w.text, 4000), ts: +w.ts || Date.now(), status: mine ? 'sent' : 'delivered', reactions: { mine: [], theirs: [] }, greact, acks: { delivered: [], seen: [] }, edited: !!w.edited, deleted: !!w.deleted, replyTo, pinned: !!w.pinned, attachment: att };
+        }
+        function mergeGroupMsgs(gid, list) {
+            const g = groups[gid]; if (!g || !Array.isArray(list)) return 0;
+            const thread = ensureThread('g:' + gid); const byId = new Map(thread.map(m => [m.id, m])); let added = 0, changed = false;
+            list.slice(0, 400).forEach(w => {
+                const m = wireToMsg(w, g); if (!m) return;
+                const ex = byId.get(m.id);
+                if (!ex) { thread.push(m); byId.set(m.id, m); added++; changed = true; return; }
+                if (m.deleted && !ex.deleted) { ex.deleted = true; ex.attachment = null; changed = true; }
+                if (m.edited && !ex.edited && !ex.deleted) { ex.text = m.text; ex.edited = true; changed = true; }
+                Object.keys(m.greact).forEach(e => { ex.greact = ex.greact || {}; const l = ex.greact[e] || (ex.greact[e] = []); m.greact[e].forEach(p => { if (!l.includes(p)) { l.push(p); changed = true; } }); });
+            });
+            if (changed) { thread.sort((a, b) => a.ts - b.ts); saveMessages(); if (activeFriendId === 'g:' + gid && activeView === 'chat') renderMessagesSoon(); renderFriendList(); }
+            return added;
+        }
+
+        // ---- incoming ----
+        function groupMsgFor(gid, id) { return (messagesByContact['g:' + gid] || []).find(x => x.id === id); }
+        function handleGroupData(d, conn) {
+            if (!d || typeof d.type !== 'string' || !d.type.startsWith('g_')) return;
+            const pid = conn.peer;
+            if (d.type === 'g_sync') {
+                const nm = cleanText(d.name, 40);
+                let changed = false;
+                if (nm) Object.values(groups).forEach(g => { const m = g.members.find(x => x.peerId === pid); if (m && m.name !== nm) { m.name = nm; changed = true; } });
+                (Array.isArray(d.groups) ? d.groups : []).slice(0, 50).forEach(meta => adoptGroupMeta(meta, pid));
+                if (changed) saveGroups();
+                // send what they are missing, for groups we are both in
+                if (d.have && typeof d.have === 'object') Object.keys(d.have).slice(0, 50).forEach(gid => {
+                    const g = groups[gid]; if (!g || !g.members.some(x => x.peerId === pid) || !Array.isArray(d.have[gid])) return;
+                    const have = new Set(d.have[gid].slice(0, 400)); const mine = (messagesByContact['g:' + gid] || []).slice(-300).filter(m => !have.has(m.id));
+                    if (mine.length) for (let i = 0; i < mine.length; i += 40) gsend(conn, { type: 'g_history', gid, msgs: mine.slice(i, i + 40).map(msgToWire) });
+                });
+                groupUiRefresh();
+                return;
+            }
+            const gid = String(d.gid || ''); const g = groups[gid];
+            if (!g || !g.members.some(x => x.peerId === pid)) return; // not a group we share with them
+            const cid = 'g:' + gid; const viewing = activeFriendId === cid && activeView === 'chat';
+            if (d.type === 'g_meta') { adoptGroupMeta(d.meta, pid); return; }
+            if (d.type === 'g_history') { mergeGroupMsgs(gid, d.msgs); return; }
+            if (d.type === 'g_msg') {
+                const thread = ensureThread(cid);
+                if (!/^[A-Za-z0-9_-]{4,40}$/.test(String(d.id || '')) || thread.some(x => x.id === d.id)) return;
+                const text = cleanText(d.text, 4000); if (!text) return;
+                const replyTo = d.replyTo && d.replyTo.id ? { id: cleanText(d.replyTo.id, 40), whoId: cleanText(d.replyTo.whoId, 80), who: d.replyTo.whoId === myPeerId() ? 'me' : 'them', whoName: cleanText(d.replyTo.whoName, 40), snippet: cleanText(d.replyTo.snippet, 140) } : null;
+                const m = { id: d.id, mine: false, from: pid, senderName: groupMemberName(g, pid), g: true, text, ts: Math.min(+d.ts || Date.now(), Date.now() + 60000), status: 'delivered', reactions: { mine: [], theirs: [] }, greact: {}, acks: { delivered: [], seen: [] }, edited: false, deleted: false, replyTo, pinned: false };
+                thread.push(m); thread.sort((a, b) => a.ts - b.ts); saveMessages();
+                gsend(conn, { type: 'g_ack', gid, id: m.id, kind: 'delivered' });
+                const focused = viewing && !document.hidden;
+                if (viewing) renderMessagesSoon();
+                renderFriendList();
+                if (activeFriendId === cid) { const b = document.getElementById('chat-tab-badge'); b.classList.toggle('hidden', activeView === 'chat' || unreadCount(cid) === 0); b.textContent = Math.min(unreadCount(cid), 9) || ''; }
+                if (focused) markVisibleMessagesSeen(); else notifyNewMessage({ name: g.name }, `${m.senderName}: ${text}`);
+                const tm = groupTyping.get(gid); if (tm && tm.has(pid)) { clearTimeout(tm.get(pid)); tm.delete(pid); if (viewing) renderTypingIndicator(); }
+                return;
+            }
+            if (d.type === 'g_ack') {
+                const m = groupMsgFor(gid, d.id); if (!m || !m.mine) return;
+                m.acks = m.acks || { delivered: [], seen: [] };
+                const k = d.kind === 'seen' ? 'seen' : 'delivered';
+                if (!m.acks[k].includes(pid)) m.acks[k].push(pid);
+                if (k === 'seen' && !m.acks.delivered.includes(pid)) m.acks.delivered.push(pid);
+                const others = groupOthers(g).length;
+                m.status = m.acks.seen.length >= others ? 'seen' : (m.acks.delivered.length ? 'delivered' : 'sent');
+                saveMessages(); if (viewing) renderMessagesSoon(); return;
+            }
+            if (d.type === 'g_typing') {
+                let tm = groupTyping.get(gid); if (!tm) { tm = new Map(); groupTyping.set(gid, tm); }
+                if (tm.has(pid)) clearTimeout(tm.get(pid));
+                if (d.isTyping) tm.set(pid, setTimeout(() => { tm.delete(pid); if (activeFriendId === cid && activeView === 'chat') renderTypingIndicator(); }, 4500)); else tm.delete(pid);
+                if (viewing) renderTypingIndicator(); return;
+            }
+            const m = groupMsgFor(gid, d.messageId);
+            if (d.type === 'g_react') {
+                if (!m || typeof d.emoji !== 'string' || d.emoji.length > 8 || !d.emoji) return;
+                m.greact = m.greact || {}; const l = m.greact[d.emoji] || (m.greact[d.emoji] = []); const i = l.indexOf(pid);
+                if (d.on && i < 0) l.push(pid); else if (!d.on && i >= 0) l.splice(i, 1);
+                if (!l.length) delete m.greact[d.emoji];
+                saveMessages(); if (viewing) renderMessagesSoon(); return;
+            }
+            if (d.type === 'g_edit') { if (m && m.from === pid && !m.deleted) { m.text = cleanText(d.newText, 4000); m.edited = true; saveMessages(); if (viewing) renderMessagesSoon(); } return; }
+            if (d.type === 'g_delete') { if (m && m.from === pid) { m.deleted = true; m.attachment = null; saveMessages(); if (viewing) renderMessagesSoon(); } return; }
+            if (d.type === 'g_pin') { if (m) { m.pinned = !!d.pinned; saveMessages(); if (viewing) renderMessagesSoon(); } return; }
+            if (d.type === 'g_leave') {
+                g.members = g.members.filter(x => x.peerId !== pid); g.ver++; saveGroups();
+                showToast(`${groupMemberName({ members: [] }, pid) === 'Someone' ? 'Someone' : 'A member'} left "${g.name}"`, 'yellow');
+                groupUiRefresh(); return;
+            }
+            if (d.type === 'g_file_start' || d.type === 'g_file_chunk' || d.type === 'g_file_end') { handleGroupFile(d, pid, g); return; }
+        }
+
+        // ---- files ----
+        function handleGroupFile(d, pid, g) {
+            const cid = 'g:' + g.id, key = pid + ':' + d.id, viewing = activeFriendId === cid && activeView === 'chat';
+            if (d.type === 'g_file_start') {
+                if (!/^[A-Za-z0-9_-]{4,40}$/.test(String(d.id || '')) || !(d.size > 0) || d.size > GROUP_FILE_MAX || !(d.totalChunks > 0) || d.totalChunks > 4000) return;
+                const thread = ensureThread(cid); if (thread.some(x => x.id === d.id)) return;
+                groupIncoming.set(key, { name: cleanText(d.name, 120), mime: cleanText(d.mime, 80), size: d.size, chunks: new Array(d.totalChunks), got: 0 });
+                thread.push({ id: d.id, mine: false, from: pid, senderName: groupMemberName(g, pid), g: true, text: cleanText(d.caption, 1000), ts: +d.ts || Date.now(), status: 'delivered', reactions: { mine: [], theirs: [] }, greact: {}, acks: { delivered: [], seen: [] }, edited: false, deleted: false, replyTo: null, pinned: false, attachment: { name: cleanText(d.name, 120), mime: cleanText(d.mime, 80), url: null, pending: true, progress: 0 } });
+                thread.sort((a, b) => a.ts - b.ts); if (viewing) renderMessagesSoon(); return;
+            }
+            const tr = groupIncoming.get(key); if (!tr) return;
+            if (d.type === 'g_file_chunk') {
+                if (!(d.chunkIndex >= 0 && d.chunkIndex < tr.chunks.length) || !d.data || tr.chunks[d.chunkIndex]) return;
+                tr.chunks[d.chunkIndex] = d.data; tr.got += d.data.byteLength || 0;
+                if (tr.got > tr.size * 1.05) { groupIncoming.delete(key); return; }
+                const m = groupMsgFor(g.id, d.id); const pct = Math.min(100, Math.round(tr.got / tr.size * 100));
+                if (m && m.attachment) { m.attachment.progress = pct; if (viewing) updateAttachmentProgressUI(d.id, pct); }
+                return;
+            }
+            groupIncoming.delete(key);
+            const m = groupMsgFor(g.id, d.id);
+            if (m) m.attachment = { name: tr.name, mime: tr.mime, url: URL.createObjectURL(new Blob(tr.chunks, { type: tr.mime })), pending: false, progress: 100 };
+            saveMessages(); groupSendTo(pid, g.id, { type: 'g_ack', id: d.id, kind: 'delivered' });
+            if (viewing) { renderMessages(); markVisibleMessagesSeen(); } else notifyNewMessage({ name: g.name }, `${groupMemberName(g, pid)} sent a file: ${tr.name}`);
+            renderFriendList();
+        }
+        async function groupSendFile(file, caption) {
+            const gid = activeFriendId.slice(2), g = groups[gid]; if (!g) return;
+            if (file.size > GROUP_FILE_MAX) { showToast('Files in groups can be up to 50 MB (it is sent to everyone).', 'yellow'); return; }
+            const thread = ensureThread(activeFriendId), id = uid();
+            const msg = { id, mine: true, from: myPeerId(), senderName: myProfile.name, g: true, text: caption || '', ts: Date.now(), status: 'sent', reactions: { mine: [], theirs: [] }, greact: {}, acks: { delivered: [], seen: [] }, edited: false, deleted: false, replyTo: null, pinned: false, attachment: { name: file.name, mime: file.type || 'application/octet-stream', url: URL.createObjectURL(file), pending: false, progress: 100 } };
+            thread.push(msg); renderMessagesSoon(); renderFriendList();
+            const buffer = await file.arrayBuffer(); const total = buffer.byteLength, n = Math.max(1, Math.ceil(total / FILE_CHUNK_SIZE));
+            const targets = groupOthers(g).map(m => groupConns.get(m.peerId)).filter(c => c && c.conn.open);
+            await Promise.all(targets.map(async (t) => {
+                const c = t.conn; const base = { gid, id };
+                if (!gsend(c, { ...base, type: 'g_file_start', name: file.name, mime: file.type || 'application/octet-stream', size: total, totalChunks: n, ts: msg.ts, caption: caption || '' })) return;
+                for (let i = 0; i < n; i++) {
+                    if (!c.open) return;
+                    await waitForBufferedAmountLow(c);
+                    gsend(c, { ...base, type: 'g_file_chunk', chunkIndex: i, data: buffer.slice(i * FILE_CHUNK_SIZE, Math.min((i + 1) * FILE_CHUNK_SIZE, total)) });
+                }
+                gsend(c, { ...base, type: 'g_file_end' });
+            }));
+            saveMessages();
+        }
+
+        // ---- sending ----
+        function groupSendText(text) {
+            const gid = activeFriendId.slice(2), g = groups[gid]; if (!g) return;
+            const thread = ensureThread(activeFriendId);
+            const rp = (replyingTo && replyingTo.friendId === activeFriendId) ? { id: replyingTo.id, who: replyingTo.who, whoId: replyingTo.whoId, whoName: replyingTo.whoName, snippet: replyingTo.snippet } : null;
+            const msg = { id: uid(), mine: true, from: myPeerId(), senderName: myProfile.name, g: true, text, ts: Date.now(), status: 'sent', reactions: { mine: [], theirs: [] }, greact: {}, acks: { delivered: [], seen: [] }, edited: false, deleted: false, replyTo: rp, pinned: false };
+            thread.push(msg); cancelReply(); saveMessages(); renderMessages(); renderFriendList();
+            groupBroadcast(gid, { type: 'g_msg', id: msg.id, text, ts: msg.ts, replyTo: rp ? { id: rp.id, whoId: rp.whoId, whoName: rp.whoName, snippet: rp.snippet } : null });
+            groupBroadcast(gid, { type: 'g_typing', isTyping: false });
+        }
+        function groupToggleReaction(messageId, emoji) {
+            const gid = activeFriendId.slice(2), m = groupMsgFor(gid, messageId); if (!m) return;
+            const me = myPeerId(); m.greact = m.greact || {}; const l = m.greact[emoji] || (m.greact[emoji] = []); const i = l.indexOf(me); const on = i < 0;
+            if (on) l.push(me); else l.splice(i, 1); if (!l.length) delete m.greact[emoji];
+            saveMessages(); renderMessages(); groupBroadcast(gid, { type: 'g_react', messageId, emoji, on });
+        }
+        // One place decides where a chat action goes: the group, or the single friend connection.
+        function chatTyping(isTyping) { if (isGroupId(activeFriendId)) groupBroadcast(activeFriendId.slice(2), { type: 'g_typing', isTyping }); else sendToConn({ type: 'typing', isTyping }); }
+        function chatConnected() { return isGroupId(activeFriendId) ? !!groups[activeFriendId.slice(2)] : !!(activeConnection && activeConnection.open); }
+        function groupAckSeen(m) { if (m.from) groupSendTo(m.from, activeFriendId.slice(2), { type: 'g_ack', id: m.id, kind: 'seen' }); }
+        function groupTypingNames(cid) {
+            const g = groupById(cid), tm = g && groupTyping.get(g.id); if (!tm || !tm.size) return '';
+            const names = [...tm.keys()].map(p => groupMemberName(g, p));
+            return names.length === 1 ? `${names[0]} is typing` : names.length === 2 ? `${names[0]} and ${names[1]} are typing` : 'Several people are typing';
+        }
+        function senderColor(pid) { let h = 0; for (let i = 0; i < pid.length; i++) h = (h * 31 + pid.charCodeAt(i)) >>> 0; return `hsl(${h % 360}, 70%, 70%)`; }
+        function groupTicks(m, g) {
+            const others = g ? groupOthers(g).length : 0, seen = (m.acks && m.acks.seen.length) || 0, del = (m.acks && m.acks.delivered.length) || 0;
+            if (!del && !seen) return '✓';
+            const cnt = others ? ` ${Math.max(seen, del === seen ? seen : del)}/${others}` : '';
+            return seen >= others && others ? `<span style="color:var(--switch-cyan);">✓✓ all seen</span>` : (seen ? `<span style="color:var(--switch-cyan);">✓✓ seen by ${seen}/${others}</span>` : `✓✓ delivered ${del}/${others}`);
+        }
+
+        // ---- sidebar ----
+        function renderGroupList() {
+            const list = document.getElementById('group-list'); if (!list) return;
+            const note = document.getElementById('groups-empty-note');
+            list.innerHTML = '';
+            const arr = Object.values(groups).sort((a, b) => ((messagesByContact['g:' + b.id] || []).slice(-1)[0] || { ts: b.created }).ts - ((messagesByContact['g:' + a.id] || []).slice(-1)[0] || { ts: a.created }).ts);
+            if (note) note.classList.toggle('hidden', arr.length > 0);
+            arr.forEach(g => {
+                const cid = 'g:' + g.id, unread = unreadCount(cid), online = groupOnlineCount(g);
+                const row = el('div', 'friend-row' + (activeFriendId === cid ? ' active' : ''));
+                row.dataset.group = g.id;
+                row.innerHTML = `<div class="avatar-circle" style="width:2.25rem;height:2.25rem;font-size:1rem;">👥<span class="presence-dot ${online ? 'online' : ''}"></span></div><div class="row-info"><div class="row-name"></div><div class="row-sub"></div></div>${unread > 0 ? `<span class="unread-pill">${unread > 9 ? '9+' : unread}</span>` : ''}`;
+                row.querySelector('.row-name').textContent = g.name;
+                row.querySelector('.row-sub').textContent = `${g.members.length} members · ${online} online`;
+                row.addEventListener('click', () => selectGroup(cid));
+                list.appendChild(row);
+            });
+        }
+        function showGalleryTab(show) { const t = document.getElementById('tab-gallery'); if (t) t.style.display = show ? '' : 'none'; const b = document.getElementById('btn-group-info'); if (b) b.style.display = show ? 'none' : ''; }
+        function selectGroup(cid) {
+            const g = groupById(cid); if (!g) return;
+            activeFriendId = cid;
+            document.getElementById('welcome-view').classList.add('hidden');
+            document.getElementById('view-tabs').classList.remove('hidden');
+            showGalleryTab(false);
+            activeView = 'chat';
+            switchView('chat');
+            renderFriendList();
+            ensureGroupLinks();
+            document.getElementById('chat-tab-badge').classList.add('hidden');
+            renderMySdCardRow();
+        }
+        function updateGroupInfoButton() { showGalleryTab(!isGroupId(activeFriendId)); }
+
+        // ---- dialogs ----
+        function showNewGroupModal() {
+            if (!myPeerId()) { showToast('Still getting your ID ready. Try again in a moment.', 'yellow'); return; }
+            const cands = friends.filter(f => f.peerId);
+            const { card, close } = openToolModal('group-new-modal', 'min(480px, 96vw)');
+            card.appendChild(el('div', 'tool-title', '👥 New group chat'));
+            if (cands.length < 2) { card.appendChild(el('div', 'tool-hint', 'You need at least two friends added to make a group (that makes three of you). Add friends with your invite link first.')); card.appendChild(toolBtn('Close', close)); return; }
+            card.appendChild(el('div', 'tool-hint', 'Pick two or more friends. Everyone in the group connects to everyone else directly, and chats are saved in each person\'s own browser.'));
+            const name = document.createElement('input'); name.type = 'text'; name.placeholder = 'Group name'; name.maxLength = 60;
+            name.style.cssText = 'width:100%;background:var(--switch-light);color:white;border:1px solid rgba(77,77,77,0.6);border-radius:0.4rem;padding:0.45rem 0.6rem;font-size:0.85rem;margin-bottom:0.5rem;';
+            card.appendChild(name);
+            const box = el('div', 'reel-list'); box.style.maxHeight = '36vh'; const picked = new Set();
+            const create = toolBtn('Create group', null, 'tool-btn primary');
+            const refresh = () => { create.disabled = !(name.value.trim() && picked.size >= 2 && picked.size < GROUP_MAX_MEMBERS); };
+            cands.forEach(f => {
+                const lab = el('label', 'tool-hint'); lab.style.cssText = 'display:flex;align-items:center;gap:0.5rem;color:white;padding:0.35rem 0.2rem;cursor:pointer;';
+                const c = document.createElement('input'); c.type = 'checkbox'; c.value = f.id;
+                c.addEventListener('change', () => { if (c.checked) picked.add(f.id); else picked.delete(f.id); refresh(); });
+                lab.appendChild(c); lab.appendChild(document.createTextNode(f.name)); box.appendChild(lab);
+            });
+            card.appendChild(box); name.addEventListener('input', refresh);
+            const bar = el('div', 'tool-bar');
+            create.disabled = true;
+            create.addEventListener('click', () => {
+                const id = uid() + Math.random().toString(36).slice(2, 6);
+                const members = [{ peerId: myPeerId(), name: myProfile.name }].concat([...picked].map(fid => { const f = friends.find(x => x.id === fid); return { peerId: f.peerId, name: f.name }; }));
+                groups[id] = { id, name: name.value.trim().slice(0, 60), members, ver: 1, created: Date.now(), creator: myPeerId() };
+                saveGroups(); close(); renderGroupList(); ensureGroupLinks(); selectGroup('g:' + id);
+                showToast('Group created. Members get it when they are online.', 'purple');
+            });
+            bar.appendChild(create); bar.appendChild(toolBtn('Cancel', close)); card.appendChild(bar);
+            name.focus();
+        }
+        function renderGroupInfoIfOpen() { const m = document.getElementById('group-info-modal'); if (m && m.__render) m.__render(); }
+        function showGroupInfoModal() {
+            const g = groupById(activeFriendId); if (!g) return;
+            const { modal, card, close } = openToolModal('group-info-modal', 'min(480px, 96vw)');
+            const render = () => {
+                const cur = groups[g.id]; if (!cur) { close(); return; }
+                card.innerHTML = '';
+                card.appendChild(el('div', 'tool-title', '👥 ' + cur.name));
+                const nameIn = document.createElement('input'); nameIn.type = 'text'; nameIn.value = cur.name; nameIn.maxLength = 60;
+                nameIn.style.cssText = 'flex:1;background:var(--switch-light);color:white;border:1px solid rgba(77,77,77,0.6);border-radius:0.4rem;padding:0.4rem 0.6rem;font-size:0.85rem;';
+                const rn = el('div', 'tool-bar'); rn.appendChild(nameIn);
+                rn.appendChild(toolBtn('Rename', () => { const v = nameIn.value.trim().slice(0, 60); if (!v || v === cur.name) return; cur.name = v; cur.ver++; saveGroups(); broadcastGroupMeta(cur); groupUiRefresh(); render(); }));
+                card.appendChild(rn);
+                card.appendChild(el('div', 'tool-hint', `${cur.members.length} members`));
+                const list = el('div', 'reel-list'); list.style.maxHeight = '28vh';
+                cur.members.forEach(m => {
+                    const me = m.peerId === myPeerId(); const c = groupConns.get(m.peerId); const on = me || (c && c.conn.open);
+                    const row = el('div', 'tool-hint'); row.style.cssText = 'color:white;display:flex;align-items:center;gap:0.5rem;padding:0.25rem 0;';
+                    const dot = el('span', '', on ? '🟢' : '⚪'); row.appendChild(dot); row.appendChild(document.createTextNode(me ? `${myProfile.name || 'You'} (you)` : groupMemberName(cur, m.peerId))); list.appendChild(row);
+                });
+                card.appendChild(list);
+                const addable = friends.filter(f => f.peerId && !cur.members.some(m => m.peerId === f.peerId));
+                if (addable.length && cur.members.length < GROUP_MAX_MEMBERS) {
+                    card.appendChild(el('div', 'tool-hint', 'Add someone'));
+                    const sel = document.createElement('select'); sel.style.cssText = 'background:var(--switch-light);color:white;border:1px solid rgba(77,77,77,0.6);border-radius:0.4rem;padding:0.35rem;font-size:0.8rem;';
+                    addable.forEach(f => { const o = document.createElement('option'); o.value = f.peerId; o.textContent = f.name; sel.appendChild(o); });
+                    const ab = el('div', 'tool-bar'); ab.appendChild(sel);
+                    ab.appendChild(toolBtn('Add to group', () => { const f = addable.find(x => x.peerId === sel.value); if (!f) return; cur.members.push({ peerId: f.peerId, name: f.name }); cur.ver++; saveGroups(); broadcastGroupMeta(cur); ensureGroupLinks(); groupUiRefresh(); render(); }));
+                    card.appendChild(ab);
+                }
+                const bar = el('div', 'tool-bar');
+                bar.appendChild(toolBtn('Leave group', () => {
+                    showPrompt('group-leave-' + cur.id, { title: `Leave "${cur.name}"?`, text: 'You will stop getting its messages and your copy of the chat is deleted. Others keep the group.', acceptLabel: 'Leave', declineLabel: 'Stay', onAccept: () => { groupBroadcast(cur.id, { type: 'g_leave' }); close(); removeGroupLocally(cur.id); } });
+                }, 'tool-btn danger'));
+                bar.appendChild(toolBtn('Close', close)); card.appendChild(bar);
+            };
+            modal.__render = render; render();
+            modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+        }
+        document.getElementById('btn-new-group').addEventListener('click', showNewGroupModal);
+        document.getElementById('btn-group-info').addEventListener('click', showGroupInfoModal);
+        renderGroupList();
 
         // ============================================================
         // CHAT: attachment chunked transfer (receiving)
@@ -3597,7 +4041,7 @@
         }
 
         function updateSendButtonState() {
-            const connected = !!(activeConnection && activeConnection.open);
+            const connected = chatConnected();
             btnSend.disabled = !connected || (composerInput.value.trim().length === 0 && !pendingAttachment);
         }
 
@@ -3605,7 +4049,7 @@
         // there's no way to type something that looks sent but never goes
         // anywhere. Call this any time the connection state changes.
         function updateComposerAvailability() {
-            const connected = !!(activeConnection && activeConnection.open);
+            const connected = chatConnected();
             composerInput.disabled = !connected;
             composerInput.placeholder = connected ? "Message... (**bold**, *italic*, `code`)" : 'Not connected...';
             document.getElementById('btn-attach').disabled = !connected;
@@ -3617,11 +4061,11 @@
             updateSendButtonState();
             composerInput.style.height = 'auto';
             composerInput.style.height = Math.min(composerInput.scrollHeight, 128) + 'px';
-            if (activeConnection && activeConnection.open) {
+            if (chatConnected()) {
                 const now = Date.now();
-                if (now - myTypingSentAt > 1500) { sendToConn({ type: 'typing', isTyping: true }); myTypingSentAt = now; }
+                if (now - myTypingSentAt > 1500) { chatTyping(true); myTypingSentAt = now; }
                 clearTimeout(typingTimeout);
-                typingTimeout = setTimeout(() => sendToConn({ type: 'typing', isTyping: false }), 2000);
+                typingTimeout = setTimeout(() => chatTyping(false), 2000);
             }
         });
         composerInput.addEventListener('keydown', (e) => {
@@ -3630,7 +4074,7 @@
 
         function sendMessage() {
             if (!activeFriendId) return;
-            if (!(activeConnection && activeConnection.open)) {
+            if (!chatConnected()) {
                 showToast("You're not connected right now — that can't send.", 'yellow');
                 updateComposerAvailability();
                 return;
@@ -3639,14 +4083,15 @@
             if (pendingAttachment) {
                 const file = pendingAttachment.file;
                 clearPendingAttachment();
-                sendFile(file, text);
+                if (isGroupId(activeFriendId)) groupSendFile(file, text); else sendFile(file, text);
                 composerInput.value = '';
                 composerInput.style.height = 'auto';
-                sendToConn({ type: 'typing', isTyping: false });
+                chatTyping(false);
                 updateSendButtonState();
                 return;
             }
             if (!text) return;
+            if (isGroupId(activeFriendId)) { groupSendText(text); composerInput.value = ''; composerInput.style.height = 'auto'; updateSendButtonState(); return; }
             const thread = ensureThread(activeFriendId);
             const replyTo = (replyingTo && replyingTo.friendId === activeFriendId)
                 ? { id: replyingTo.id, who: replyingTo.who, snippet: replyingTo.snippet } : null;
@@ -3844,7 +4289,7 @@
             const thread = messagesByContact[activeFriendId] || [];
             const m = thread.find(x => x.id === messageId);
             if (!m || m.deleted) return;
-            replyingTo = { friendId: activeFriendId, id: m.id, who: m.mine ? 'me' : 'them', snippet: replySnippetFor(m) };
+            replyingTo = { friendId: activeFriendId, id: m.id, who: m.mine ? 'me' : 'them', snippet: replySnippetFor(m), whoId: m.g ? (m.from || myPeerId()) : undefined, whoName: m.g ? (m.mine ? myProfile.name : m.senderName) : undefined };
             renderReplyPreview();
             composerInput.focus();
         }
@@ -3865,7 +4310,7 @@
             const text = document.createElement('div');
             text.className = 'reply-preview-text';
             const who = document.createElement('b');
-            who.textContent = 'Replying to ' + (replyingTo.who === 'me' ? 'yourself' : (friend ? friend.name : 'them')) + ': ';
+            who.textContent = 'Replying to ' + (replyingTo.who === 'me' ? 'yourself' : (replyingTo.whoName || (friend ? friend.name : 'them'))) + ': ';
             text.appendChild(who);
             text.appendChild(document.createTextNode(replyingTo.snippet));
             const close = document.createElement('button');
@@ -3894,7 +4339,7 @@
             if (!m || m.deleted) return;
             m.pinned = !m.pinned;
             saveMessages();
-            sendToConn({ type: 'pin', messageId: m.id, pinned: m.pinned });
+            if (isGroupId(activeFriendId)) groupBroadcast(activeFriendId.slice(2), { type: 'g_pin', messageId: m.id, pinned: m.pinned }); else sendToConn({ type: 'pin', messageId: m.id, pinned: m.pinned });
             renderMessages();
         }
 
@@ -3927,6 +4372,7 @@
             row.dataset.id = m.id;
             const bubbleWrap = document.createElement('div');
             bubbleWrap.className = 'msg-bubble-wrap';
+            if (m.g && !m.mine) { const s = document.createElement('div'); s.className = 'msg-sender'; s.textContent = m.senderName || 'Someone'; s.style.color = senderColor(m.from || ''); row.appendChild(s); }
             const bubble = document.createElement('div');
             bubble.className = 'msg-bubble' + (m.deleted ? ' deleted' : '');
             if (m.deleted) {
@@ -3948,7 +4394,7 @@
                 const quoted = (messagesByContact[activeFriendId] || []).find(x => x.id === m.replyTo.id);
                 const quoteText = quoted ? (quoted.deleted ? 'This message was deleted' : (quoted.text || (quoted.attachment ? '📎 Attachment' : ''))) : m.replyTo.snippet;
                 const strong = document.createElement('strong');
-                strong.textContent = m.replyTo.who === 'me' ? 'You' : (getActiveFriend() ? getActiveFriend().name : 'Them');
+                strong.textContent = m.replyTo.who === 'me' ? 'You' : (m.replyTo.whoName || (getActiveFriend() ? getActiveFriend().name : 'Them'));
                 quote.appendChild(strong);
                 quote.appendChild(document.createTextNode(String(quoteText || '').slice(0, 140)));
                 quote.addEventListener('click', () => scrollToMessage(m.replyTo.id));
@@ -3997,6 +4443,7 @@
             const allReactions = {};
             (m.reactions.mine || []).forEach(e => { allReactions[e] = allReactions[e] || { count: 0, mine: false }; allReactions[e].count++; allReactions[e].mine = true; });
             (m.reactions.theirs || []).forEach(e => { allReactions[e] = allReactions[e] || { count: 0, mine: false }; allReactions[e].count++; });
+            if (m.g && m.greact) { const me = myPeerId(); Object.keys(m.greact).forEach(e => { const l = m.greact[e]; allReactions[e] = { count: l.length, mine: l.includes(me) }; }); }
             if (Object.keys(allReactions).length > 0) {
                 const reactionsEl = document.createElement('div');
                 reactionsEl.className = 'msg-reactions';
@@ -4012,7 +4459,7 @@
             if (!m.deleted) {
                 const meta = document.createElement('div');
                 meta.className = 'msg-meta';
-                meta.innerHTML = `${m.edited ? '<span class="edited-tag">edited</span> · ' : ''}${timeLabel(m.ts)}${m.mine ? ' · ' + statusTicks(m.status) : ''}${m.pinned ? '<span class="pin-tag">📌 pinned</span>' : ''}`;
+                meta.innerHTML = `${m.edited ? '<span class="edited-tag">edited</span> · ' : ''}${timeLabel(m.ts)}${m.mine ? ' · ' + (m.g ? groupTicks(m, groupById(activeFriendId)) : statusTicks(m.status)) : ''}${m.pinned ? '<span class="pin-tag">📌 pinned</span>' : ''}`;
                 row.appendChild(meta);
             }
             return row;
@@ -4087,12 +4534,15 @@
         function renderTypingIndicator() {
             const area = document.getElementById('messages-area');
             let el = document.getElementById('typing-indicator-row');
-            if (peerTyping) {
+            const gtxt = isGroupId(activeFriendId) ? groupTypingNames(activeFriendId) : '';
+            if (isGroupId(activeFriendId) ? !!gtxt : peerTyping) {
+                if (el && isGroupId(activeFriendId)) el.remove(), el = null;
                 if (!el) {
                     el = document.createElement('div');
                     el.id = 'typing-indicator-row';
                     el.className = 'msg-row theirs';
-                    el.innerHTML = `<div class="typing-indicator"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>`;
+                    el.innerHTML = `<div class="typing-indicator"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>${gtxt ? `<span style="font-size:0.65rem;color:var(--switch-muted);margin-left:0.4rem;"></span>` : ''}`;
+                    if (gtxt) el.lastElementChild.textContent = gtxt;
                     area.appendChild(el);
                     area.scrollTop = area.scrollHeight;
                 }
@@ -4123,6 +4573,7 @@
             }, 0);
         }
         function toggleMyReaction(messageId, emoji) {
+            if (isGroupId(activeFriendId)) { groupToggleReaction(messageId, emoji); return; }
             const thread = messagesByContact[activeFriendId] || [];
             const m = thread.find(x => x.id === messageId);
             if (!m) return;
@@ -4149,7 +4600,7 @@
                 const newText = input.value.trim();
                 if (newText && newText !== m.text) {
                     m.text = newText; m.edited = true; saveMessages();
-                    sendToConn({ type: 'edit', messageId, newText });
+                    if (m.g) groupBroadcast(activeFriendId.slice(2), { type: 'g_edit', messageId, newText }); else sendToConn({ type: 'edit', messageId, newText });
                 }
                 renderMessages();
             };
@@ -4164,7 +4615,7 @@
             const m = thread.find(x => x.id === messageId);
             if (!m) return;
             m.deleted = true; m.attachment = null; saveMessages(); renderMessages();
-            sendToConn({ type: 'delete', messageId });
+            if (m.g) groupBroadcast(activeFriendId.slice(2), { type: 'g_delete', messageId }); else sendToConn({ type: 'delete', messageId });
         }
 
         // ============================================================
@@ -4213,8 +4664,9 @@
             const friend = getActiveFriend();
             const thread = messagesByContact[activeFriendId] || [];
             const lines = thread.map(m => {
-                if (m.deleted) return `[${new Date(m.ts).toLocaleString()}] ${m.mine ? myProfile.name : friend.name}: (message deleted)`;
-                const who = m.mine ? myProfile.name : friend.name;
+                const nm = m.mine ? myProfile.name : (m.senderName || friend.name);
+                if (m.deleted) return `[${new Date(m.ts).toLocaleString()}] ${nm}: (message deleted)`;
+                const who = nm;
                 const body = m.attachment ? `[attachment: ${m.attachment.name}]${m.text ? ' ' + m.text : ''}` : m.text;
                 return `[${new Date(m.ts).toLocaleString()}] ${who}: ${body}`;
             });

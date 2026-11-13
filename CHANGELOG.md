@@ -2,6 +2,17 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.9.0] - 2026-11-13
+
+### Added
+- **Group chat for 3 or more people.** There's a new Groups section in the sidebar. Tap **+ New**, name the group and pick two or more friends from your friends list. Everyone in the group connects directly to everyone else (no server, and the chat keeps working even if the person who made it leaves), so it's best for small friend groups of up to 12. Groups support text, replies, reactions, pinning, edit and delete (only your own messages), typing indicators ("Falcon is typing"), and read receipts that count people ("seen by 2/3"). You can send screenshots, clips and files up to 50 MB too. Each message shows who sent it.
+- **Group info.** The 👥 button in a group's header lets you rename it, see who's online, add more friends, or leave.
+- **Saved in your browser, with catch-up.** Groups and their history are saved in each member's browser. If you were offline, you catch up on what you missed from whoever is online when you reconnect.
+- Only your friends can add you to a group, and strangers can't open a group connection to you.
+
+### Notes
+- Gallery browsing, watch together, calls and games are still one-on-one for now.
+
 ## [1.8.0] - 2026-11-13
 
 ### Added

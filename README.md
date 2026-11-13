@@ -41,6 +41,7 @@ No install, no sign-up. Just open it in Chrome, Edge, or Opera on desktop (it ne
 - Everything runs peer-to-peer (via [PeerJS](https://peerjs.com/)/WebRTC) directly between browsers. Nothing gets uploaded to a server — if you and your friend both close the tab, the connection's just gone.
 - **Watch together** — hit 🎬 in the sidebar while you're connected. Your friend gets a prompt, and if they join they follow along as you flip through screenshots or run a slideshow. You can pass the remote back and forth
 - **Session album** — a shared pile for tonight. Either of you can drop screenshots into it and both of you see it. It disappears when either of you disconnects
+- **Group chat** — make a group with 2 or more friends (3+ people total). Text, replies, reactions, read receipts, photos and files, all straight between browsers. Groups are saved in each person's browser and members catch up from whoever's online
 - **Browser names** — when you're connected you can both see which browser the other is on (just the name, like "Firefox", nothing else about your device)
 - **Guess the game** and **Vote on the best shot** — two quick games to play with a friend while connected (find them under 🎮 Games; the clue is a blurred crop)
 - **Install it as an app** — if your browser offers it, there's an "Install as an app" button in the sidebar. The shell also works offline, so you can still browse a locally loaded SD card without a connection (friends need a connection, obviously)
