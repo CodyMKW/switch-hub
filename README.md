@@ -43,7 +43,7 @@ No install, no sign-up. Just open it in Chrome, Edge, or Opera on desktop (it ne
 - **Session album** — a shared pile for tonight. Either of you can drop screenshots into it and both of you see it. It disappears when either of you disconnects
 - **Group chat** — make a group with 2 or more friends (3+ people total). Text, replies, reactions, read receipts, photos and files, all straight between browsers. Groups are saved in each person's browser and members catch up from whoever's online
 - **Browser names** — when you're connected you can both see which browser the other is on (just the name, like "Firefox", nothing else about your device)
-- **Guess the game** and **Vote on the best shot** — two quick games to play with a friend while connected (find them under 🎮 Games; the clue is a blurred crop)
+- **Guess the game**, **Guess the date** and **Vote on the best shot** — quick games to play with a friend while connected (find them under 🎮 Games). Guess the game uses a blurred crop; Guess the date asks which year, month or day a capture was taken
 - **Install it as an app** — if your browser offers it, there's an "Install as an app" button in the sidebar. The shell also works offline, so you can still browse a locally loaded SD card without a connection (friends need a connection, obviously)
 - You get a permanent ID the first time you open it, so you can just copy an invite link and send it to someone. They click it, it connects automatically, done. No typing IDs back and forth.
 - Optional live "what game is my friend playing right now" status via [nxapi's presence API](https://github.com/samuelthomas2774/nxapi) — add anyone's NSA ID and see their online/game status update in real time, whether or not you're actively connected to them.

@@ -624,6 +624,7 @@
             <div class="peer-sub" id="games-sub">
                 <button id="btn-vote" class="peer-chip" title="Vote on the best shot">🗳️ Best shot vote</button>
                 <button id="btn-guess" class="peer-chip" title="Guess the game from a blurred crop">🎯 Guess the game</button>
+                <button id="btn-gdate" class="peer-chip" title="Guess when a capture was taken">📅 Guess the date</button>
             </div>
             <button id="btn-jump-peer-viewing" style="display:none; margin-top: 0.5rem; width: 100%; padding: 0.35rem 0.6rem; border: 1px solid #a855f7; color: #a855f7; background: rgba(168,85,247,0.08); border-radius: 0.25rem; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.03em; cursor: pointer;">▶ Jump to what they're viewing</button>
             <label style="display: flex; align-items: center; gap: 0.4rem; margin-top: 0.6rem; font-size: 0.7rem; color: var(--switch-muted); cursor: pointer;">
@@ -1831,6 +1832,7 @@
                 resetCallState();
                 resetVoteState();
                 resetGuessState();
+                closeGdate();
                 sessionPile = [];
                 updateSessionButton();
                 showToast(`${friend.name} went offline`);
@@ -1934,6 +1936,7 @@
             else if (typeof data.type === 'string' && data.type.startsWith('wt_')) { handleWtMessage(data, friend); }
             else if (typeof data.type === 'string' && data.type.startsWith('vote_')) { handleVoteMessage(data, friend); }
             else if (typeof data.type === 'string' && data.type.startsWith('guess_')) { handleGuessMessage(data, friend); }
+            else if (typeof data.type === 'string' && data.type.startsWith('gdate_')) { handleGdateMessage(data, friend); }
             else if (data.type === 'sess_add') {
                 const thumb = (typeof data.thumb === 'string' && data.thumb.startsWith('data:image/') && data.thumb.length < 200000) ? data.thumb : '';
                 const entry = {
@@ -5964,6 +5967,187 @@
             card.appendChild(actions);
         }
         document.getElementById('btn-guess').addEventListener('click', startGuessGame);
+
+        // ============================================================
+        // GUESS THE DATE
+        // Like Guess the game, but the question is when a capture was taken: the year, the month, the day of the
+        // week or the day of the month. You take turns being the quizmaster with your own screenshots and clips
+        // (clips show a still frame). Only captures with the date in their file name are used, since that is the
+        // only date Hub can be sure of. Games marked as spoilers never appear.
+        // ============================================================
+        let gdate = null;
+        const GD_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const GD_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const GD_KINDS = ['year', 'month', 'weekday', 'day'];
+        const GD_QUESTION = { year: 'What year was this taken?', month: 'What month was this taken?', weekday: 'What day of the week was this taken?', day: 'What day of the month was this taken?' };
+        function gdOrdinal(n) { const s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
+        function gdParts(m) {
+            const r = /^(\d{4})(\d{2})(\d{2})/.exec((m.file && m.file.name) || '');
+            if (!r) return null;
+            const y = +r[1], mo = +r[2], d = +r[3];
+            if (y < 2017 || y > new Date().getFullYear() + 1 || mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+            const dt = new Date(y, mo - 1, d); if (dt.getMonth() !== mo - 1) return null;
+            return { y, mo, d, wd: dt.getDay(), long: dt.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) };
+        }
+        function gdPool() { return allMediaFiles.filter(m => m.file && !isGameSpoiled(m.hash) && gdParts(m)); }
+        function gdEligible() { return gdPool().length >= 3; }
+        function gdAnswerFor(kind, p) { return kind === 'year' ? String(p.y) : kind === 'month' ? GD_MONTHS[p.mo - 1] : kind === 'weekday' ? GD_DAYS[p.wd] : gdOrdinal(p.d); }
+        function gdChoices(kind, p) {
+            let opts;
+            if (kind === 'year') {
+                const last = Math.max(new Date().getFullYear(), p.y), all = []; for (let y = 2017; y <= last; y++) if (y !== p.y) all.push(String(y));
+                // keep wrong answers believable: prefer years near the right one
+                opts = all.sort((a, b) => Math.abs(a - p.y) - Math.abs(b - p.y) + (Math.random() - 0.5) * 3).slice(0, 3);
+            } else if (kind === 'month') opts = shuffled(GD_MONTHS.filter((_, i) => i !== p.mo - 1)).slice(0, 3);
+            else if (kind === 'weekday') opts = shuffled(GD_DAYS.filter((_, i) => i !== p.wd)).slice(0, 3);
+            else { const s = new Set(); const dim = new Date(p.y, p.mo, 0).getDate(); let guard = 0; while (s.size < 3 && guard++ < 60) { const d = Math.max(1, Math.min(dim, p.d + Math.round((Math.random() * 2 - 1) * 9))); if (d !== p.d) s.add(d); } opts = [...s].map(gdOrdinal); }
+            const answer = gdAnswerFor(kind, p);
+            const out = shuffled([answer, ...opts]);
+            return kind === 'year' ? out.sort((a, b) => a - b) : kind === 'day' ? out.sort((a, b) => parseInt(a) - parseInt(b)) : out;
+        }
+        async function gdClue(media) {
+            let bmp = null;
+            try {
+                if (media.type === 'video') {
+                    bmp = await new Promise((resolve) => {
+                        const v = document.createElement('video'); v.muted = true; v.preload = 'auto'; v.playsInline = true; v.src = media.url;
+                        const done = (r) => { clearTimeout(t); v.removeAttribute('src'); try { v.load(); } catch (e) {} resolve(r); };
+                        const t = setTimeout(() => done(null), 8000);
+                        v.addEventListener('error', () => done(null));
+                        v.addEventListener('loadeddata', () => { try { v.currentTime = Math.min(1, (v.duration || 2) / 2); } catch (e) { done(null); } });
+                        v.addEventListener('seeked', async () => { try { done(await createImageBitmap(v)); } catch (e) { done(null); } });
+                    });
+                } else bmp = await createImageBitmap(media.file);
+                if (!bmp) return '';
+                const w = Math.min(480, bmp.width), h = Math.max(1, Math.round(bmp.height * w / bmp.width));
+                const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(bmp, 0, 0, w, h);
+                return c.toDataURL('image/jpeg', 0.7);
+            } catch (e) { return ''; } finally { try { bmp && bmp.close(); } catch (e) {} }
+        }
+        function startGdate() {
+            if (!(activeConnection && activeConnection.open)) { showToast('Connect to a friend first to play.', 'yellow'); return; }
+            if (gdate) { renderGdateModal(); return; }
+            if (!gdEligible()) { showToast('You need at least 3 captures with the date in their file name (and not marked as spoilers) to play.', 'yellow', 5500); return; }
+            showChoiceModal('Guess the date: what should the questions be about?', [{ label: '🎲 A mix of everything', value: 'mix' }, { label: '📅 Year only', value: 'year' }, { label: '🗓️ Month only', value: 'month' }, { label: '📆 Day only (week day and day of month)', value: 'days' }], (mode) => {
+                showChoiceModal('Guess the date: how many rounds?', [{ label: '4 rounds (quick)', value: 4 }, { label: '6 rounds', value: 6 }, { label: '10 rounds', value: 10 }], (rounds) => {
+                    if (gdate) return;
+                    const id = uid();
+                    gdate = { id, total: rounds, mode, n: 0, initiator: true, myScore: 0, theirScore: 0, role: null, cur: null, used: new Set(), phase: 'waiting' };
+                    sendToConn({ type: 'gdate_invite', id, rounds, mode });
+                    gdate.timer = setTimeout(() => { if (gdate && gdate.id === id && gdate.phase === 'waiting') { sendToConn({ type: 'gdate_cancel', id }); closeGdate(); showToast('No answer to your game invite.', 'yellow'); } }, 60000);
+                    renderGdateModal();
+                });
+            });
+        }
+        function closeGdate() {
+            if (gdate) { if (gdate.timer) clearTimeout(gdate.timer); if (gdate.nextTimer) clearTimeout(gdate.nextTimer); }
+            gdate = null; const m = document.getElementById('gdate-modal'); if (m) m.remove(); closePrompt('gdate-invite');
+        }
+        function gdKindFor(mode, n) { const kinds = mode === 'year' ? ['year'] : mode === 'month' ? ['month'] : mode === 'days' ? ['weekday', 'day'] : GD_KINDS; return kinds[Math.floor(Math.random() * kinds.length)]; }
+        async function sendGdateRound(n) {
+            if (!gdate) return;
+            const g = gdate, pool = gdPool().filter(m => !g.used.has(mediaKey(m))), from = pool.length ? pool : gdPool();
+            if (!from.length) { sendToConn({ type: 'gdate_cancel', id: g.id, reason: 'pool' }); closeGdate(); showToast('Ran out of eligible captures.', 'yellow'); return; }
+            const media = from[Math.floor(Math.random() * from.length)]; g.used.add(mediaKey(media));
+            const p = gdParts(media), kind = gdKindFor(g.mode, n), img = await gdClue(media);
+            if (!gdate || gdate !== g) return;
+            if (!img) { g.used.add(mediaKey(media)); return sendGdateRound(n); } // unreadable file: pick another
+            g.n = n; g.role = 'master';
+            g.cur = { img, kind, choices: gdChoices(kind, p), correct: gdAnswerFor(kind, p), full: p.long, isVideo: media.type === 'video', answer: null, revealed: false, right: false };
+            sendToConn({ type: 'gdate_round', id: g.id, n, total: g.total, img, kind, choices: g.cur.choices, isVideo: g.cur.isVideo });
+            renderGdateModal();
+        }
+        function handleGdateMessage(data, friend) {
+            const id = String(data.id || '');
+            if (data.type === 'gdate_invite') {
+                const rounds = [4, 6, 10].includes(+data.rounds) ? +data.rounds : 6, mode = ['mix', 'year', 'month', 'days'].includes(data.mode) ? data.mode : 'mix';
+                if (gdate) { sendToConn({ type: 'gdate_decline', id, busy: true }); return; }
+                if (!gdEligible()) { sendToConn({ type: 'gdate_decline', id, noPool: true }); showToast(`${friend.name} invited you to Guess the date, but you need 3+ captures with dates in their file names to play.`, 'yellow', 6000); return; }
+                gdate = { id, total: rounds, mode, n: 0, initiator: false, myScore: 0, theirScore: 0, role: null, cur: null, used: new Set(), phase: 'invited' };
+                showPrompt('gdate-invite', {
+                    title: `📅 ${friend.name} wants to play Guess the date`, text: `${rounds} rounds. You take turns: you guess when their captures were taken, they guess for yours.`,
+                    acceptLabel: 'Play', declineLabel: 'Not now', timeoutMs: 60000,
+                    onAccept: () => { if (gdate && gdate.id === id) { gdate.phase = 'playing'; sendToConn({ type: 'gdate_accept', id }); renderGdateModal(); } },
+                    onDecline: () => { if (gdate && gdate.id === id) { sendToConn({ type: 'gdate_decline', id }); gdate = null; } },
+                    onExpire: () => { if (gdate && gdate.id === id && gdate.phase === 'invited') { sendToConn({ type: 'gdate_decline', id, expired: true }); gdate = null; } }
+                });
+            } else if (data.type === 'gdate_accept') {
+                if (gdate && gdate.id === id && gdate.initiator && gdate.phase === 'waiting') { clearTimeout(gdate.timer); gdate.phase = 'playing'; showToast(`${friend.name} joined 📅`, 'purple'); sendGdateRound(1); }
+            } else if (data.type === 'gdate_decline') {
+                if (gdate && gdate.id === id && gdate.initiator) { closeGdate(); showToast(data.noPool ? `${friend.name} doesn't have enough dated captures loaded to play.` : data.busy ? `${friend.name} is already in a game.` : data.expired ? `${friend.name} didn't answer.` : `${friend.name} isn't up for it right now.`, 'yellow'); }
+            } else if (data.type === 'gdate_cancel') {
+                if (gdate && gdate.id === id) { const was = gdate.phase === 'invited'; closeGdate(); showToast(was ? `${friend.name} cancelled the invite.` : (data.reason === 'pool' ? `${friend.name} ran out of captures, so the game ended.` : `${friend.name} ended the game.`)); }
+            } else if (data.type === 'gdate_round') {
+                if (!gdate || gdate.id !== id || gdate.phase !== 'playing') return;
+                const kind = GD_KINDS.includes(data.kind) ? data.kind : null;
+                const choices = Array.isArray(data.choices) ? data.choices.slice(0, 4).map(c => String(c).slice(0, 40)) : [];
+                const img = (typeof data.img === 'string' && data.img.startsWith('data:image/') && data.img.length < 400000) ? data.img : '';
+                if (!kind || !img || choices.length < 2) return;
+                gdate.n = Math.max(1, Math.min(gdate.total, +data.n || 1)); gdate.role = 'guesser';
+                gdate.cur = { img, kind, choices, correct: null, full: '', isVideo: !!data.isVideo, answer: null, revealed: false, right: false };
+                renderGdateModal();
+            } else if (data.type === 'gdate_answer') {
+                if (!gdate || gdate.id !== id || gdate.role !== 'master' || !gdate.cur || gdate.cur.answer !== null || +data.n !== gdate.n) return;
+                const choice = String(data.choice || ''); if (!gdate.cur.choices.includes(choice)) return;
+                const c = gdate.cur; c.answer = choice; c.revealed = true; c.right = choice === c.correct; if (c.right) gdate.theirScore++;
+                sendToConn({ type: 'gdate_reveal', id, n: gdate.n, correct: c.correct, right: c.right, full: c.full });
+                renderGdateModal(); scheduleGdateNext();
+            } else if (data.type === 'gdate_reveal') {
+                if (!gdate || gdate.id !== id || gdate.role !== 'guesser' || !gdate.cur || +data.n !== gdate.n) return;
+                const c = gdate.cur; c.revealed = true; c.correct = String(data.correct || '').slice(0, 40); c.right = !!data.right; c.full = String(data.full || '').slice(0, 80);
+                if (c.right) gdate.myScore++;
+                renderGdateModal(); scheduleGdateNext();
+            }
+        }
+        function scheduleGdateNext() {
+            if (!gdate) return;
+            const g = gdate, n = g.n;
+            g.nextTimer = setTimeout(() => {
+                if (!gdate || gdate !== g || g.n !== n) return;
+                if (n >= g.total) { g.phase = 'final'; renderGdateModal(); return; }
+                if (g.role === 'guesser') sendGdateRound(n + 1);
+            }, 4200);
+        }
+        function renderGdateModal() {
+            if (!gdate || gdate.phase === 'invited') return;
+            const g = gdate, friend = friends.find(f => f.id === connectedFriendId), name = friend ? friend.name : 'Friend';
+            const { card } = openToolModal('gdate-modal', 'min(560px, 96vw)');
+            card.appendChild(el('div', 'tool-title', '📅 Guess the date'));
+            const score = el('div', 'guess-score'); score.appendChild(el('span', '', `You ${g.myScore}`)); score.appendChild(el('span', '', g.phase === 'final' ? 'Final' : `Round ${Math.max(1, g.n)} of ${g.total}`)); score.appendChild(el('span', '', `${name} ${g.theirScore}`)); card.appendChild(score);
+            if (g.phase === 'waiting') card.appendChild(el('div', 'tool-hint', `Waiting for ${name} to join...`));
+            else if (g.phase === 'final') {
+                const draw = g.myScore === g.theirScore;
+                card.appendChild(el('div', 'tool-title', draw ? "🤝 It's a draw!" : (g.myScore > g.theirScore ? '🏆 You win!' : `🏆 ${name} wins!`)));
+                card.appendChild(el('div', 'tool-hint', `Final score: you ${g.myScore}, ${name} ${g.theirScore}.`));
+            } else if (g.cur) {
+                const c = g.cur;
+                const status = g.role === 'master' ? (c.revealed ? (c.right ? `${name} got it!` : `${name} missed it.`) : `Your capture, taken ${c.full}. Waiting for ${name} to guess...`) : (c.revealed ? (c.right ? '✅ Correct!' : `❌ It was ${c.correct}.`) : GD_QUESTION[c.kind]);
+                card.appendChild(el('div', 'tool-hint', status));
+                if (c.revealed && c.full) card.appendChild(el('div', 'tool-title', '📅 ' + c.full));
+                const img = document.createElement('img'); img.className = 'guess-img'; img.src = c.img; img.alt = 'Capture'; card.appendChild(img);
+                if (c.isVideo) card.appendChild(el('div', 'tool-hint', '🎬 This was a clip. Showing one frame.'));
+                if (g.role === 'master') card.appendChild(el('div', 'tool-hint', GD_QUESTION[c.kind]));
+                const grid = el('div', 'guess-choices');
+                c.choices.forEach(ch => {
+                    const b = el('button', '', ch); b.type = 'button';
+                    if (c.revealed) { b.disabled = true; if (ch === c.correct) b.classList.add('right'); else if (ch === c.answer) b.classList.add('wrong'); }
+                    else if (g.role === 'master') b.disabled = true;
+                    if (c.answer === ch) b.classList.add('mine');
+                    b.addEventListener('click', () => {
+                        if (g.role !== 'guesser' || c.answer !== null) return;
+                        c.answer = ch; sendToConn({ type: 'gdate_answer', id: g.id, n: g.n, choice: ch });
+                        grid.querySelectorAll('button').forEach(x => { x.disabled = true; x.classList.toggle('mine', x.textContent === ch); });
+                    });
+                    grid.appendChild(b);
+                });
+                card.appendChild(grid);
+            }
+            const actions = el('div', 'tool-bar');
+            if (g.phase === 'final') actions.appendChild(toolBtn('Play again', () => { closeGdate(); startGdate(); }, 'tool-btn primary'));
+            actions.appendChild(toolBtn(g.phase === 'final' ? 'Close' : 'End game', () => { if (g.phase !== 'final') sendToConn({ type: 'gdate_cancel', id: g.id }); closeGdate(); }, g.phase === 'final' ? 'tool-btn' : 'tool-btn danger'));
+            card.appendChild(actions);
+        }
+        document.getElementById('btn-gdate').addEventListener('click', startGdate);
 
         // ============================================================
         // PLAY-TIME JOURNAL

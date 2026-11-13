@@ -2,6 +2,11 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.10.0] - 2026-11-13
+
+### Added
+- **Guess the date.** A new game next to Guess the game in the Games menu (📅). You take turns showing a screenshot or clip from your own captures and your friend answers a multiple choice question about when it was taken: "What year was this taken?", "What month?", "What day of the week?" or "What day of the month?". Pick a mix of everything, year only, month only or day only, then 4, 6 or 10 rounds. After each answer the full date is revealed, and the score and winner work like Guess the game. Clips show a single frame. Only captures with the date in their file name are used (that's the only date Hub is sure of), and games marked as spoilers never appear. You need 3 or more such captures to play.
+
 ## [1.9.0] - 2026-11-13
 
 ### Added
