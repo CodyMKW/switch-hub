@@ -2,6 +2,14 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.8.0] - 2026-11-13
+
+### Added
+- **See which browser you and your friend are using.** When you're connected, Peer Activity shows a line like "🌐 You: Chrome · Joseph: Firefox", and Settings shows "Your browser: Chrome" under your Peer ID. Only the browser's name is shared (Chrome, Edge, Firefox, Safari, Opera, Brave, Vivaldi, Samsung Internet or DuckDuckGo), never the full user agent or anything else about your device. A friend on an older version shows as "unknown" until they update.
+
+### Fixed
+- **A friend's name could stay "New Friend" after connecting.** The first hello between two browsers could arrive before the other side was listening and get lost. Each side now answers a hello once, so names, status and the browser name always arrive.
+
 ## [1.7.0] - 2026-11-12
 
 ### Added
