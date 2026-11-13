@@ -2,6 +2,11 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.6.1] - 2026-11-12
+
+### Changed
+- **"By Play Time" only shows on your own gallery.** Play time is only known for your own games, so the option is hidden while you're looking at a friend's gallery (and a friend's gallery falls back to All Media if it was selected), and comes back when you switch to your own.
+
 ## [1.6.0] - 2026-11-12
 
 ### Added
