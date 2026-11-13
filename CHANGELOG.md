@@ -2,6 +2,15 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.11.0] - 2026-11-13
+
+### Added
+- **Now playing, for you and your friends.** These use the Switch presence Hub already reads (a friend needs their presence linked), and each one has its own switch in Settings.
+  - **Banner.** A card slides in when you or a friend starts a game ("Joseph started Mario Kart 8 Deluxe"), with an "Open chat" button. Hub stays quiet for games that were already running when you opened it.
+  - **Game-coloured chat.** While a friend is playing, their chat gets an accent colour for that game (taken from the game's icon when the browser allows it, otherwise a steady colour made from the name), and the header shows "Playing Mario Kart 8 Deluxe · 25 min" while they play.
+  - **Same-game alert.** If you and a friend are in the same game, Hub tells you ("You're both playing…") with a "Say hi" button that fills in a message for you to send (it never sends by itself).
+  - **Their game's shots.** A strip under the chat header shows your screenshots of the game they're playing and, while you're connected, theirs too. Click one to open it. The ✕ hides the strip for that game.
+
 ## [1.10.1] - 2026-11-13
 
 ### Added
