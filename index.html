@@ -5456,11 +5456,11 @@
         // available) and play sessions Hub tracks from your own Switch presence while it is open.
         // Notes and sessions live in this browser only.
         // ============================================================
-        let journal = { sessions: [], notes: {} };
-        try { const j = JSON.parse(localStorage.getItem('switch_hub_journal') || 'null'); if (j && Array.isArray(j.sessions)) journal = { sessions: j.sessions, notes: j.notes || {} }; } catch (e) {}
+        let journal = { sessions: [], notes: {}, official: {} }; // official: Nintendo's own totals per game, from your presence
+        try { const j = JSON.parse(localStorage.getItem('switch_hub_journal') || 'null'); if (j && Array.isArray(j.sessions)) journal = { sessions: j.sessions, notes: j.notes || {}, official: (j.official && typeof j.official === 'object') ? j.official : {} }; } catch (e) {}
         let journalSaveTimer = null;
-        function saveJournal() { if (journalSaveTimer) return; journalSaveTimer = setTimeout(() => { journalSaveTimer = null; try { localStorage.setItem('switch_hub_journal', JSON.stringify({ sessions: journal.sessions.slice(-5000), notes: journal.notes })); } catch (e) {} }, 1500); }
-        window.addEventListener('pagehide', () => { try { localStorage.setItem('switch_hub_journal', JSON.stringify({ sessions: journal.sessions.slice(-5000), notes: journal.notes })); } catch (e) {} });
+        function saveJournal() { if (journalSaveTimer) return; journalSaveTimer = setTimeout(() => { journalSaveTimer = null; try { localStorage.setItem('switch_hub_journal', JSON.stringify({ sessions: journal.sessions.slice(-5000), notes: journal.notes, official: journal.official })); } catch (e) {} }, 1500); }
+        window.addEventListener('pagehide', () => { try { localStorage.setItem('switch_hub_journal', JSON.stringify({ sessions: journal.sessions.slice(-5000), notes: journal.notes, official: journal.official })); } catch (e) {} });
         const JOURNAL_GAP_MS = 3 * 60 * 1000; // a session carries on if we see the same game again within this
         function normGame(name) { return String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, ''); }
         function fmtPlayTime(ms) {
@@ -5470,22 +5470,48 @@
             const h = mins / 60; return `${h >= 10 ? Math.round(h) : (Math.round(h * 10) / 10)} h`;
         }
         // Call with the game you're playing right now (or null when you're not). Safe to call as often as you like.
-        function journalIngest(gameName, now) {
+        // `since` (optional, ms) is when Nintendo says this game was started, so a session Hub only noticed halfway through still counts from the real start.
+        function journalIngest(gameName, now, since) {
             now = now || Date.now();
             const last = journal.sessions[journal.sessions.length - 1];
             if (!gameName) return;
             const norm = normGame(gameName);
             if (!norm) return;
-            if (last && last.norm === norm && now - last.end <= JOURNAL_GAP_MS) { if (now > last.end) { last.end = now; saveJournal(); } return; }
-            journal.sessions.push({ game: String(gameName).slice(0, 120), norm, start: now, end: now });
+            const okSince = (s, floor) => Number.isFinite(s) && s <= now && now - s < 24 * 3600 * 1000 && s >= floor;
+            if (last && last.norm === norm && now - last.end <= JOURNAL_GAP_MS) {
+                let changed = false;
+                if (now > last.end) { last.end = now; changed = true; }
+                const prev = journal.sessions[journal.sessions.length - 2];
+                if (okSince(since, prev ? prev.end : 0) && since < last.start) { last.start = since; changed = true; }
+                if (changed) saveJournal();
+                return;
+            }
+            const floor = last ? last.end : 0;
+            journal.sessions.push({ game: String(gameName).slice(0, 120), norm, start: okSince(since, floor) ? since : now, end: now });
             saveJournal();
         }
+        // Nintendo's own numbers for a game (minutes played in total, and when you first played it).
+        function journalRecordOfficial(game, now) {
+            if (!game || !game.name) return;
+            const norm = normGame(game.name); if (!norm) return;
+            const mins = Number(game.totalPlayTime), first = Number(game.firstPlayedAt);
+            if (!(mins > 0)) return;
+            const prev = journal.official[norm];
+            const rec = { name: String(game.name).slice(0, 120), totalMin: Math.round(mins), firstPlayedAt: first > 0 ? first : (prev && prev.firstPlayedAt) || 0, seen: now || Date.now() };
+            if (prev && prev.totalMin === rec.totalMin && prev.firstPlayedAt === rec.firstPlayedAt) return;
+            journal.official[norm] = rec; saveJournal();
+        }
+        function journalOfficialTotalMin() { return Object.values(journal.official).reduce((s, o) => s + (o.totalMin || 0), 0); }
         function journalFromPresenceCache() {
             if (!myProfile.nsaId) return;
             const cached = presenceCache[myProfile.nsaId];
             if (!cached || cached.error || !cached.data || !cached.data.friend) return;
             const p = cached.data.friend.presence;
-            if (p && p.state === 'ONLINE' && p.game && p.game.name) journalIngest(p.game.name);
+            if (p && p.game && p.game.name) journalRecordOfficial(p.game); // also shows the last game played while offline
+            if (p && p.state === 'ONLINE' && p.game && p.game.name) {
+                const since = cached.data.title && cached.data.title.since ? Date.parse(cached.data.title.since) : NaN;
+                journalIngest(p.game.name, undefined, since);
+            }
         }
         async function journalPoll() { if (!myProfile.nsaId) return; try { await fetchPresence(myProfile.nsaId); journalFromPresenceCache(); } catch (e) {} }
         setInterval(journalPoll, 60 * 1000);
@@ -5498,7 +5524,7 @@
         // One entry per game, merging library captures with tracked sessions.
         function buildJournalEntries() {
             const map = new Map();
-            const entry = (name) => { const k = normGame(name); if (!k) return null; let e = map.get(k); if (!e) { e = { key: k, name, captures: 0, first: 0, last: 0, trackedMs: 0, sessions: 0, lastPlayed: 0, cover: null, coverAt: 0, months: new Map() }; map.set(k, e); } return e; };
+            const entry = (name) => { const k = normGame(name); if (!k) return null; let e = map.get(k); if (!e) { e = { key: k, name, captures: 0, first: 0, last: 0, trackedMs: 0, sessions: 0, lastPlayed: 0, cover: null, coverAt: 0, months: new Map(), official: null }; map.set(k, e); } return e; };
             allMediaFiles.forEach(m => {
                 const g = gameKey(m.hash); if (!isRealGameName(g)) return;
                 const e = entry(g); if (!e) return;
@@ -5512,8 +5538,10 @@
                 const ms = sessionMs(s); e.trackedMs += ms; e.sessions++; if (s.end > e.lastPlayed) e.lastPlayed = s.end;
                 const d = new Date(s.start); const mk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; const mo = e.months.get(mk) || { captures: 0, ms: 0 }; mo.ms += ms; e.months.set(mk, mo);
             });
+            Object.entries(journal.official).forEach(([k, o]) => { const e = entry(o.name); if (e) e.official = o; });
             return [...map.values()].sort((a, b) => Math.max(b.last, b.lastPlayed) - Math.max(a.last, a.lastPlayed));
         }
+        function fmtOfficial(o) { return o && o.totalMin > 0 ? fmtPlayTime(o.totalMin * 60000) : ''; }
         function journalDateRange(e) {
             if (!e.first) return '';
             const a = formatDay(e.first), b = formatDay(e.last);
@@ -5524,6 +5552,7 @@
             entries.forEach(e => {
                 lines.push(`## ${e.name}`);
                 lines.push(`- Captures: ${e.captures}${e.first ? ` (${journalDateRange(e)})` : ''}`);
+                if (e.official) lines.push(`- Total play time (Nintendo): ${fmtOfficial(e.official)}${e.official.firstPlayedAt ? `, first played ${formatDay(e.official.firstPlayedAt * 1000)}` : ''}`);
                 if (e.trackedMs) lines.push(`- Time tracked: ${fmtPlayTime(e.trackedMs)} over ${e.sessions} session${e.sessions === 1 ? '' : 's'}`);
                 const note = journal.notes[e.key]; if (note) lines.push('', note);
                 lines.push('');
@@ -5537,9 +5566,9 @@
             const { card, close } = openToolModal('journal-modal', 'min(760px, 96vw)');
             card.appendChild(el('div', 'tool-title', '📓 Play-time journal'));
             const totalMs = journal.sessions.reduce((s, x) => s + sessionMs(x), 0);
-            card.appendChild(el('div', 'tool-hint', `${entries.length} game${entries.length === 1 ? '' : 's'} · ${allMediaFiles.length.toLocaleString()} captures · ${fmtPlayTime(totalMs)} tracked`));
+            card.appendChild(el('div', 'tool-hint', `${entries.length} game${entries.length === 1 ? '' : 's'} · ${allMediaFiles.length.toLocaleString()} captures${journalOfficialTotalMin() ? ` · ${fmtPlayTime(journalOfficialTotalMin() * 60000)} played in total (Nintendo)` : ''}${totalMs ? ` · ${fmtPlayTime(totalMs)} tracked by Hub` : ''}`));
             if (!myProfile.nsaId) card.appendChild(el('div', 'tool-hint', 'Tip: add your NSA ID in Settings and Hub will also track how long you play (it checks your Switch status every minute while Hub is open). Until then the journal is built from your captures.'));
-            else card.appendChild(el('div', 'tool-hint', 'Play time is tracked from your Switch status while Hub is open, so time played with Hub closed isn\'t counted.'));
+            else card.appendChild(el('div', 'tool-hint', 'Your Switch status gives Hub Nintendo\'s own total play time for whichever game you are playing (or played last), so each game fills in the first time Hub sees it. Hub also tracks sessions while it is open.'));
             const tabs = el('div', 'tool-bar');
             [['games', 'Games'], ['timeline', 'Timeline']].forEach(([id, label]) => { const b = toolBtn(label, () => { close(); showJournalModal(id); }); if (id === tab) b.classList.add('active'); tabs.appendChild(b); });
             card.appendChild(tabs);
@@ -5558,8 +5587,12 @@
                         col.appendChild(el('div', 'j-name', e.name));
                         const bits = [`${e.captures} capture${e.captures === 1 ? '' : 's'}`];
                         if (e.first) bits.push(journalDateRange(e));
-                        if (e.trackedMs) bits.push(`${fmtPlayTime(e.trackedMs)} tracked`);
                         col.appendChild(el('div', 'j-meta', bits.join(' · ')));
+                        if (e.official) {
+                            const ob = [`${fmtOfficial(e.official)} played in total`]; if (e.official.firstPlayedAt) ob.push(`first played ${formatDay(e.official.firstPlayedAt * 1000)}`);
+                            const ol = el('div', 'j-meta', ob.join(' · ')); ol.style.color = 'var(--switch-cyan)'; ol.title = "From Nintendo, through your Switch status"; col.appendChild(ol);
+                        }
+                        if (e.trackedMs) col.appendChild(el('div', 'j-meta', `${fmtPlayTime(e.trackedMs)} tracked by Hub across ${e.sessions} session${e.sessions === 1 ? '' : 's'}`));
                         const ta = document.createElement('textarea'); ta.placeholder = 'Notes (where you left off, goals, favourite moments...)'; ta.value = journal.notes[e.key] || ''; ta.maxLength = 2000;
                         ta.addEventListener('input', () => { if (ta.value.trim()) journal.notes[e.key] = ta.value; else delete journal.notes[e.key]; saveJournal(); });
                         col.appendChild(ta); row.appendChild(col); body.appendChild(row);
@@ -5667,7 +5700,8 @@
             chips.push([s.activeDays.toLocaleString(), 'Days with captures']);
             const from = view === 'all' ? 0 : new Date(view, 0, 1).getTime(), to = view === 'all' ? Infinity : new Date(view + 1, 0, 1).getTime();
             const tracked = journalTrackedMs(from, to);
-            if (tracked >= 60000) chips.push([fmtPlayTime(tracked), 'Time played (tracked)']);
+            if (view === 'all' && journalOfficialTotalMin() > 0) chips.push([fmtPlayTime(journalOfficialTotalMin() * 60000), 'Time played (Nintendo)']);
+            else if (tracked >= 60000) chips.push([fmtPlayTime(tracked), 'Time played (tracked)']);
             const chipW = (W - pad * 2 - gap * (chips.length - 1)) / chips.length, chipH = 150;
             chips.forEach(([big, lbl], i) => {
                 const cx = pad + i * (chipW + gap);
@@ -6250,7 +6284,8 @@
                 if (view !== 'all') cards.appendChild(statCard(MONTH_NAMES[s.busiestMonthIdx], `Busiest month (${s.byMonth[s.busiestMonthIdx]})`));
                 cards.appendChild(statCard(`${s.longestStreak} day${s.longestStreak === 1 ? '' : 's'}`, 'Longest streak'));
                 { const ms = view === 'all' ? journalTrackedMs(0, Infinity) : journalTrackedMs(new Date(view, 0, 1).getTime(), new Date(view + 1, 0, 1).getTime());
-                  if (ms >= 60000) cards.appendChild(statCard(fmtPlayTime(ms), 'Time played (tracked)')); }
+                  if (view === 'all' && journalOfficialTotalMin() > 0) cards.appendChild(statCard(fmtPlayTime(journalOfficialTotalMin() * 60000), 'Time played (Nintendo)'));
+                  else if (ms >= 60000) cards.appendChild(statCard(fmtPlayTime(ms), 'Time played (tracked)')); }
                 cards.appendChild(statCard(s.activeDays.toLocaleString(), 'Days with captures'));
                 if (s.bytes) cards.appendChild(statCard(s.bytes >= 1073741824 ? (s.bytes / 1073741824).toFixed(1) + ' GB' : Math.round(s.bytes / 1048576) + ' MB', 'Total size'));
                 card.appendChild(cards);

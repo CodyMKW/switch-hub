@@ -2,6 +2,12 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.5.0] - 2026-11-12
+
+### Changed
+- **The play-time journal now uses Nintendo's own play time.** Your Switch status already includes the total time you've played each game and when you first played it, so Hub records those instead of relying only on its own stopwatch. Each game shows, for example, "563 h played in total · first played Aug 5, 2018", and the same totals appear in the journal header, the Markdown export, and the all-time Stats and Year card ("Time played (Nintendo)"). The game you're playing, or the last one you played while offline, fills in the first time Hub sees it, and games show up in the journal even if you have no captures of them. The totals are saved in this browser.
+- **Session start times are more accurate.** Nintendo also says when the current game was started, so a session Hub only noticed halfway through now counts from the real start. Hub's own tracking is still shown ("tracked by Hub") as the per-session detail, and still drives the per-year numbers, because Nintendo only reports all-time totals.
+
 ## [1.4.1] - 2026-11-12
 
 ### Fixed
