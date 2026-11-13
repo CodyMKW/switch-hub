@@ -2,6 +2,12 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.10.1] - 2026-11-13
+
+### Added
+- **25 more games in the built-in list**, synced from the upstream Switch-Screenshots list: 198X, Bat Boy, Chime Sharp, Dragon Quest, Dragon Quest I & II HD-2D Remake, Elevator Action -Returns- S-Tribute, Elliot Quest, Huntdown, Inversus, JAWS - Retro Edition, Joggernauts, Kentucky Route Zero, Killer Quen Black, Ori and the Blind Forest, Overcooked 2, RUNNER3, Split Fiction, The Last Campfire, Tick-Tock, Ticket to Ride, To the Moon, Tomb Raider - Definitive Edition, Vengeful Guardian - Moonrider, We should talk. and Worms Armageddon. Three of them (Dragon Quest I & II HD-2D Remake, Split Fiction, Tomb Raider - Definitive Edition) had a stray extra "L" on the end of their IDs upstream, which is removed here so they actually match.
+- Cleaned out 25 empty placeholder lines from `game_ids.json`.
+
 ## [1.10.0] - 2026-11-13
 
 ### Added
