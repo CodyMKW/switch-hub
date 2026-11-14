@@ -112,14 +112,35 @@ Then open `http://localhost:8000`. Use `localhost` or HTTPS, because folder acce
 
 Hub's game names come from `game_ids.json`, which started as a fork of the community list in [RenanGreca/Switch-Screenshots](https://github.com/RenanGreca/Switch-Screenshots). If a game shows up as a long ID, you can rename it yourself in Hub, and a pull request adding its title ID and name here is always welcome.
 
-## Also available on their own
+## The original apps
 
-If you only need one half, the originals still exist:
+Hub is the combined version of two earlier projects, and both of those still exist if you're curious:
 
-- **[Switch Chat](https://codymkw.github.io/switch-chat/)** is just the chat.
-- **[Switch Album Gallery](https://codymkw.github.io/switch-album-gallery/)** is just the gallery.
+- **[Switch Chat](https://codymkw.github.io/switch-chat/)**, the original chat app
+- **[Switch Album Gallery](https://codymkw.github.io/switch-album-gallery/)**, the original gallery
 
-Fair warning: they're **very old** and no longer updated, so they're missing nearly everything added since (group chats, games, Now playing, the editing tools, Discord activity and more), and they don't have the new branding either. Switch Hub is the one to use. Each original keeps its own local data, apart from the gallery's game names and spoiler settings, which Hub reads automatically.
+They're **very old** and no longer updated, so they're missing nearly everything you've read about above, and they still have the old branding. Here's what they do and don't have, so you know what you'd be giving up:
+
+| | Switch Chat (original) | Album Gallery (original) | Switch Hub |
+| --- | --- | --- | :---: |
+| Direct browser-to-browser connection and invite links | ✅ | ✅ | ✅ |
+| One-on-one chat with read receipts, typing, reactions, edit and delete, files | ✅ | basic text chat only | ✅ |
+| Browse your SD card, sort by date or game, search, favorites, slideshow, Random, On this day | | ✅ | ✅ |
+| Browse a friend's gallery, spoiler games, rename games | | ✅ | ✅ |
+| Switch presence (see what a friend is playing) | ✅ | | ✅ |
+| Replies, pinned messages, markdown, conversation export | export and markdown only | | ✅ |
+| Group chats | | | ✅ |
+| Voice calls, watch together, session album | | | ✅ |
+| Guess the game, Guess the date, best shot vote | | | ✅ |
+| Now playing banners, game-colored chat, shots strip | | | ✅ |
+| Albums, select mode and zip, captions, duplicate finder | | | ✅ |
+| Stats, Year in Review, journal, month, year and play time sorting | | | ✅ |
+| Clip trimming and GIFs, redact and annotate, highlight reels | | | ✅ |
+| Discord activity, welcome tour, installable app, new logo and link previews | | | ✅ |
+
+The one thing the original gallery has that Hub doesn't is a "Detect USB Switch" button that checks for a Switch plugged in over USB. Hub reads your captures from a folder instead, which works for an SD card or a USB export.
+
+Each original keeps its own local data, apart from the gallery's game names and spoiler settings, which Hub reads automatically when they're on the same domain.
 
 ## Credits
 
