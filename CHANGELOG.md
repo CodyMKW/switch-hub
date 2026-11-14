@@ -2,6 +2,11 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.11.2] - 2026-11-14
+
+### Fixed
+- **A lone "Chat" button showed at the top of group chats.** Groups have no gallery, so the Gallery/Chat switch is now hidden there.
+
 ## [1.11.1] - 2026-11-13
 
 ### Changed

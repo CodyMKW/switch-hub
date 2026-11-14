@@ -3889,7 +3889,7 @@
                 list.appendChild(row);
             });
         }
-        function showGalleryTab(show) { const t = document.getElementById('tab-gallery'); if (t) t.style.display = show ? '' : 'none'; const b = document.getElementById('btn-group-info'); if (b) b.style.display = show ? 'none' : ''; }
+        function showGalleryTab(show) { const vt = document.getElementById('view-tabs'); if (vt) vt.style.display = show ? '' : 'none'; /* groups are chat only, so the Gallery/Chat switch has nothing to switch */ const t = document.getElementById('tab-gallery'); if (t) t.style.display = show ? '' : 'none'; const b = document.getElementById('btn-group-info'); if (b) b.style.display = show ? 'none' : ''; }
         function selectGroup(cid) {
             const g = groupById(cid); if (!g) return;
             activeFriendId = cid;
