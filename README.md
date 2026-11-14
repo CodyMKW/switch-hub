@@ -119,7 +119,7 @@ If you only need one half, the originals still exist:
 - **[Switch Chat](https://codymkw.github.io/switch-chat/)** is just the chat.
 - **[Switch Album Gallery](https://codymkw.github.io/switch-album-gallery/)** is just the gallery.
 
-Each keeps its own local data, apart from the gallery's game names and spoiler settings, which Hub reads automatically.
+Fair warning: they're **very old** and no longer updated, so they're missing nearly everything added since (group chats, games, Now playing, the editing tools, Discord activity and more), and they don't have the new branding either. Switch Hub is the one to use. Each original keeps its own local data, apart from the gallery's game names and spoiler settings, which Hub reads automatically.
 
 ## Credits
 
