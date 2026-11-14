@@ -2,6 +2,11 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.13.2] - 2026-11-14
+
+### Added
+- **Link previews.** Sharing the Switch Hub link (including invite links) on Discord, Facebook, X/Twitter, Slack, iMessage and similar now shows a proper embed: the name, a short description and a 1200 x 630 preview image with the logo. Also added a page description, a canonical link and the author.
+
 ## [1.13.1] - 2026-11-14
 
 ### Changed
