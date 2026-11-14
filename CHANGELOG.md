@@ -2,10 +2,15 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.13.4] - 2026-11-14
+
+### Changed
+- **Reel title card shows the name too.** "Switch Hub" now appears beside the logo on the highlight reel title card.
+
 ## [1.13.3] - 2026-11-14
 
 ### Added
-- **Logo on the highlight reel title card.** If you give your reel a title, the Switch Hub logo and name now fade in above it. Reels without a title are unchanged, and if the logo can't load the card just renders without it.
+- **Logo on the highlight reel title card.** If you give your reel a title, the Switch Hub logo now fades in above it. Reels without a title are unchanged, and if the logo can't load the card just renders without it.
 
 ## [1.13.2] - 2026-11-14
 
