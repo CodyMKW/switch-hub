@@ -1,89 +1,128 @@
-# Switch Hub
+<p align="center">
+  <img src="logo.png" alt="Switch Hub logo: two glowing controllers, one cyan and one red" width="120">
+</p>
 
-A little browser app for Nintendo Switch nerds who want to show their friends what they've been playing.
+<h1 align="center">Switch Hub</h1>
 
-Load up your `Nintendo/Album` folder and browse your own screenshots and clips, then connect directly to a friend's browser (no server, no accounts, no uploading anything anywhere) and you can see their gallery too, chat with them, and watch each other's live Switch status while you do it. It started as two separate little tools and eventually just made sense to smush them together into one thing, so here we are.
+<p align="center">
+  Browse your Nintendo Switch screenshots and clips, then share them with friends.<br>
+  Gallery, chat, games and calls, straight between browsers. No uploads, no accounts.
+</p>
 
-## [👉 Try it here](https://codymkw.github.io/switch-hub/)
+<p align="center">
+  <a href="https://codymkw.github.io/switch-hub/"><b>Open Switch Hub</b></a> ·
+  <a href="CHANGELOG.md">Changelog</a> ·
+  <a href="https://github.com/CodyMKW/switch-hub/issues">Report a bug</a>
+</p>
 
-No install, no sign-up. Just open it in Chrome, Edge, or Opera on desktop (it needs the File System Access API to read your SD card folder, which Safari/Firefox don't support yet).
+---
 
-## What it actually does
+## What is this?
 
-**Gallery side**
-- Browse your screenshots and clips straight off your SD card, sorted by date or by game (it auto-identifies ~650+ games from a community title-ID database, no manual tagging needed)
-- Search, filter by photo/video, favorite the ones you want to find again later
-- Slideshow mode, random screenshot button, "on this day" for old memories
-- Mark a game as spoiler and it's automatically hidden from anyone you're connected to (and blurred in your own view too, in case you're screen-sharing)
-- See what your friend is currently looking at in their gallery, and jump straight to it
-- **Albums** — make your own named collections ("Splatoon highlights", "Mario Kart fails") that are separate from favorites
-- **Select mode** — pick a bunch of screenshots, then add them to an album, send them all to a friend in one go, or download them as a zip (grouped into a folder per game)
-- **Captions** — write a short note on any of your screenshots and your friend sees it when they browse your gallery. They can also leave a ❤️ (or 😂, 🔥...) on a screenshot and it sticks as a little badge for you to find later
-- **Duplicate finder** — spots identical files when your SD card and a USB export overlap, and can hide the extras for the session (it never deletes anything)
-- **Stats & Year in Review** — screenshots per game, a calendar heatmap, busiest day/month, longest streak, and a "your year in review" recap. All worked out in your browser from the files you loaded
-- **Clip tools** — trim a clip or turn part of it into a GIF, right from the lightbox (✂️ button)
-- **Redact & annotate** — blur/pixelate a friend code or name, or draw arrows, boxes and text on a screenshot before sending it (🖍️ button)
-- **Highlight reel maker** — select shots and clips and stitch them into one WebM reel
-- **Play-time journal** — per-game notes, captures and tracked play time, with a timeline and Markdown export
-- **Year in Review card** — a shareable post or story image of your year (spoiler games left out)
+Switch Hub is a single web page for people who take a lot of screenshots on their Switch and want to show them off. Point it at your SD card, and you get a fast, searchable gallery of everything you've captured. Connect to a friend and the two of you can browse each other's galleries, chat, watch slideshows together, jump on a voice call, or play a few quick games, all with your browsers talking directly to each other.
 
-**Chat side**
-- Real read receipts (sent / delivered / seen), typing indicators, message reactions
-- **Reply** to a specific message (it shows the quote, click it to jump back to the original)
-- **Pin** messages for both of you — pinned messages show up in a bar at the top of the chat
-- **Voice calls** with a ringing prompt, mute and a timer. Calls go straight between your browsers, same as everything else
-- Edit or delete your own messages
-- Send files and images, with an actual progress bar instead of just... nothing happening for 20 seconds
-- Basic markdown (`**bold**`, `*italic*`, `` `code` ``), auto-linked URLs
-- Export a conversation as a `.txt` file, or just clear it
+It started life as two separate little tools (a gallery and a chat app) and got merged into one because that just made more sense. Nothing is uploaded to a server, there's nothing to sign up for, and your captures stay on your computer unless you choose to send them.
 
-**Both sides**
-- Everything runs peer-to-peer (via [PeerJS](https://peerjs.com/)/WebRTC) directly between browsers. Nothing gets uploaded to a server — if you and your friend both close the tab, the connection's just gone.
-- **Watch together** — hit 🎬 in the sidebar while you're connected. Your friend gets a prompt, and if they join they follow along as you flip through screenshots or run a slideshow. You can pass the remote back and forth
-- **Session album** — a shared pile for tonight. Either of you can drop screenshots into it and both of you see it. It disappears when either of you disconnects
-- **Group chat** — make a group with 2 or more friends (3+ people total). Text, replies, reactions, read receipts, photos and files, all straight between browsers. Groups are saved in each person's browser and members catch up from whoever's online
-- **Now playing** — if you and your friend have Switch presence linked, you get a banner when someone starts a game, the chat takes on that game's colour, Hub points out when you're in the same game, and a strip shows both of your screenshots from it. Each part can be switched off in Settings
-- **Discord activity** — optionally show on your Discord profile what you're up to in Hub: browsing, chatting, on a call, playing a game together, making a reel, taking the tour. It never shows game names, captions or messages, and it's off until you connect Discord in Settings
-- **Welcome screen and tour** — Hub greets you by name with your last game, who's playing and any unread chats, and a short first-time tour walks you through the sidebar (replay it from the welcome screen or Settings)
-- **Browser names** — when you're connected you can both see which browser the other is on (just the name, like "Firefox", nothing else about your device)
-- **Guess the game**, **Guess the date** and **Vote on the best shot** — quick games to play with a friend while connected (find them under 🎮 Games). Guess the game uses a blurred crop; Guess the date asks which year, month or day a screenshot or clip was taken (clips play, they aren't just a still)
-- **Install it as an app** — if your browser offers it, there's an "Install as an app" button in the sidebar. The shell also works offline, so you can still browse a locally loaded SD card without a connection (friends need a connection, obviously)
-- You get a permanent ID the first time you open it, so you can just copy an invite link and send it to someone. They click it, it connects automatically, done. No typing IDs back and forth.
-- Optional live "what game is my friend playing right now" status via [nxapi's presence API](https://github.com/samuelthomas2774/nxapi) — add anyone's NSA ID and see their online/game status update in real time, whether or not you're actively connected to them.
+## Try it
 
-## How to actually use it with a friend
+Open **[codymkw.github.io/switch-hub](https://codymkw.github.io/switch-hub/)**. There's nothing to install.
 
-1. Open the app, hit **Settings**, set your name/avatar/status if you want.
-2. Click **Copy Invite Link** and send it to a friend (Discord, text, whatever).
-3. They open it, it connects automatically, and now you can see each other's galleries and chat.
+To load your own captures you need **Chrome, Edge or Opera on a desktop computer**, because reading a folder from your SD card relies on the File System Access API. Other browsers can still open the page, but the Load button stays disabled there.
 
-That's it. If the link ever stops working (new device, cleared your browser data, whatever), just grab a fresh one.
+## Quick start
 
-## A few honest caveats
+1. Click **Load SD Card Folder** and pick your `Nintendo/Album` folder (or a USB export). Hub reads the files right in your browser.
+2. Click **Invite Link** in the sidebar, copy it, and send it to a friend.
+3. When they open it, the two of you connect automatically and show up in each other's friends list. Click them to browse their gallery or start chatting.
 
-- **Both people need the tab open at the same time.** This isn't a messaging service with a backend — if your friend's browser isn't open, there's nobody to connect to. Not what to reach for instead of Discord for anything time-sensitive.
-- **Your Peer ID is basically a key.** Anyone who has your invite link can connect to you. If you want to kill an old link, there's a "Reset my ID" button in Settings.
-- **Video playback depends on your browser's codec support.** If a clip won't preview, it'll tell you why (usually HEVC, which most browsers can't decode) and let you download it to play elsewhere instead of just failing silently.
-- **File attachments in chat don't survive a page refresh** — the actual file data can't be stored in a way that persists, so if you reload, you'll see a message history but the attachment itself will say it expired. Text messages, reactions, and everything else stick around fine.
-- **Calls need microphone/camera permission, and they can fail on strict networks.** There's no relay server, so if both of you are behind particularly stubborn routers or a corporate/school network, the call may simply not connect. Chat and gallery sharing can still work when a call can't.
-- **Trimmed clips are saved as WebM, not MP4**, because browsers can't write MP4. Trimming runs in real time (a 20 second clip takes about 20 seconds). GIFs are capped at 15 seconds and use a limited colour palette, so they look a little retro. Clips your browser can't play (usually HEVC) can't be trimmed either.
-- **Reels render in real time** and need the tab in front. **Play time is only tracked while Hub is open** and an NSA ID is set in Settings.
-- **The duplicate finder compares file contents, not names.** "Hide extras" only affects the current session, so reloading your folder brings them back.
-- **The session album and watch-together sessions aren't saved.** They only exist while you're connected.
-- The Switch presence stuff depends on a third-party API staying up. If it's down, you'll just see "Unavailable" instead of someone's status — nothing else breaks.
+Your invite link stays the same every time, so you only need to send it once. If you ever need a new one (new device, cleared browser data), grab a fresh one from the sidebar or use **Reset my ID** in Settings.
 
-## The standalone versions
+First time here? A short tour walks you through the sidebar. You can replay it any time from the welcome screen or Settings.
 
-Hub is the combined version, but the two halves also still exist on their own if you just want one piece:
+## What you can do
 
-- **[Switch Chat](https://codymkw.github.io/switch-chat/)** — just the chat, no gallery
-- **[Switch Album Gallery](https://codymkw.github.io/switch-album-gallery/)** — just the gallery, no chat
+### Your captures
 
-All three save their own separate local data, so renaming a game or saving a friend in one won't show up in another unless it's Hub pulling in the Gallery's game-name/spoiler data specifically (that part's shared automatically since they're hosted under the same domain).
+- **Browse and search.** Sort by date, game, year, month or play time. Search by game name or by date (`march`, `march 2024`, `2024-03`). Filter photos and videos, star favorites, run a slideshow, or hit Random and On this day for old memories.
+- **Games are named for you.** Hub recognizes 700+ Switch games from their title IDs, so nothing needs tagging by hand. Rename any game it doesn't know.
+- **Spoiler protection.** Mark a game as a spoiler and it's hidden from anyone you're connected to, and blurred in your own view in case you're screen sharing.
+- **Albums and select mode.** Make named collections ("Splatoon highlights", "Mario Kart fails"), or select a bunch of shots to album them, send them to a friend, or download them as a zip with a folder per game.
+- **Captions and reactions.** Add a note to any screenshot. Friends see it when they browse, and can leave a reaction that sticks as a little badge.
+- **Duplicate finder.** Spots identical files when your SD card and a USB export overlap. It only hides extras for the session and never deletes anything.
+- **Stats and Year in Review.** Shots per game, a calendar heatmap, your busiest day and month, your longest streak, and a shareable Year in Review card (spoiler games left out).
+- **Play-time journal.** A per-game timeline of captures and play time, with your own notes and a Markdown export. If you add your NSA ID, it also uses the play time Nintendo reports.
+- **Editing tools.** Trim a clip or turn part of it into a GIF, blur or draw on a screenshot before you send it (great for hiding a friend code), and stitch your best shots and clips into a highlight reel.
+
+### With friends
+
+- **Gallery sharing.** Browse a friend's gallery as if it were yours, see what they're looking at, and jump straight to it.
+- **Chat.** Read receipts, typing indicators, reactions, replies, pinned messages, edits and deletes, basic markdown, and file and image sending with a real progress bar. Export a conversation as a `.txt`.
+- **Group chats.** Pick two or more friends and start a group. Everyone connects directly to everyone else, so the chat keeps working even if the person who made it leaves. Groups support text, replies, reactions, pins, read receipts ("seen by 2/3") and files up to 50 MB. They're saved in each member's browser, and anyone who was offline catches up from whoever's around when they come back.
+- **Watch together.** Flip through screenshots or run a slideshow while your friend follows along. You can pass the remote back and forth.
+- **Session album.** A shared pile for tonight that either of you can add to.
+- **Voice calls.** Ringing, mute and a timer, with audio going directly between your browsers.
+- **Games.** Under 🎮 Games: *Guess the game* (name the game from a blurred crop), *Guess the date* (which year, month or day was this screenshot or clip taken?) and *Vote on the best shot*. You take turns being the quizmaster with your own captures.
+- **Now playing.** With Switch presence linked, you get a banner when a friend starts a game, their chat picks up that game's color, Hub tells you when you're both in the same game, and a strip pulls up your screenshots of it. Each piece has its own switch in Settings.
+
+### Making it yours
+
+- **Install it** as an app from the sidebar if your browser offers it. The shell works offline, so you can browse a locally loaded SD card without a connection.
+- **Discord activity.** Optionally show what you're up to in Hub on your Discord profile: browsing, chatting, on a call, playing a game together, taking the tour. It never shows game names, captions or messages, and group chats are never named. It's off until you connect Discord in Settings.
+- **Notifications and sound** for new messages, if you want them.
+
+## Privacy and how it works
+
+- **Peer to peer.** Hub uses [PeerJS](https://peerjs.com/) (WebRTC) to connect browsers directly. PeerJS's signaling server only helps two browsers find each other. Your files, messages and calls travel straight between you and your friend.
+- **Everything stays in your browser.** Friends, chats, groups, captions, albums and settings are saved in your browser's local storage. Your captures are read from your folder and never uploaded. File attachments in chat aren't kept after a refresh (the message stays, the file expires).
+- **Your invite link is a key.** Anyone who has it can connect to you. Groups can only be joined by people already on your friends list, and strangers can't open a group connection. If an old link gets around, reset your ID in Settings.
+- **Third-party presence.** The optional "what's my friend playing" status comes from [nxapi's presence API](https://github.com/samuelthomas2774/nxapi) using the NSA ID you add. Hub only shows it, and nothing else depends on it.
+
+## Good to know
+
+- **Both people need the tab open.** There's no server holding messages for later, so Hub isn't a replacement for Discord when something is time-sensitive.
+- **Calls can fail on strict networks.** There's no relay, so two stubborn routers or a school or work network may block a call. Chat and gallery sharing often still work.
+- **Video depends on your browser's codecs.** If a clip won't play (usually HEVC), Hub tells you why and lets you download it instead.
+- **Edited clips are WebM, not MP4,** since browsers can't write MP4. Trimming and reels run in real time and need the tab in front, and GIFs are capped at 15 seconds with a limited palette.
+- **Group chats are meant for small groups** (up to 12 people), since every person connects to every other person. Gallery browsing, calls, watch together and games stay one-on-one.
+- **Play time is only tracked while Hub is open** and an NSA ID is set.
+- **Session albums and watch-together sessions aren't saved.** They only exist while you're connected.
+
+## Run it yourself
+
+Hub is plain HTML, CSS and JavaScript in a single `index.html`, with no build step and nothing to install. Serve the folder with any static server:
+
+```bash
+git clone https://github.com/CodyMKW/switch-hub.git
+cd switch-hub
+python3 -m http.server 8000
+```
+
+Then open `http://localhost:8000`. Use `localhost` or HTTPS, because folder access, the microphone and installing as an app all require a secure context.
+
+| File | What it is |
+| --- | --- |
+| `index.html` | The whole app |
+| `game_ids.json` | Title ID to game name list |
+| `sw.js`, `manifest.webmanifest` | Offline shell and install support |
+| `logo.png`, `favicon.svg`, `icon-*.png`, `og-image.png` | Logo, icons and the link-preview image |
+| `branding/` | The Discord app icon and scripts that regenerate the artwork |
+| `CHANGELOG.md` | What changed in each version |
+
+## Missing a game?
+
+Hub's game names come from `game_ids.json`, which started as a fork of the community list in [RenanGreca/Switch-Screenshots](https://github.com/RenanGreca/Switch-Screenshots). If a game shows up as a long ID, you can rename it yourself in Hub, and a pull request adding its title ID and name here is always welcome.
+
+## Also available on their own
+
+If you only need one half, the originals still exist:
+
+- **[Switch Chat](https://codymkw.github.io/switch-chat/)** is just the chat.
+- **[Switch Album Gallery](https://codymkw.github.io/switch-album-gallery/)** is just the gallery.
+
+Each keeps its own local data, apart from the gallery's game names and spoiler settings, which Hub reads automatically.
 
 ## Credits
 
-- Switch presence data from [nxapi](https://github.com/samuelthomas2774/nxapi)
-- P2P connections via [PeerJS](https://peerjs.com/)
+Built by [CodyMKW](https://github.com/CodyMKW), mostly so I could send Joseph my Splatoon screenshots without a middleman. Thanks to [PeerJS](https://peerjs.com/) for the peer-to-peer plumbing, [nxapi](https://github.com/samuelthomas2774/nxapi) for Switch presence, and [RenanGreca/Switch-Screenshots](https://github.com/RenanGreca/Switch-Screenshots) for the game list that got this started.
 
-Built for fun, mostly to send Joseph my Splatoon screenshots without a middleman. Hope it's useful to more than just us.
+Switch Hub is a fan project and isn't affiliated with or endorsed by Nintendo. Nintendo Switch is a trademark of Nintendo.
