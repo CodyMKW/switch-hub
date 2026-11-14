@@ -1018,6 +1018,11 @@
                     <input type="checkbox" id="setting-dh-names">
                 </div>
                 <p style="color: var(--switch-muted); font-size: 0.72rem; line-height: 1.4;">Off: Discord says "a friend's gallery" instead of their name.</p>
+                <div class="toggle-row" style="margin: 0.6rem 0 0.3rem;">
+                    <label>Show other Hub activities</label>
+                    <input type="checkbox" id="setting-dh-more" checked>
+                </div>
+                <p style="color: var(--switch-muted); font-size: 0.72rem; line-height: 1.4;">Shows things like "Taking the welcome tour", "On a voice call", "Playing Guess the date" or "Making a highlight reel". It never includes game names, captions or messages.</p>
             </div>
 
             <div class="input-group" style="margin-top: 1.25rem;">
@@ -6507,7 +6512,7 @@
         }
         function endTour() {
             if (!tourState) return;
-            tourMarkDone(); tourState.root.remove(); tourState = null;
+            tourMarkDone(); tourState.root.remove(); tourState = null; try { dhSchedule(); } catch (e) {}
             window.removeEventListener('resize', tourPlace); document.removeEventListener('keydown', tourKey, true);
             const tb = document.getElementById('btn-welcome-tour'); if (tb) tb.classList.remove('wl-new');
         }
@@ -6539,7 +6544,7 @@
             if (i > 0) { const b = el('button', 'tour-back', 'Back'); b.type = 'button'; b.addEventListener('click', () => tourShow(i - 1)); right.appendChild(b); }
             const nx = el('button', 'tour-next', i === TOUR_STEPS.length - 1 ? 'Done' : 'Next'); nx.type = 'button'; nx.addEventListener('click', () => tourShow(i + 1)); right.appendChild(nx);
             bar.appendChild(right); card.appendChild(bar);
-            tourPlace(); nx.focus();
+            tourPlace(); nx.focus(); try { dhSchedule(); } catch (e) {}
         }
         function tourPlace() {
             if (!tourState) return;
@@ -8231,6 +8236,7 @@
 
         // ---- what to show -------------------------------------------------------
         const dhShowNames = () => localStorage.getItem('hub_dc_names') === '1';
+        const dhShowMore = () => localStorage.getItem('hub_dc_more') !== '0';   // other Hub activities (tour, calls, games...), on unless switched off
         function dhSchedule() { try { clearTimeout(_dc.rt); _dc.rt = setTimeout(dhRefresh, 700); } catch (e) { /* still starting */ } }
 
         function dhGameLabel(hash) {
@@ -8242,11 +8248,26 @@
 
         function dhDescribe() {
             const names  = dhShowNames();
-            const friend = (connectedFriendId && friends.find(f => f.id === connectedFriendId)) || getActiveFriend();
+            const friend0 = (connectedFriendId && friends.find(f => f.id === connectedFriendId)) || getActiveFriend();
+            const friend = friend0 && !friend0.isGroup ? friend0 : null; // a group is never named on Discord
             const friendGallery = friend && names ? friend.name + "'s gallery" : "a friend's gallery";
             const whose = remote => remote ? friendGallery : 'my gallery';
             const gKey  = remote => remote ? 'gallery:' + (friend ? friend.id : 'friend') : 'gallery:me';
             const art   = DH_ART_KEY ? { large_image: DH_ART_KEY } : {};
+            const more  = dhShowMore();
+            const withWho = names && friend ? 'with ' + friend.name : 'with a friend';
+            const make = (details, state, key) => ({ key, activity: { name: DH_ACTIVITY_NAME, type: DH_ACTIVITY_TYPE, application_id: DISCORD_APP_ID, details, state, assets: Object.assign({ large_text: DH_ACTIVITY_NAME }, art) } });
+            if (more) {
+                // What you're doing in Hub itself. Never includes game names, captions or message text.
+                if (typeof tourState !== 'undefined' && tourState) return make('Taking the welcome tour', `Step ${tourState.i + 1} of ${TOUR_STEPS.length}`, 'tour');
+                if (callState && callState.active) return make('On a voice call', withWho, 'call');
+                if (wt && wt.active) return make('Watching together', withWho, 'watch');
+                if (gdate && (gdate.phase === 'playing' || gdate.phase === 'final')) return make('Playing Guess the date', `${gdate.phase === 'final' ? 'Finished' : `Round ${Math.max(1, gdate.n)} of ${gdate.total}`} · ${withWho}`, 'game:date');
+                if (guess && (guess.phase === 'playing' || guess.phase === 'final')) return make('Playing Guess the game', `${guess.phase === 'final' ? 'Finished' : `Round ${Math.max(1, guess.n)} of ${guess.total}`} · ${withWho}`, 'game:guess');
+                if (vote && (vote.phase === 'voting' || vote.phase === 'locked' || vote.phase === 'result')) return make('Voting on the best shot', withWho, 'game:vote');
+                const busy = [['reel-modal', 'Making a highlight reel'], ['editor-modal', 'Redacting and annotating a screenshot'], ['journal-modal', 'Reading the play-time journal'], ['yearcard-modal', 'Making a Year in Review card'], ['stats-modal', 'Looking at screenshot stats'], ['dupes-modal', 'Tidying up duplicate files'], ['bestof-modal', 'Looking back at best shots']].find(([id]) => document.getElementById(id));
+                if (busy) return make(busy[1], 'in Switch Hub', 'modal:' + busy[0]);
+            }
 
             const m = !lightbox.classList.contains('hidden') ? activeMediaList[currentLightboxIndex] : null;
             if (m) {
@@ -8266,12 +8287,13 @@
                 };
             }
             if (activeView === 'chat') {
+                if (isGroupId(activeFriendId)) return make('Chatting', 'in a group chat', 'chat:group');
                 if (!friend) return null;
                 return { key: 'chat', activity: { name: DH_ACTIVITY_NAME, type: DH_ACTIVITY_TYPE, application_id: DISCORD_APP_ID, details: 'Chatting', state: names ? 'with ' + friend.name : 'with a friend', assets: Object.assign({ large_text: DH_ACTIVITY_NAME }, art) } };
             }
             const remote = currentSource === 'remote';
             const count  = (remote ? remoteMediaFiles : allMediaFiles).length;
-            if (!count) return null;
+            if (!count) return more && !document.getElementById('welcome-view').classList.contains('hidden') ? make('Looking around Switch Hub', 'Just getting started', 'welcome') : null;
             return {
                 key: gKey(remote),
                 activity: { name: DH_ACTIVITY_NAME, type: DH_ACTIVITY_TYPE, application_id: DISCORD_APP_ID, details: 'Browsing ' + whose(remote), state: count + (count === 1 ? ' item' : ' items'), assets: Object.assign({ large_text: DH_ACTIVITY_NAME }, art) }
@@ -8308,6 +8330,7 @@
             document.getElementById('btn-dh-disconnect').classList.toggle('hidden', !t);
             document.getElementById('setting-dh-on').checked    = dcEnabled();
             document.getElementById('setting-dh-names').checked = dhShowNames();
+            const mb = document.getElementById('setting-dh-more'); if (mb) mb.checked = dhShowMore();
         }
 
         function dhInit() {
@@ -8327,6 +8350,10 @@
             });
             document.getElementById('setting-dh-names').addEventListener('change', e => {
                 localStorage.setItem('hub_dc_names', e.target.checked ? '1' : '0');
+                dhSchedule();
+            });
+            document.getElementById('setting-dh-more').addEventListener('change', e => {
+                localStorage.setItem('hub_dc_more', e.target.checked ? '1' : '0');
                 dhSchedule();
             });
             dcRenderStatus();
