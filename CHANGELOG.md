@@ -2,6 +2,11 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.13.4] - 2026-11-14
+
+### Changed
+- **Reel title card shows the name too.** "Switch Hub" now appears beside the logo on the highlight reel title card.
+
 ## [1.13.3] - 2026-11-14
 
 ### Added
