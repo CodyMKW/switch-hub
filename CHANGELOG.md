@@ -2,6 +2,19 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.13.0] - 2026-11-14
+
+### Added
+- **Discord shows more of what you're doing in Hub.** Besides browsing the gallery, looking at a shot and chatting, your Discord activity can now say:
+  - "Taking the welcome tour" (with the step)
+  - "On a voice call" and "Watching together"
+  - "Playing Guess the game" or "Playing Guess the date" (with the round), and "Voting on the best shot"
+  - "Making a highlight reel", "Redacting and annotating a screenshot", "Reading the play-time journal", "Making a Year in Review card", "Looking at screenshot stats", "Tidying up duplicate files" and "Looking back at best shots"
+  - "Looking around Switch Hub" on the empty welcome screen
+  - "Chatting · in a group chat" in a group
+- These follow the same "Show friends' names" setting ("with a friend" or "with Joseph"). They never include game names, captions or messages, and group chats are never named.
+- A new **Show other Hub activities** switch in the Discord section of Settings (on by default). Turn it off and Discord goes back to showing only the gallery, shots and one-on-one chats.
+
 ## [1.12.0] - 2026-11-14
 
 ### Added
