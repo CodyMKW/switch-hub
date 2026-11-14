@@ -192,6 +192,46 @@
         .welcome-state svg { width: 5rem; height: 5rem; color: var(--switch-light); }
         .welcome-state h2 { color: white; font-size: 1.3rem; }
         .welcome-state p { color: var(--switch-muted); max-width: 28rem; line-height: 1.55; }
+        .welcome-state { position: relative; overflow: hidden; }
+        .wl-bg { position: absolute; inset: 0; pointer-events: none; }
+        .wl-bg i { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.28; animation: wlFloat 16s ease-in-out infinite; }
+        .wl-bg i:nth-child(1) { width: 22rem; height: 22rem; background: #00c3e3; left: 8%; top: 6%; }
+        .wl-bg i:nth-child(2) { width: 20rem; height: 20rem; background: #ff4554; right: 6%; bottom: 8%; animation-delay: -5s; }
+        .wl-bg i:nth-child(3) { width: 16rem; height: 16rem; background: #a855f7; left: 45%; top: 40%; animation-delay: -10s; opacity: 0.2; }
+        @keyframes wlFloat { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(30px, -24px) scale(1.12); } }
+        .wl-inner { position: relative; display: flex; flex-direction: column; align-items: center; gap: 1rem; width: 100%; max-width: 40rem; }
+        .welcome-state .wl-logo { width: 7.5rem; height: 5rem; color: inherit; animation: wlPop 0.7s ease both; }
+        .wl-hello { color: white; font-size: 1.9rem; font-weight: 800; letter-spacing: -0.01em; background: linear-gradient(90deg, #fff, #8fe6f5 55%, #ff9aa3); -webkit-background-clip: text; background-clip: text; color: transparent; animation: wlRise 0.6s 0.1s ease both; }
+        .welcome-state .wl-sub { animation: wlRise 0.6s 0.2s ease both; }
+        .wl-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; animation: wlRise 0.6s 0.3s ease both; }
+        .wl-chip { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 9999px; padding: 0.3rem 0.8rem; font-size: 0.78rem; color: #d7dde2; }
+        .wl-inner .welcome-actions { animation: wlRise 0.6s 0.4s ease both; }
+        .wl-tour { background: transparent !important; color: white !important; border: 1px solid rgba(255,255,255,0.35) !important; position: relative; }
+        .wl-tour.wl-new::after { content: 'NEW'; position: absolute; top: -0.5rem; right: -0.4rem; background: var(--switch-red); color: white; font-size: 0.55rem; font-weight: 800; padding: 0.1rem 0.35rem; border-radius: 9999px; }
+        .wl-cards { width: 100%; max-width: 28rem; display: flex; flex-direction: column; gap: 0.35rem; text-align: left; animation: wlRise 0.6s 0.5s ease both; }
+        .wl-cards-title { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--switch-muted); }
+        .wl-unread { display: flex; align-items: center; gap: 0.6rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: 0.6rem; padding: 0.5rem 0.7rem; cursor: pointer; color: white; text-align: left; transition: background 0.15s; }
+        .wl-unread:hover { background: rgba(255,255,255,0.12); }
+        .wl-unread-name { font-weight: 800; font-size: 0.82rem; flex-shrink: 0; }
+        .wl-unread-text { flex: 1; min-width: 0; font-size: 0.78rem; color: var(--switch-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .wl-unread-n { background: var(--switch-red); color: white; font-size: 0.68rem; font-weight: 800; border-radius: 9999px; padding: 0.05rem 0.45rem; }
+        .welcome-state .wl-tip { font-size: 0.8rem; color: var(--switch-muted); max-width: 26rem; animation: wlRise 0.6s 0.6s ease both; }
+        @keyframes wlRise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+        @keyframes wlPop { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .wl-bg i, .wl-hello, .wl-logo, .wl-chips, .wl-inner .welcome-actions, .wl-cards, .wl-tip, .welcome-state .wl-sub { animation: none !important; } }
+        .tour-root { position: fixed; inset: 0; z-index: 300; }
+        .tour-dim { position: absolute; inset: 0; background: rgba(5,8,12,0.74); }
+        .tour-hole { position: absolute; border-radius: 0.7rem; box-shadow: 0 0 0 100vmax rgba(5,8,12,0.74), 0 0 0 2px var(--switch-cyan), 0 0 22px 2px rgba(0,195,227,0.5); transition: left 0.25s, top 0.25s, width 0.25s, height 0.25s; pointer-events: none; }
+        .tour-card { position: absolute; background: var(--switch-light); color: white; border-radius: 0.8rem; padding: 1rem 1.1rem; box-shadow: 0 12px 40px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); animation: wlRise 0.25s ease; }
+        .tour-title { font-size: 1rem; font-weight: 800; margin-bottom: 0.4rem; }
+        .tour-text { font-size: 0.84rem; line-height: 1.5; color: #d7dde2; }
+        .tour-dots { display: flex; gap: 0.3rem; margin: 0.8rem 0 0.7rem; }
+        .tour-dots i { width: 0.4rem; height: 0.4rem; border-radius: 50%; background: rgba(255,255,255,0.25); }
+        .tour-dots i.on { background: var(--switch-cyan); width: 1rem; border-radius: 9999px; }
+        .tour-bar { display: flex; justify-content: space-between; align-items: center; }
+        .tour-btns { display: flex; gap: 0.4rem; margin-left: auto; }
+        .tour-skip, .tour-back { background: none; border: none; color: var(--switch-muted); cursor: pointer; font-size: 0.8rem; padding: 0.35rem 0.5rem; }
+        .tour-next { background: var(--switch-cyan); color: #04222b; border: none; border-radius: 0.45rem; padding: 0.4rem 1rem; font-weight: 800; font-size: 0.82rem; cursor: pointer; }
         .welcome-actions { display: flex; gap: 0.75rem; margin-top: 0.5rem; flex-wrap: wrap; justify-content: center; }
 
         /* ---------- Buttons & inputs (shared design system) ---------- */
@@ -702,12 +742,19 @@
 
         <!-- Welcome / nothing selected -->
         <div id="welcome-view" class="welcome-state">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            <h2>Welcome to Switch Hub</h2>
-            <p>Load your SD card's <strong>Nintendo/Album</strong> folder to browse your own screenshots, or connect with a friend to see their gallery and chat with them.</p>
-            <div class="welcome-actions">
-                <button id="btn-welcome-load" class="btn-save" style="padding: 0.6rem 1.25rem;">Load SD Card</button>
-                <button id="btn-welcome-invite" class="btn-save" style="padding: 0.6rem 1.25rem; background: var(--switch-purple); color: white;">📋 Copy My Invite Link</button>
+            <div class="wl-bg" aria-hidden="true"><i></i><i></i><i></i></div>
+            <div class="wl-inner">
+                <svg class="wl-logo" viewBox="0 0 120 80" aria-hidden="true"><defs><filter id="wlglow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><g filter="url(#wlglow)"><rect x="14" y="10" width="40" height="60" rx="16" fill="none" stroke="#00c3e3" stroke-width="5"/><rect x="66" y="10" width="40" height="60" rx="16" fill="none" stroke="#ff4554" stroke-width="5"/></g><circle cx="34" cy="28" r="6" fill="#00c3e3"/><circle cx="86" cy="52" r="6" fill="#ff4554"/><circle cx="34" cy="52" r="3" fill="#00c3e3" opacity=".6"/><circle cx="86" cy="28" r="3" fill="#ff4554" opacity=".6"/></svg>
+                <div class="wl-hello" id="wl-hello">Welcome to Switch Hub</div>
+                <p class="wl-sub" id="wl-sub">Load your SD card to browse your captures, or pick up a chat with a friend.</p>
+                <div class="wl-chips" id="wl-chips" style="display:none;"></div>
+                <div class="welcome-actions">
+                    <button id="btn-welcome-load" class="btn-save" style="padding: 0.6rem 1.25rem;">📁 Load SD Card</button>
+                    <button id="btn-welcome-invite" class="btn-save" style="padding: 0.6rem 1.25rem; background: var(--switch-purple); color: white;">📋 Copy My Invite Link</button>
+                    <button id="btn-welcome-tour" class="btn-save wl-tour" style="padding: 0.6rem 1.25rem;">🧭 Take the tour</button>
+                </div>
+                <div class="wl-cards" id="wl-cards" style="display:none;"></div>
+                <p class="wl-tip" id="wl-tip"></p>
             </div>
         </div>
 
@@ -948,6 +995,10 @@
             <div class="toggle-row">
                 <label>📸 Show screenshots of the game they're playing</label>
                 <input type="checkbox" id="setting-np-shots" checked>
+            </div>
+
+            <div class="input-group" style="margin-top: 1rem;">
+                <button id="btn-replay-tour" class="btn-cancel" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">🧭 Replay the welcome tour</button>
             </div>
 
             <div class="input-group" style="margin-top: 1.25rem;">
@@ -1209,6 +1260,7 @@
         const groupIncoming = new Map();  // "peerId:fileId" -> transfer in progress
         function isGroupId(id) { return typeof id === 'string' && id.startsWith('g:'); }
 
+        const HAD_PROFILE = (() => { try { return localStorage.getItem('switch_hub_profile') !== null; } catch (e) { return true; } })();
         loadState();
 
         // ============================================================
@@ -1436,6 +1488,7 @@
 
         function renderFriendList() {
             if (typeof renderGroupList === 'function') renderGroupList();
+            try { renderWelcome(); } catch (e) { /* not ready during start-up */ }
             const list = document.getElementById('friend-list');
             const emptyNote = document.getElementById('friends-empty-note');
             list.innerHTML = '';
@@ -1575,6 +1628,7 @@
                 switchView('gallery');
             } else {
                 document.getElementById('welcome-view').classList.remove('hidden');
+                try { renderWelcome(); } catch (e) {}
                 document.getElementById('gallery-view').classList.add('hidden');
                 document.getElementById('chat-view').classList.add('hidden');
                 document.getElementById('gallery-search-wrap').classList.add('hidden');
@@ -6298,6 +6352,7 @@
             });
             [...np.alerted].forEach(id => { if (!still.has(id)) np.alerted.delete(id); });
             updateGameTheme();
+            try { renderWelcome(); } catch (e) {}
         }
 
         // ---- game colour for the chat ----
@@ -6359,6 +6414,152 @@
         }
         setInterval(() => { if (activeView === 'chat' && activeFriendId) { try { renderGameShots(); updateTopBar(); } catch (e) {} } }, 30000);
         setInterval(() => { if (activeView === 'chat') { try { renderGameShots(); } catch (e) {} } }, 4000);
+
+        // ============================================================
+        // WELCOME SCREEN + FIRST-TIME TOUR
+        // The welcome screen greets you by name and shows what is going on (last game, friends playing, unread
+        // chats) plus a tip that changes each visit. The tour walks through the sidebar the first time Hub is
+        // opened on a device, and can be replayed from the welcome screen or Settings.
+        // ============================================================
+        const WELCOME_TIPS = [
+            'Type a month in the gallery search, like "march 2024", to see just those shots.',
+            'Tap 🎮 Games while you\'re connected to play Guess the game, Guess the date or Best shot vote.',
+            'Make a group chat from the Groups section: pick 2 or more friends and you\'re set.',
+            'Mark a game as a spoiler and it stays hidden from friends in your gallery.',
+            'Add your Switch NSA ID in Settings so friends can see what you\'re playing.',
+            'Load your SD card, then open 🎬 Reel to turn your best clips into a highlight reel.',
+            'Your chats and groups are saved in this browser only, so they stay private.',
+            'You and your friend both need the tab open to connect. There\'s no server in between.',
+            'Open 📓 Journal to see a game-by-game timeline of your captures and play time.'
+        ];
+        let tourVisits = 1;
+        try { tourVisits = (parseInt(localStorage.getItem('switch_hub_visits') || '0', 10) || 0) + 1; localStorage.setItem('switch_hub_visits', String(tourVisits)); } catch (e) {}
+        function welcomeGreeting() { const h = new Date().getHours(); return h < 5 ? 'Up late' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'; }
+        function welcomeAgo(ms) {
+            const d = Math.floor((Date.now() - ms) / 86400000);
+            return d <= 0 ? 'today' : d === 1 ? 'yesterday' : d < 30 ? `${d} days ago` : d < 365 ? `${Math.round(d / 30)} months ago` : `${Math.round(d / 365)} years ago`;
+        }
+        function welcomeLastGame() {
+            let best = null;
+            journal.sessions.forEach(s => { if (s.end && (!best || s.end > best.at)) best = { name: s.game, at: s.end }; });
+            Object.values(journal.official).forEach(o => { if (o.seen && (!best || o.seen > best.at)) best = { name: o.name, at: o.seen }; });
+            return best;
+        }
+        function welcomeUnread() {
+            const rows = [];
+            friends.forEach(f => { const n = unreadCount(f.id); if (n) rows.push({ id: f.id, name: f.name, n, group: false }); });
+            Object.values(groups).forEach(g => { const n = unreadCount('g:' + g.id); if (n) rows.push({ id: 'g:' + g.id, name: g.name, n, group: true }); });
+            rows.forEach(r => { const th = messagesByContact[r.id] || []; const last = th[th.length - 1]; r.last = last ? (last.deleted ? '' : (last.text || (last.attachment ? '📎 Attachment' : ''))) : ''; r.who = last && last.g && !last.mine ? last.senderName : ''; r.ts = last ? last.ts : 0; });
+            return rows.sort((a, b) => b.ts - a.ts);
+        }
+        function renderWelcome() {
+            const view = document.getElementById('welcome-view'); if (!view || view.classList.contains('hidden')) return;
+            const first = tourVisits <= 1 && !HAD_PROFILE;
+            const hello = document.getElementById('wl-hello'); hello.textContent = first ? 'Welcome to Switch Hub' : `${welcomeGreeting()}, ${myProfile.name || 'there'}`;
+            document.getElementById('wl-sub').textContent = first ? 'Browse your Switch captures and share them with friends, straight between your browsers. Nothing gets uploaded.' : 'Load your SD card to browse your captures, or pick up a chat with a friend.';
+            const chips = document.getElementById('wl-chips'); chips.innerHTML = '';
+            const chip = (icon, text) => { const c = el('span', 'wl-chip'); c.appendChild(el('b', '', icon)); c.appendChild(document.createTextNode(' ' + text)); chips.appendChild(c); };
+            const lg = welcomeLastGame(); if (lg && lg.name) chip('🎮', `Last played ${lg.name}, ${welcomeAgo(lg.at)}`);
+            const playing = Object.keys(np.playing).filter(k => k !== 'me').map(k => friends.find(f => f.id === k)).filter(Boolean);
+            if (playing.length) chip('🟢', playing.length === 1 ? `${playing[0].name} is playing ${np.playing[playing[0].id].name}` : `${playing.length} friends are playing right now`);
+            if (friends.length) chip('👥', `${friends.length} friend${friends.length === 1 ? '' : 's'}${Object.keys(groups).length ? ` · ${Object.keys(groups).length} group${Object.keys(groups).length === 1 ? '' : 's'}` : ''}`);
+            chips.style.display = chips.children.length ? '' : 'none';
+            const cards = document.getElementById('wl-cards'); cards.innerHTML = '';
+            const unread = welcomeUnread();
+            if (unread.length) {
+                cards.appendChild(el('div', 'wl-cards-title', `💬 ${unread.reduce((s, r) => s + r.n, 0)} unread`));
+                unread.slice(0, 3).forEach(r => {
+                    const row = el('button', 'wl-unread'); row.type = 'button';
+                    row.appendChild(el('span', 'wl-unread-name', (r.group ? '👥 ' : '') + r.name));
+                    row.appendChild(el('span', 'wl-unread-text', ((r.who ? r.who + ': ' : '') + r.last).slice(0, 80)));
+                    row.appendChild(el('span', 'wl-unread-n', String(r.n > 9 ? '9+' : r.n)));
+                    row.addEventListener('click', () => { if (r.group) selectGroup(r.id); else { activeView = 'chat'; selectFriend(r.id); } });
+                    cards.appendChild(row);
+                });
+            }
+            cards.style.display = unread.length ? '' : 'none';
+            document.getElementById('wl-tip').textContent = '💡 ' + WELCOME_TIPS[(tourVisits + Math.floor(Date.now() / 86400000)) % WELCOME_TIPS.length];
+            const tb = document.getElementById('btn-welcome-tour'); if (tb) tb.classList.toggle('wl-new', !tourSeen());
+        }
+        function tourSeen() { try { return localStorage.getItem('switch_hub_tour_done') === '1'; } catch (e) { return true; } }
+        function tourMarkDone() { try { localStorage.setItem('switch_hub_tour_done', '1'); } catch (e) {} }
+
+        const TOUR_STEPS = [
+            { title: 'Welcome to Switch Hub 👋', text: 'A quick look around, about a minute. Hub shows your Switch screenshots and clips, and lets you share them and chat with friends directly from browser to browser. Nothing is uploaded anywhere.' },
+            { target: '#btn-select-folder', title: 'Load your captures', text: 'Pick the Nintendo/Album folder from your SD card (or a USB export). Everything is read inside your browser, and the files never leave your computer unless you send them.' },
+            { target: '#my-profile-card', title: 'This is you', text: 'Click here to set your name, status and avatar. You can also add your Switch NSA ID so friends see what game you\'re playing, and switch on the little extras like game banners.' },
+            { target: '#btn-copy-invite-link', pad: 8, title: 'Add a friend', text: 'Copy your invite link and send it to a friend. When they open it, you\'re connected and added to each other\'s friends list. Your link stays the same, so it keeps working.' },
+            { target: '#friend-list', pad: 4, title: 'Your friends', text: 'Click a friend to connect. Once you\'re connected you can browse their gallery, chat, and see what they\'re playing. Both of you need the tab open to connect.' },
+            { target: '#btn-new-group', pad: 8, title: 'Group chats', text: 'Pick 2 or more friends and make a group. Everyone connects directly to everyone else, and the chat is saved in each person\'s browser.' },
+            { title: 'When you\'re connected', text: 'A Peer Activity box appears in the sidebar with Watch together, Voice call, a shared Session album and 🎮 Games (Guess the game, Guess the date and Best shot vote). Chats also show a shots strip when a friend is playing a game you have captures of.' },
+            { target: '#btn-open-settings', pad: 6, title: 'Settings', text: 'Notifications, sounds, thumbnail size, Discord presence and the Now Playing extras all live here. You can replay this tour from there any time.' },
+            { title: 'You\'re all set 🎉', text: 'Load your SD card or send an invite link to get going. Have fun!' }
+        ];
+        let tourState = null;
+        function startTour() {
+            if (tourState) return;
+            const root = el('div', 'tour-root'); root.id = 'tour-root'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', 'Welcome tour');
+            const dim = el('div', 'tour-dim'), hole = el('div', 'tour-hole'), card = el('div', 'tour-card');
+            root.appendChild(dim); root.appendChild(hole); root.appendChild(card); document.body.appendChild(root);
+            tourState = { i: 0, root, dim, hole, card };
+            window.addEventListener('resize', tourPlace); document.addEventListener('keydown', tourKey, true);
+            tourShow(0);
+        }
+        function endTour() {
+            if (!tourState) return;
+            tourMarkDone(); tourState.root.remove(); tourState = null;
+            window.removeEventListener('resize', tourPlace); document.removeEventListener('keydown', tourKey, true);
+            const tb = document.getElementById('btn-welcome-tour'); if (tb) tb.classList.remove('wl-new');
+        }
+        function tourKey(e) {
+            if (!tourState) return;
+            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); endTour(); }
+            else if (e.key === 'ArrowRight' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); tourShow(tourState.i + 1); }
+            else if (e.key === 'ArrowLeft') { e.preventDefault(); e.stopPropagation(); tourShow(tourState.i - 1); }
+        }
+        function tourTargetRect(step) {
+            if (!step.target) return null;
+            const t = document.querySelector(step.target); if (!t) return null;
+            try { t.scrollIntoView({ block: 'nearest' }); } catch (e) {}
+            const r = t.getBoundingClientRect();
+            if (r.width < 4 || r.height < 4 || r.right < 0 || r.left > innerWidth || r.bottom < 0 || r.top > innerHeight) return null; // hidden or off screen: explain it in the middle instead
+            return r;
+        }
+        function tourShow(i) {
+            if (!tourState) return;
+            if (i < 0) i = 0;
+            if (i >= TOUR_STEPS.length) { endTour(); return; }
+            tourState.i = i; const s = TOUR_STEPS[i], card = tourState.card;
+            card.innerHTML = '';
+            card.appendChild(el('div', 'tour-title', s.title)); card.appendChild(el('div', 'tour-text', s.text));
+            const dots = el('div', 'tour-dots'); TOUR_STEPS.forEach((_, k) => dots.appendChild(el('i', k === i ? 'on' : ''))); card.appendChild(dots);
+            const bar = el('div', 'tour-bar');
+            const skip = el('button', 'tour-skip', i === TOUR_STEPS.length - 1 ? '' : 'Skip tour'); skip.type = 'button'; skip.addEventListener('click', endTour); if (i < TOUR_STEPS.length - 1) bar.appendChild(skip);
+            const right = el('div', 'tour-btns');
+            if (i > 0) { const b = el('button', 'tour-back', 'Back'); b.type = 'button'; b.addEventListener('click', () => tourShow(i - 1)); right.appendChild(b); }
+            const nx = el('button', 'tour-next', i === TOUR_STEPS.length - 1 ? 'Done' : 'Next'); nx.type = 'button'; nx.addEventListener('click', () => tourShow(i + 1)); right.appendChild(nx);
+            bar.appendChild(right); card.appendChild(bar);
+            tourPlace(); nx.focus();
+        }
+        function tourPlace() {
+            if (!tourState) return;
+            const { hole, dim, card } = tourState, s = TOUR_STEPS[tourState.i], r = tourTargetRect(s);
+            const pad = s.pad == null ? 6 : s.pad, margin = 14, cw = Math.min(340, innerWidth - 24);
+            card.style.width = cw + 'px';
+            if (!r) {
+                hole.style.display = 'none'; dim.style.display = 'block';
+                card.style.left = Math.max(12, (innerWidth - cw) / 2) + 'px'; card.style.top = Math.max(12, (innerHeight - card.offsetHeight) / 2) + 'px'; return;
+            }
+            dim.style.display = 'none'; hole.style.display = 'block';
+            hole.style.left = (r.left - pad) + 'px'; hole.style.top = (r.top - pad) + 'px'; hole.style.width = (r.width + pad * 2) + 'px'; hole.style.height = (r.height + pad * 2) + 'px';
+            const ch = card.offsetHeight; let left, top;
+            if (r.right + margin + cw + 12 <= innerWidth) { left = r.right + pad + margin; top = r.top + r.height / 2 - ch / 2; }       // to the right of it
+            else if (r.bottom + margin + ch + 12 <= innerHeight) { left = r.left; top = r.bottom + pad + margin; }                       // below
+            else { left = r.left; top = r.top - pad - margin - ch; }                                                                       // above
+            card.style.left = Math.max(12, Math.min(innerWidth - cw - 12, left)) + 'px'; card.style.top = Math.max(12, Math.min(innerHeight - ch - 12, top)) + 'px';
+        }
+        document.getElementById('btn-welcome-tour').addEventListener('click', startTour);
+        document.getElementById('btn-replay-tour').addEventListener('click', () => { settingsModal.classList.add('hidden'); startTour(); });
 
         // ============================================================
         // PLAY-TIME JOURNAL
@@ -8147,6 +8348,10 @@
         dhInit();
         refreshAllPresence();
         setInterval(refreshAllPresence, 60000);
+        try { renderWelcome(); } catch (e) { console.warn('welcome', e); }
+        // First time on this device: start the tour. Not for people who already had Hub set up, and not while an invite link is connecting.
+        if (!HAD_PROFILE && !tourSeen() && !getPeerIdFromUrl()) setTimeout(() => { if (!document.getElementById('settings-modal') || document.getElementById('settings-modal').classList.contains('hidden')) startTour(); }, 900);
+
     </script>
 
 

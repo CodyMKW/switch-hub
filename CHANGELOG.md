@@ -2,6 +2,16 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.12.0] - 2026-11-14
+
+### Added
+- **A better welcome screen.** It now greets you by name and time of day ("Good evening, Cody"), with glowing animated colours behind it. Under the greeting it shows what's going on: your last played game and when, which friends are playing right now, how many friends and groups you have, and any unread chats (click one to jump straight in). There's also a tip that changes each time you visit. The animations switch off if your device asks for reduced motion.
+- **A welcome tour.** The first time Hub is opened on a device, a short tour walks through loading your SD card, your profile, the invite link, friends, groups, what appears once you're connected (Watch together, calls, games), and Settings. It highlights each part of the sidebar as it goes. Use the buttons, or the arrow keys, and Esc skips it.
+- **Replay it any time** with the "🧭 Take the tour" button on the welcome screen or "Replay the welcome tour" in Settings.
+
+### Notes
+- If you already had Hub set up, the tour doesn't start on its own. The Take the tour button just carries a small NEW badge until you use it. It also doesn't start while an invite link is connecting.
+
 ## [1.11.2] - 2026-11-14
 
 ### Fixed
