@@ -17,6 +17,25 @@
 
 ---
 
+## A look around
+
+<p align="center">
+  <img src="docs/screenshots/gallery.png" alt="The gallery sorted by game, showing Animal Crossing, Ni no Kuni and Splatoon 3 captures" width="100%">
+</p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/chat.png" alt="A chat between Mario and Luigi with read receipts and a reaction"><br><sub><b>Chat</b> with read receipts, reactions and replies</sub></td>
+    <td width="50%"><img src="docs/screenshots/guess-the-date.png" alt="Guess the date: a Splatoon 3 screenshot with four month choices"><br><sub><b>Guess the date</b>, one of the games you can play together</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/stats.png" alt="The stats and Year in Review screen"><br><sub><b>Stats and Year in Review</b></sub></td>
+    <td width="50%"><img src="docs/screenshots/reel-title-card.png" alt="A highlight reel title card with the Switch Hub logo"><br><sub><b>Highlight reels</b> with an optional title card</sub></td>
+  </tr>
+</table>
+
+<sub>Screenshots use the made-up players Mario and Luigi.</sub>
+
 ## What is this?
 
 Switch Hub is a single web page for people who take a lot of screenshots on their Switch and want to show them off. Point it at your SD card, and you get a fast, searchable gallery of everything you've captured. Connect to a friend and the two of you can browse each other's galleries, chat, watch slideshows together, jump on a voice call, or play a few quick games, all with your browsers talking directly to each other.
