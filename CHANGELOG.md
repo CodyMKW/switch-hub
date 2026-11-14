@@ -2,6 +2,12 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.13.1] - 2026-11-14
+
+### Changed
+- **A new Switch Hub logo.** Two glowing controllers in cyan and red, drawn from scratch. It replaces the old logo that was loaded from another site, so the sidebar header no longer depends on an outside file. It's also the new browser tab icon (favicon), the home screen / installed app icon, and there's a 1024 x 1024 version for the Discord app in `branding/discord-app-icon-1024.png`.
+- The app's offline cache was refreshed so the new icons are picked up.
+
 ## [1.13.0] - 2026-11-14
 
 ### Added
