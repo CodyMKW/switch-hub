@@ -20,16 +20,16 @@
 ## A look around
 
 <p align="center">
-  <img src="docs/screenshots/gallery.png" alt="The gallery sorted by game, showing Animal Crossing, Ni no Kuni and Splatoon 3 captures" width="100%">
+  <img src="docs/screenshots/gallery.png" alt="The gallery sorted by game, with screenshots and clips from Animal Crossing, My Hero Ultra Rumble, Ni no Kuni and Pokémon" width="100%">
 </p>
 
 <table>
   <tr>
     <td width="50%"><img src="docs/screenshots/chat.png" alt="A chat between Mario and Luigi with read receipts and a reaction"><br><sub><b>Chat</b> with read receipts, reactions and replies</sub></td>
-    <td width="50%"><img src="docs/screenshots/guess-the-date.png" alt="Guess the date: a Splatoon 3 screenshot with four month choices"><br><sub><b>Guess the date</b>, one of the games you can play together</sub></td>
+    <td width="50%"><img src="docs/screenshots/guess-the-date.png" alt="Guess the date: a Ni no Kuni clip with four month choices"><br><sub><b>Guess the date</b>, one of the games you can play together</sub></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/stats.png" alt="The stats and Year in Review screen"><br><sub><b>Stats and Year in Review</b></sub></td>
+    <td width="50%"><img src="docs/screenshots/stats.png" alt="The all-time stats screen with captures per year and per game"><br><sub><b>Stats and Year in Review</b></sub></td>
     <td width="50%"><img src="docs/screenshots/reel-title-card.png" alt="A highlight reel title card with the Switch Hub logo"><br><sub><b>Highlight reels</b> with an optional title card</sub></td>
   </tr>
 </table>
