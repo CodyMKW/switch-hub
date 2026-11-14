@@ -2,6 +2,11 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.11.1] - 2026-11-13
+
+### Changed
+- **Guess the date plays the real clip.** Clips used to show a single frame, which could be a black or white screen. Now the frame appears right away and the whole clip follows ("Loading the clip... 40%"), then swaps in as a looping video with controls (it starts muted, so tap the speaker for sound). Your own clip plays straight away on your side. Clips up to 150 MB are sent; anything bigger falls back to the frame.
+
 ## [1.11.0] - 2026-11-13
 
 ### Added

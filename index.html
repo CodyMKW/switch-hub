@@ -6066,6 +6066,19 @@
                 return c.toDataURL('image/jpeg', 0.7);
             } catch (e) { return ''; } finally { try { bmp && bmp.close(); } catch (e) {} }
         }
+        // The clip itself follows the first frame, in pieces, so the round shows up right away and the video swaps in when it has arrived.
+        const GD_CLIP_MAX = 150 * 1024 * 1024;
+        async function sendGdateClip(g, n, file) {
+            try {
+                const conn = activeConnection; const buf = await file.arrayBuffer(); const total = Math.max(1, Math.ceil(buf.byteLength / FILE_CHUNK_SIZE));
+                for (let i = 0; i < total; i++) {
+                    if (!gdate || gdate !== g || g.n !== n || !conn || !conn.open) return; // round over or friend gone
+                    await waitForBufferedAmountLow(conn);
+                    conn.send({ type: 'gdate_clip', id: g.id, n, idx: i, total, data: buf.slice(i * FILE_CHUNK_SIZE, Math.min((i + 1) * FILE_CHUNK_SIZE, buf.byteLength)) });
+                }
+            } catch (e) { console.warn('clip send failed', e); }
+        }
+        function gdDropClip(c) { if (c && c.clipUrl && !c.ownUrl) { try { URL.revokeObjectURL(c.clipUrl); } catch (e) {} } if (c) { c.clipUrl = ''; c.videoEl = null; } }
         function startGdate() {
             if (!(activeConnection && activeConnection.open)) { showToast('Connect to a friend first to play.', 'yellow'); return; }
             if (gdate) { renderGdateModal(); return; }
@@ -6083,6 +6096,7 @@
         }
         function closeGdate() {
             if (gdate) { if (gdate.timer) clearTimeout(gdate.timer); if (gdate.nextTimer) clearTimeout(gdate.nextTimer); }
+            if (gdate) gdDropClip(gdate.cur);
             gdate = null; const m = document.getElementById('gdate-modal'); if (m) m.remove(); closePrompt('gdate-invite');
         }
         function gdKindFor(mode, n) { const kinds = mode === 'year' ? ['year'] : mode === 'month' ? ['month'] : mode === 'days' ? ['weekday', 'day'] : GD_KINDS; return kinds[Math.floor(Math.random() * kinds.length)]; }
@@ -6095,9 +6109,11 @@
             if (!gdate || gdate !== g) return;
             if (!img) { g.used.add(mediaKey(media)); return sendGdateRound(n); } // unreadable file: pick another
             g.n = n; g.role = 'master';
-            g.cur = { img, kind, choices: gdChoices(kind, p), correct: gdAnswerFor(kind, p), full: p.long, isVideo: media.type === 'video', answer: null, revealed: false, right: false };
-            sendToConn({ type: 'gdate_round', id: g.id, n, total: g.total, img, kind, choices: g.cur.choices, isVideo: g.cur.isVideo });
+            const isVideo = media.type === 'video', clipOk = isVideo && media.file.size > 0 && media.file.size <= GD_CLIP_MAX;
+            g.cur = { img, kind, choices: gdChoices(kind, p), correct: gdAnswerFor(kind, p), full: p.long, isVideo, clipUrl: clipOk ? media.url : '', ownUrl: true, answer: null, revealed: false, right: false };
+            sendToConn({ type: 'gdate_round', id: g.id, n, total: g.total, img, kind, choices: g.cur.choices, isVideo, clipSize: clipOk ? media.file.size : 0 });
             renderGdateModal();
+            if (clipOk) sendGdateClip(g, n, media.file);
         }
         function handleGdateMessage(data, friend) {
             const id = String(data.id || '');
@@ -6126,8 +6142,22 @@
                 const img = (typeof data.img === 'string' && data.img.startsWith('data:image/') && data.img.length < 400000) ? data.img : '';
                 if (!kind || !img || choices.length < 2) return;
                 gdate.n = Math.max(1, Math.min(gdate.total, +data.n || 1)); gdate.role = 'guesser';
-                gdate.cur = { img, kind, choices, correct: null, full: '', isVideo: !!data.isVideo, answer: null, revealed: false, right: false };
+                gdDropClip(gdate.cur);
+                const clipSize = Math.max(0, Math.min(GD_CLIP_MAX, +data.clipSize || 0));
+                gdate.cur = { img, kind, choices, correct: null, full: '', isVideo: !!data.isVideo, clipSize, clipParts: clipSize ? [] : null, clipGot: 0, clipUrl: '', ownUrl: false, answer: null, revealed: false, right: false };
                 renderGdateModal();
+            } else if (data.type === 'gdate_clip') {
+                const c = gdate && gdate.id === id && gdate.role === 'guesser' && gdate.cur;
+                if (!c || !c.clipParts || +data.n !== gdate.n || c.clipUrl) return;
+                const idx = +data.idx, total = +data.total;
+                if (!(idx >= 0 && idx < 4000 && total > 0 && total <= 4000) || !(data.data instanceof ArrayBuffer) && !ArrayBuffer.isView(data.data)) return;
+                if (c.clipParts[idx]) return;
+                c.clipParts[idx] = data.data; c.clipGot += data.data.byteLength || 0;
+                if (c.clipGot > c.clipSize * 1.02 + 1024) { c.clipParts = null; return; } // more than announced: drop it
+                const pct = Math.min(99, Math.round(c.clipGot / Math.max(1, c.clipSize) * 100)), note = document.getElementById('gdate-clip-note'); if (note) note.textContent = `🎬 Loading the clip... ${pct}%`;
+                if (c.clipParts.filter(Boolean).length === total) {
+                    c.clipUrl = URL.createObjectURL(new Blob(c.clipParts, { type: 'video/mp4' })); c.clipParts = null; renderGdateModal();
+                }
             } else if (data.type === 'gdate_answer') {
                 if (!gdate || gdate.id !== id || gdate.role !== 'master' || !gdate.cur || gdate.cur.answer !== null || +data.n !== gdate.n) return;
                 const choice = String(data.choice || ''); if (!gdate.cur.choices.includes(choice)) return;
@@ -6166,8 +6196,14 @@
                 const status = g.role === 'master' ? (c.revealed ? (c.right ? `${name} got it!` : `${name} missed it.`) : `Your capture, taken ${c.full}. Waiting for ${name} to guess...`) : (c.revealed ? (c.right ? '✅ Correct!' : `❌ It was ${c.correct}.`) : GD_QUESTION[c.kind]);
                 card.appendChild(el('div', 'tool-hint', status));
                 if (c.revealed && c.full) card.appendChild(el('div', 'tool-title', '📅 ' + c.full));
-                const img = document.createElement('img'); img.className = 'guess-img'; img.src = c.img; img.alt = 'Capture'; card.appendChild(img);
-                if (c.isVideo) card.appendChild(el('div', 'tool-hint', '🎬 This was a clip. Showing one frame.'));
+                if (c.isVideo && c.clipUrl) {
+                    if (!c.videoEl) { const v = document.createElement('video'); v.className = 'guess-img'; v.src = c.clipUrl; v.poster = c.img; v.controls = true; v.loop = true; v.muted = true; v.autoplay = true; v.playsInline = true; c.videoEl = v; v.play().catch(() => {}); }
+                    card.appendChild(c.videoEl); c.videoEl.play().catch(() => {});
+                    card.appendChild(el('div', 'tool-hint', '🎬 A clip: it loops, and you can turn the sound on.'));
+                } else {
+                    const img = document.createElement('img'); img.className = 'guess-img'; img.src = c.img; img.alt = 'Capture'; card.appendChild(img);
+                    if (c.isVideo) { const note = el('div', 'tool-hint', c.clipParts ? '🎬 Loading the clip... 0%' : '🎬 This was a clip. Showing one frame.'); note.id = 'gdate-clip-note'; card.appendChild(note); }
+                }
                 if (g.role === 'master') card.appendChild(el('div', 'tool-hint', GD_QUESTION[c.kind]));
                 const grid = el('div', 'guess-choices');
                 c.choices.forEach(ch => {
