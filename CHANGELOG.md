@@ -2,6 +2,11 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.14.2] - 2026-11-15
+
+### Fixed
+- **Dock layout: the rail's scroll bar no longer fades away.** On some systems the bar appeared for a moment and then disappeared, so you couldn't scroll without a wheel. It now stays visible, and there are also ▲ / ▼ buttons above and below the friends list (shown only when the list is longer than the rail) that scroll it for you.
+
 ## [1.14.1] - 2026-11-15
 
 ### Changed
