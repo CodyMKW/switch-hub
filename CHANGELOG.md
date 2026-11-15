@@ -2,6 +2,13 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.14.1] - 2026-11-15
+
+### Changed
+- **Dock layout: the friends rail now scrolls with a visible scroll bar.** Friends, groups and Switch presence scroll in their own area, so your profile, Load, My SD Card and Settings stay in place, and you can drag the bar if you don't have a scroll wheel.
+- **Dock layout on phones: a cleaner bottom bar.** The logo, settings gear and Switch presence entries are gone from the bar (tap your avatar for Settings). What's left is your avatar, Load, My SD Card, your friends and groups, and the invite and new-group buttons.
+- Removed the small "back to classic" button from the Dock rail. You can still switch back in Settings → Layout or from the welcome screen.
+
 ## [1.14.0] - 2026-11-14
 
 ### Added
