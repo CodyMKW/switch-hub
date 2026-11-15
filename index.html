@@ -724,6 +724,7 @@
         .layout-dock .view-tab { border-radius: 9999px; padding: 0.45rem 1.1rem; }
         .layout-dock .view-tab.active { background: var(--dk-grad); color: #fff; box-shadow: 0 8px 22px -8px rgba(0,195,227,0.8); }
         .layout-dock .search-input { width: 15rem; border-radius: 9999px; padding: 0.55rem 1rem 0.55rem 2.2rem; background: var(--dk-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238f98b8' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") no-repeat 0.8rem center / 1rem; border-color: var(--dk-line); }
+        .layout-dock #jump-page-input { width: 7.5rem; padding: 0.3rem 0.6rem; background-image: none; font-size: 0.8rem; }
         .layout-dock .search-input:focus { border-color: var(--switch-cyan); box-shadow: 0 0 0 3px rgba(47,212,240,0.18); }
         .layout-dock .type-filter-btn { border-radius: 9999px; background: var(--dk-soft); border-color: var(--dk-line); padding: 0.45rem 0.7rem; }
         .layout-dock .type-filter-btn.active { background: rgba(47,212,240,0.16); border-color: var(--switch-cyan); }
@@ -1071,9 +1072,9 @@
     <button id="btn-page-prev" class="btn-load" style="width: auto; padding: 0.5rem 1.5rem;">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:1.1rem;height:1.1rem;margin-right: 0.25rem;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> Prev
     </button>
-    <div style="display: flex; align-items: center; gap: 0.5rem;">
+    <div id="page-jump-box" style="display: flex; flex-direction: column; align-items: center; gap: 0.4rem;">
         <span id="page-info" style="color: var(--switch-muted); font-weight: 600; font-size: 0.875rem;">Page 1 of 1</span>
-        <input type="number" id="jump-page-input" min="1" placeholder="Jump" class="search-input" style="width: 60px; text-align: center;" title="Type page number and press Enter">
+        <input type="number" id="jump-page-input" min="1" placeholder="Jump to page" class="search-input" style="width: 7.5rem; text-align: center; padding: 0.3rem 0.5rem; font-size: 0.8rem;" title="Type page number and press Enter">
     </div>
     <button id="btn-page-next" class="btn-load" style="width: auto; padding: 0.5rem 1.5rem;">
         Next <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:1.1rem;height:1.1rem;margin-left: 0.25rem;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
