@@ -36,6 +36,21 @@
 
 <sub>Screenshots use the made-up players Mario and Luigi.</sub>
 
+## Two layouts
+
+Hub opens in the **Classic** layout (sidebar on the left). If you'd like something different, open **Settings → Layout** and switch to **Dock**: a slim friends rail, a toolbar for sorting and tools, a session strip for calls and games, and a softer glass look. It's the same app with every feature intact, it works on phones, and you can switch back any time. Your choice is remembered in your browser.
+
+<p align="center">
+  <img src="docs/screenshots/dock-gallery.png" alt="The Dock layout: friends rail on the left, sort and tool pills along the top, gallery below" width="100%">
+</p>
+
+<table>
+  <tr>
+    <td width="68%"><img src="docs/screenshots/dock-chat.png" alt="The Dock layout in a chat, with the session strip for watch together, voice calls and games"><br><sub><b>Dock</b> chat with the session strip</sub></td>
+    <td width="32%"><img src="docs/screenshots/dock-mobile.png" alt="The Dock layout on a phone, with the rail along the bottom"><br><sub><b>Dock</b> on a phone</sub></td>
+  </tr>
+</table>
+
 ## What is this?
 
 Switch Hub is a single web page for people who take a lot of screenshots on their Switch and want to show them off. Point it at your SD card, and you get a fast, searchable gallery of everything you've captured. Connect to a friend and the two of you can browse each other's galleries, chat, watch slideshows together, jump on a voice call, or play a few quick games, all with your browsers talking directly to each other.
@@ -87,6 +102,7 @@ First time here? A short tour walks you through the sidebar. You can replay it a
 
 - **Install it** as an app from the sidebar if your browser offers it. The shell works offline, so you can browse a locally loaded SD card without a connection.
 - **Discord activity.** Optionally show what you're up to in Hub on your Discord profile: browsing, chatting, on a call, playing a game together, taking the tour. It never shows game names, captions or messages, and group chats are never named. It's off until you connect Discord in Settings.
+- **Two layouts.** Classic, or the optional Dock layout with a friends rail, a toolbar and a mobile-friendly bottom bar (Settings → Layout).
 - **Notifications and sound** for new messages, if you want them.
 
 ## Privacy and how it works

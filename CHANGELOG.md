@@ -2,6 +2,21 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.14.0] - 2026-11-14
+
+### Added
+- **Dock layout (optional).** A completely new way to lay out Hub, chosen in **Settings → Layout** (or from the welcome screen). Classic stays the default.
+  - Your friends, groups and Switch presence live in a slim rail on the left, shown as avatar tiles with unread badges and presence dots.
+  - Sorting, Random, On this day, albums and tools (Select, Duplicates, Stats, Reel, Journal) sit in a toolbar above your gallery.
+  - While connected, Watch together, Voice call, Session album and Games appear as a strip under the top bar, with Games as a drop-down.
+  - A new look: floating glass panels, a soft aurora background, rounder cards and bubbles, gradient accents, and restyled dialogs and tools.
+  - It works on phones: the rail turns into a bar along the bottom and the toolbar scrolls sideways.
+  - Every feature works the same in both layouts. Hub just moves the same controls around, and switching back puts everything exactly where it was.
+  - The welcome tour adapts to the layout you're using.
+
+### Fixed
+- Picking a friend now un-highlights **My SD Card** in the sidebar (it stayed highlighted before).
+
 ## [1.13.4] - 2026-11-14
 
 ### Changed

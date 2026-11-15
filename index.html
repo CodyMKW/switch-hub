@@ -604,9 +604,277 @@
         .btn-composer:disabled { opacity: 0.4; cursor: not-allowed; }
         .composer-input:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-composer svg { width: 1.2rem; height: 1.2rem; }
+
+        /* ============================================================
+           LAYOUT PICKER (Settings) + the welcome-screen layout button
+           ============================================================ */
+        .layout-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+        .layout-opt { text-align: left; background: var(--switch-dark); border: 2px solid rgba(77,77,77,0.35); border-radius: 0.7rem; padding: 0.55rem; color: var(--switch-text); cursor: pointer; display: flex; flex-direction: column; gap: 0.3rem; transition: border-color 0.15s, transform 0.15s; font-family: inherit; }
+        .layout-opt:hover { transform: translateY(-1px); border-color: rgba(255,255,255,0.3); }
+        .layout-opt.selected { border-color: var(--switch-cyan); }
+        .layout-opt b { font-size: 0.82rem; }
+        .layout-opt small { font-size: 0.68rem; color: var(--switch-muted); line-height: 1.3; }
+        .lo-prev { position: relative; display: block; height: 3.6rem; border-radius: 0.45rem; background: #1b1b1b; overflow: hidden; }
+        .lo-prev i { position: absolute; display: block; border-radius: 0.2rem; }
+        .lo-classic i:nth-child(1) { left: 0; top: 0; bottom: 0; width: 28%; background: #2d2d2d; border-radius: 0; }
+        .lo-classic i:nth-child(2) { left: 33%; top: 12%; width: 18%; height: 30%; background: #4d4d4d; }
+        .lo-classic i:nth-child(3) { left: 55%; top: 12%; width: 18%; height: 30%; background: #4d4d4d; }
+        .lo-classic i:nth-child(4) { left: 77%; top: 12%; width: 18%; height: 30%; background: #4d4d4d; }
+        .lo-classic i:nth-child(5) { left: 33%; top: 52%; width: 30%; height: 30%; background: #4d4d4d; }
+        .lo-dock { background: radial-gradient(circle at 10% 0, rgba(0,195,227,0.5), transparent 55%), radial-gradient(circle at 100% 100%, rgba(255,77,141,0.45), transparent 55%), #0b0d17; }
+        .lo-dock i:nth-child(1) { left: 4%; top: 8%; bottom: 8%; width: 12%; background: rgba(255,255,255,0.16); border-radius: 0.45rem; }
+        .lo-dock i:nth-child(2) { left: 21%; top: 8%; right: 4%; height: 14%; background: rgba(255,255,255,0.14); border-radius: 9999px; }
+        .lo-dock i:nth-child(3) { left: 21%; top: 30%; width: 24%; height: 28%; background: rgba(255,255,255,0.22); border-radius: 0.4rem; }
+        .lo-dock i:nth-child(4) { left: 48%; top: 30%; width: 24%; height: 28%; background: rgba(255,255,255,0.22); border-radius: 0.4rem; }
+        .lo-dock i:nth-child(5) { left: 75%; top: 30%; width: 21%; height: 28%; background: rgba(255,255,255,0.22); border-radius: 0.4rem; }
+        .lo-dock i:nth-child(6) { left: 21%; top: 66%; width: 40%; height: 22%; background: linear-gradient(90deg, #00c3e3, #6d7bff); border-radius: 9999px; }
+
+        /* ============================================================
+           DOCK LAYOUT (optional, chosen in Settings). Everything below only applies while <body> has
+           .layout-dock, so the classic layout is untouched. The same elements are used (they are moved,
+           not copied), so every feature keeps working.
+           ============================================================ */
+        body.layout-dock {
+            --switch-dark: #0b0d17; --switch-darker: #131728; --switch-light: #272d49; --switch-muted: #8f98b8; --switch-text: #eef1ff;
+            --switch-cyan: #2fd4f0; --switch-red: #ff4d7d; --switch-purple: #9b7bff;
+            --dk-glass: rgba(20,24,42,0.66); --dk-line: rgba(255,255,255,0.08); --dk-soft: rgba(255,255,255,0.05);
+            --dk-grad: linear-gradient(135deg, #00c3e3 0%, #6d7bff 55%, #ff4d8d 100%);
+            --dk-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
+            height: 100vh; height: 100dvh; padding: 0.75rem; gap: 0.75rem; background: #080a12; color: var(--switch-text);
+        }
+        body.layout-dock::before {
+            content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+            background:
+                radial-gradient(60rem 40rem at 6% -8%, rgba(0,195,227,0.22), transparent 62%),
+                radial-gradient(50rem 36rem at 104% 6%, rgba(255,77,141,0.17), transparent 62%),
+                radial-gradient(46rem 34rem at 52% 118%, rgba(109,123,255,0.2), transparent 62%), #080a12;
+        }
+        body.layout-dock ::-webkit-scrollbar { width: 6px; height: 6px; }
+        body.layout-dock ::-webkit-scrollbar-track { background: transparent; }
+        body.layout-dock ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.16); border-radius: 9999px; }
+        body.layout-dock ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+
+        /* ----- people rail (the old sidebar) ----- */
+        .layout-dock .sidebar {
+            width: 5.9rem; height: 100%; max-height: none; border-radius: 1.5rem; background: var(--dk-glass); border: 1px solid var(--dk-line);
+            -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: 0 24px 60px -24px rgba(0,0,0,0.75);
+            align-items: center; padding: 0.95rem 0 0.75rem; overflow-x: hidden; overflow-y: auto; scrollbar-width: none;
+        }
+        .layout-dock .sidebar::-webkit-scrollbar { display: none; }
+        .layout-dock .sidebar-header { padding: 0; border: 0; margin: 0 0 0.7rem; }
+        .layout-dock .sidebar-title { display: none; }
+        .layout-dock .sidebar-logo { width: 2.7rem; height: 2.7rem; filter: drop-shadow(0 0 14px rgba(0,195,227,0.55)); }
+        .layout-dock .my-profile-card { margin: 0 0 0.55rem; padding: 0; background: none; border: 0; justify-content: center; width: auto; }
+        .layout-dock .my-profile-card:hover { background: none; }
+        .layout-dock .my-profile-info, .layout-dock .my-profile-card > svg { display: none; }
+        .layout-dock .my-profile-card .avatar-circle { width: 3.1rem; height: 3.1rem; font-size: 1.5rem; background: var(--switch-light); box-shadow: 0 0 0 2px #0e1120, 0 0 0 4px rgba(47,212,240,0.85); transition: transform 0.15s; }
+        .layout-dock .my-profile-card:hover .avatar-circle { transform: scale(1.06); }
+        .layout-dock .presence-dot { border-color: #131728; }
+        .layout-dock #btn-select-folder {
+            width: 3.7rem !important; margin: 0.15rem 0 0.35rem !important; padding: 0.55rem 0; flex-direction: column; gap: 0.2rem; font-size: 0; line-height: 1;
+            border-radius: 1rem; background: var(--dk-soft); border: 1px solid var(--dk-line); box-shadow: none;
+        }
+        .layout-dock #btn-select-folder::after { content: 'Load'; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.02em; }
+        .layout-dock #btn-select-folder svg { width: 1.35rem; height: 1.35rem; margin: 0; }
+        .layout-dock #btn-select-folder:hover:not(:disabled) { background: var(--dk-grad); color: #fff; }
+        .layout-dock #btn-select-folder:hover:not(:disabled) svg { color: #fff; }
+        .layout-dock .sidebar > div[style*="padding: 0 0.6rem"] { width: 100%; padding: 0 0.4rem !important; }
+        .layout-dock .section-title { padding: 0; margin: 0.8rem 0 0.35rem; flex-direction: column; gap: 0.3rem; align-items: center; width: 100%; position: relative; }
+        .layout-dock .section-title::before { content: ''; width: 2rem; height: 1px; background: var(--dk-line); }
+        .layout-dock .section-title span { font-size: 0.55rem; letter-spacing: 0.08em; color: var(--switch-muted); text-align: center; line-height: 1.15; max-width: 4.6rem; }
+        .layout-dock .section-title button { font-size: 0; width: 1.9rem; height: 1.9rem; border-radius: 9999px; background: var(--dk-soft); border: 1px dashed rgba(255,255,255,0.22); color: var(--switch-text); display: flex; align-items: center; justify-content: center; transition: 0.15s; }
+        .layout-dock .section-title button::before { font-size: 0.85rem; line-height: 1; }
+        .layout-dock #btn-add-presence::before { content: '🎮'; }
+        .layout-dock #btn-copy-invite-link::before { content: '🔗'; }
+        .layout-dock #btn-new-group::before { content: '＋'; font-weight: 700; }
+        .layout-dock .section-title button:hover { text-decoration: none; background: var(--dk-grad); border-style: solid; border-color: transparent; transform: scale(1.1); }
+        .layout-dock .presence-list, .layout-dock .friend-list { padding: 0 0.4rem; width: 100%; gap: 0.15rem; }
+        .layout-dock .friend-row, .layout-dock .presence-row { flex-direction: column; gap: 0.3rem; padding: 0.5rem 0.2rem 0.4rem; border-radius: 1rem; text-align: center; width: 100%; }
+        .layout-dock .friend-row.active { background: rgba(255,255,255,0.08); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1); }
+        .layout-dock .friend-row.active::before { content: ''; position: absolute; left: -0.4rem; top: 26%; bottom: 26%; width: 4px; border-radius: 0 4px 4px 0; background: var(--dk-grad); }
+        .layout-dock .friend-row .avatar-circle, .layout-dock .presence-row .avatar-circle { width: 3rem !important; height: 3rem !important; font-size: 1.35rem !important; }
+        .layout-dock .friend-row .game-icon, .layout-dock .presence-row .game-icon { width: 3rem; height: 3rem; border-radius: 0.95rem; }
+        .layout-dock .row-info { flex: none; width: 100%; }
+        .layout-dock .row-name { font-size: 0.64rem; font-weight: 600; color: #dfe4ff; }
+        .layout-dock .row-sub, .layout-dock .row-remove, .layout-dock .sidebar-empty-note { display: none; }
+        .layout-dock .unread-pill { position: absolute; top: 0.1rem; right: 0.5rem; border: 2px solid #131728; box-sizing: content-box; }
+        .layout-dock .sidebar > .nav-section-title, .layout-dock .sidebar > #sort-title, .layout-dock .sidebar > #discover-title,
+        .layout-dock .sidebar > #nav-filters, .layout-dock .sidebar > #discover-buttons, .layout-dock .sidebar > #local-tools,
+        .layout-dock .sidebar > #peer-activity-box, .layout-dock .sidebar > #stats-container { display: none !important; }
+        .layout-dock .settings-btn-container { margin-top: auto; padding: 0.6rem 0 0; border: 0; display: flex; flex-direction: column; gap: 0.4rem; align-items: center; width: 100%; }
+        .layout-dock .btn-sidebar-action { width: 3.1rem; height: 3.1rem; padding: 0; font-size: 0; justify-content: center; border-radius: 1rem; background: var(--dk-soft); border: 1px solid var(--dk-line); }
+        .layout-dock .btn-sidebar-action svg { width: 1.3rem; height: 1.3rem; }
+        .layout-dock .btn-sidebar-action:hover { background: rgba(255,255,255,0.12); }
+        .layout-dock #btn-dk-classic { font-size: 0.95rem; color: var(--switch-muted); }
+
+        /* ----- main panel ----- */
+        .layout-dock .main-area { border-radius: 1.5rem; background: var(--dk-glass); border: 1px solid var(--dk-line); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: 0 24px 60px -24px rgba(0,0,0,0.75); overflow: hidden; }
+        .layout-dock .top-bar { height: 4.4rem; padding: 0 1.5rem; background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; border-bottom: 1px solid var(--dk-line); }
+        .layout-dock .top-bar-title { font-family: var(--dk-display); font-size: 1.2rem; font-weight: 700; letter-spacing: -0.01em; }
+        .layout-dock .top-bar-status { font-size: 0.74rem; }
+        .layout-dock .view-indicator { width: 0.6rem; height: 0.6rem; background: var(--dk-grad); box-shadow: 0 0 12px rgba(0,195,227,0.8); }
+        .layout-dock .view-tabs { background: var(--dk-soft); border: 1px solid var(--dk-line); border-radius: 9999px; padding: 0.25rem; }
+        .layout-dock .view-tab { border-radius: 9999px; padding: 0.45rem 1.1rem; }
+        .layout-dock .view-tab.active { background: var(--dk-grad); color: #fff; box-shadow: 0 8px 22px -8px rgba(0,195,227,0.8); }
+        .layout-dock .search-input { width: 15rem; border-radius: 9999px; padding: 0.55rem 1rem 0.55rem 2.2rem; background: var(--dk-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238f98b8' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") no-repeat 0.8rem center / 1rem; border-color: var(--dk-line); }
+        .layout-dock .search-input:focus { border-color: var(--switch-cyan); box-shadow: 0 0 0 3px rgba(47,212,240,0.18); }
+        .layout-dock .type-filter-btn { border-radius: 9999px; background: var(--dk-soft); border-color: var(--dk-line); padding: 0.45rem 0.7rem; }
+        .layout-dock .type-filter-btn.active { background: rgba(47,212,240,0.16); border-color: var(--switch-cyan); }
+        .layout-dock #clock { padding: 0.4rem 0.9rem; border-radius: 9999px; background: var(--dk-soft); border: 1px solid var(--dk-line); font-size: 0.8rem; }
+        .layout-dock .btn-icon-sm { background: var(--dk-soft); border: 1px solid var(--dk-line); }
+
+        /* toolbar (sort + tools) and the session strip, both made out of the old sidebar parts */
+        .dk-toolbar { display: none; align-items: center; gap: 0.6rem 1rem; flex-wrap: wrap; padding: 0.75rem 1.5rem 0.2rem; flex-shrink: 0; }
+        .layout-dock .dk-toolbar { display: flex; }
+        .layout-dock .dk-toolbar:not(:has(> #dk-sort > #nav-filters:not(.hidden))) { display: none; }
+        .dk-sort, .dk-tools { display: contents; }
+        .layout-dock #nav-filters { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 0.15rem; padding: 0.22rem; border-radius: 9999px; background: var(--dk-soft); border: 1px solid var(--dk-line); }
+        .layout-dock #nav-filters.hidden { display: none; }
+        .layout-dock #nav-filters .nav-item { width: auto; padding: 0.4rem 0.9rem; border-radius: 9999px; border: 0; font-size: 0.78rem; font-weight: 600; text-align: center; grid-column: auto; overflow: visible; }
+        .layout-dock #nav-filters .nav-item[data-sort="all"] { grid-column: auto; }
+        .layout-dock #nav-filters .nav-item:hover { color: #fff; background: rgba(255,255,255,0.06); }
+        .layout-dock #nav-filters .nav-item.active { background: var(--dk-grad); color: #fff; box-shadow: 0 6px 18px -8px rgba(0,195,227,0.9); }
+        .layout-dock .dk-tools > .tool-grid, .layout-dock .dk-tools > #local-tools .tool-grid, .layout-dock .dk-tools > #local-tools .collapse-body { display: flex !important; flex-wrap: wrap; gap: 0.35rem; padding: 0; }
+        .layout-dock .dk-tools > #local-tools:not([style*="none"]) { display: flex !important; flex-wrap: wrap; gap: 0.35rem; align-items: center; }
+        .layout-dock .dk-tools .nav-section-title { display: none; }
+        .layout-dock .dk-tools .collapse-body.collapsed { display: flex !important; }
+        .layout-dock .dk-tools .tool-chip { padding: 0.42rem 0.85rem; border-radius: 9999px; background: var(--dk-soft); border-color: var(--dk-line); color: var(--switch-text); font-size: 0.76rem; white-space: nowrap; }
+        .layout-dock .dk-tools .tool-chip:hover { background: rgba(255,255,255,0.12); }
+        .layout-dock .dk-tools #albums-list { flex-direction: row !important; flex-wrap: wrap; padding: 0 !important; gap: 0.3rem !important; max-height: none; overflow: visible; }
+        .layout-dock .dk-tools .album-row { background: rgba(155,123,255,0.14); border: 1px solid rgba(155,123,255,0.35); border-radius: 9999px; padding: 0 0.45rem 0 0.2rem; }
+        .layout-dock .dk-tools .album-row .nav-item { width: auto; padding: 0.3rem 0.6rem; border: 0; border-radius: 9999px; font-size: 0.74rem; color: var(--switch-text); }
+        .layout-dock .dk-tools .album-row .nav-item.active { background: rgba(155,123,255,0.4); }
+
+        .dk-peer { display: none; position: relative; flex-shrink: 0; }
+        .layout-dock .dk-peer { display: block; }
+        .layout-dock .dk-peer:not(:has(> #peer-activity-box:not(.hidden))) { display: none; }
+        .layout-dock #peer-activity-box { margin: 0.6rem 1.5rem 0.2rem; padding: 0.55rem 0.7rem 0.55rem 1.1rem; border-radius: 1.1rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.9rem; background: linear-gradient(90deg, rgba(155,123,255,0.16), rgba(155,123,255,0.05)); border: 1px solid rgba(155,123,255,0.4) !important; }
+        .layout-dock #peer-activity-box.hidden { display: none; }
+        .layout-dock #peer-activity-box > p:first-child { margin: 0 !important; font-size: 0.62rem !important; }
+        .layout-dock #peer-activity-text { flex: 1 1 14rem; min-width: 0; margin: 0 !important; }
+        .layout-dock #peer-browser-line { display: none !important; }
+        .layout-dock #peer-loading-bar-wrap { flex: 1 0 100%; margin: 0 !important; }
+        .layout-dock #peer-activity-box .peer-grid { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 0; }
+        .layout-dock #peer-activity-box .peer-chip { padding: 0.4rem 0.85rem; border-radius: 9999px; background: rgba(155,123,255,0.12); border-color: rgba(155,123,255,0.5); color: #cdbfff; font-size: 0.75rem; }
+        .layout-dock #peer-activity-box .peer-chip:hover:not(:disabled) { background: rgba(155,123,255,0.3); color: #fff; }
+        .layout-dock #peer-activity-box .peer-sub { position: absolute; right: 1.5rem; top: calc(100% - 0.1rem); z-index: 30; width: 15rem; grid-template-columns: 1fr; gap: 0.3rem; padding: 0.5rem; border-radius: 1rem; background: #181c33; border: 1px solid rgba(155,123,255,0.45); box-shadow: 0 18px 40px rgba(0,0,0,0.55); margin: 0; }
+        .layout-dock #peer-activity-box .peer-sub .peer-chip { border-radius: 0.7rem; text-align: left; }
+        .layout-dock #btn-jump-peer-viewing { margin: 0 !important; width: auto !important; border-radius: 9999px !important; padding: 0.4rem 0.85rem !important; }
+        .layout-dock #peer-activity-box > label { margin: 0 !important; }
+
+        /* ----- gallery ----- */
+        .layout-dock .gallery-container { padding: 0.5rem 1.75rem 6rem; }
+        .layout-dock .media-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.1rem; }
+        .layout-dock .media-item { border: 0; border-radius: 1.1rem; background: #0d1020; box-shadow: 0 12px 30px -14px rgba(0,0,0,0.8); transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s; }
+        .layout-dock .media-item:hover { transform: translateY(-4px) scale(1.015); border: 0; box-shadow: 0 0 0 2px rgba(47,212,240,0.9), 0 22px 44px -12px rgba(0,195,227,0.5); }
+        .layout-dock .media-item.selected { outline-offset: -3px; outline-color: var(--switch-cyan); }
+        .layout-dock .group-header { background: linear-gradient(rgba(16,19,36,0.94), rgba(16,19,36,0.8)); border-bottom: 0; margin-top: 1.6rem; margin-bottom: 0.9rem; padding: 0.8rem 0.9rem; border-radius: 1rem; border: 1px solid var(--dk-line); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+        .layout-dock .group-title { font-family: var(--dk-display); font-size: 1.3rem; font-weight: 700; letter-spacing: -0.01em; }
+        .layout-dock .group-count { background: var(--dk-soft); border: 1px solid var(--dk-line); }
+        .layout-dock #media-grid { gap: 0.4rem !important; }
+        .layout-dock .modal-overlay { background: rgba(5,6,12,0.93); }
+        .layout-dock .lightbox-media-wrapper img, .layout-dock .lightbox-media-wrapper video { border-radius: 1rem; }
+        .layout-dock .media-badge, .layout-dock .star-badge, .layout-dock .favorite-badge, .layout-dock .react-badge { border-radius: 9999px; }
+        .layout-dock #loading-state { background: rgba(255,255,255,0.04) !important; border-radius: 1.2rem !important; border: 1px solid var(--dk-line); }
+
+        /* ----- chat ----- */
+        .layout-dock .messages-area { padding: 1.4rem 2rem; }
+        .layout-dock .msg-row { max-width: min(36rem, 72%); }
+        .layout-dock .msg-bubble { border-radius: 1.35rem; padding: 0.65rem 1.05rem; font-size: 0.9rem; }
+        .layout-dock .msg-row.mine .msg-bubble { background: linear-gradient(135deg, #14b8d8, #5d6cff); color: #fff; border-bottom-right-radius: 0.4rem; box-shadow: 0 10px 24px -12px rgba(77,108,255,0.8); }
+        .layout-dock .msg-row.theirs .msg-bubble { background: rgba(255,255,255,0.075); border: 1px solid var(--dk-line); border-bottom-left-radius: 0.4rem; }
+        .layout-dock .msg-row.mine .reply-quote { border-left-color: rgba(255,255,255,0.7); background: rgba(255,255,255,0.15); }
+        .layout-dock .typing-indicator { background: rgba(255,255,255,0.075); }
+        .layout-dock .day-divider::before, .layout-dock .day-divider::after { background: var(--dk-line); }
+        .layout-dock .pinned-bar { border-radius: 0; }
+        .layout-dock .game-shots { background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--dk-line); }
+        .layout-dock .composer-area { border-top: 0; padding: 0.5rem 1.5rem 1.25rem; }
+        .layout-dock .composer-row { align-items: center; background: rgba(255,255,255,0.06); border: 1px solid var(--dk-line); border-radius: 9999px; padding: 0.35rem 0.4rem; }
+        .layout-dock .composer-row:focus-within { border-color: var(--switch-cyan); box-shadow: 0 0 0 3px rgba(47,212,240,0.15); }
+        .layout-dock .composer-input { background: transparent; border: 0; padding: 0.55rem 0.4rem; }
+        .layout-dock .btn-composer { width: 2.4rem; height: 2.4rem; }
+        .layout-dock .btn-composer.send { background: var(--dk-grad); color: #fff; }
+        .layout-dock .btn-composer.send:hover { filter: brightness(1.12); background: var(--dk-grad); }
+        .layout-dock .chat-search-bar { background: rgba(255,255,255,0.03); border-bottom-color: var(--dk-line); }
+
+        /* ----- dialogs, tools, pop-ups ----- */
+        .layout-dock .custom-modal { background: rgba(5,6,12,0.66); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+        .layout-dock .modal-card, .layout-dock .tool-card { background: rgba(21,25,44,0.96); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.4rem; box-shadow: 0 40px 90px -20px rgba(0,0,0,0.75); }
+        .layout-dock .modal-actions { background: rgba(21,25,44,0.96); }
+        .layout-dock .modal-title, .layout-dock .tool-title { font-family: var(--dk-display); letter-spacing: -0.01em; }
+        .layout-dock .tool-modal { background: rgba(5,6,12,0.74); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+        .layout-dock .input-field, .layout-dock .guess-choices button, .layout-dock .reel-row input[type=number] { border-radius: 0.8rem; border-color: var(--dk-line); }
+        .layout-dock .btn-save, .layout-dock .btn-cancel { border-radius: 9999px; padding-left: 1.3rem; padding-right: 1.3rem; }
+        .layout-dock .btn-save { background: var(--dk-grad); color: #fff; }
+        .layout-dock .btn-save:hover { background: var(--dk-grad); filter: brightness(1.12); }
+        .layout-dock .btn-save.red { background: var(--switch-red); }
+        .layout-dock .tool-bar button, .layout-dock .tool-btn, .layout-dock .stats-tabs button { border-color: var(--dk-line); }
+        .layout-dock .tool-bar button.active, .layout-dock .tool-btn.active, .layout-dock .stats-tabs button.active { background: var(--dk-grad); color: #fff; border-color: transparent; }
+        .layout-dock .stat-card, .layout-dock .reel-row, .layout-dock .journal-row { border: 1px solid var(--dk-line); border-radius: 1rem; }
+        .layout-dock .stat-card .big { background: var(--dk-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .layout-dock .bar-row .bar-fill, .layout-dock .progress-line > div { background: var(--dk-grad); }
+        .layout-dock .toast, .layout-dock .np-banner, .layout-dock .prompt-card, .layout-dock .call-overlay, .layout-dock .select-bar, .layout-dock .tour-card { border-radius: 1.1rem; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+        .layout-dock .select-bar { background: rgba(21,25,44,0.92); border-color: var(--dk-line); border-radius: 9999px; padding: 0.5rem 0.8rem; }
+        .layout-dock .select-bar button { border-radius: 9999px; border-color: var(--dk-line); }
+        .layout-dock .toast, .layout-dock .np-banner { background: rgba(21,25,44,0.94); }
+        .layout-dock .tour-card { background: #1a1f3a; }
+        .layout-dock .tour-next { background: var(--dk-grad); color: #fff; border-radius: 9999px; padding: 0.45rem 1.1rem; }
+        .layout-dock .wt-banner { background: linear-gradient(90deg, #7c5cff, #b04dff); }
+        .layout-dock .layout-opt { background: rgba(255,255,255,0.04); border-color: var(--dk-line); }
+        .layout-dock .layout-opt.selected { border-color: var(--switch-cyan); }
+        .layout-dock .wl-hello { font-family: var(--dk-display); }
+
+        /* ----- phones and narrow windows: the rail becomes a bar along the bottom ----- */
+        @media (max-width: 860px) {
+            body.layout-dock { flex-direction: column-reverse; padding: 0.5rem; gap: 0.5rem; }
+            .layout-dock .sidebar { width: 100%; height: auto; flex-direction: row; align-items: center; justify-content: flex-start; gap: 0.15rem; padding: 0.45rem 0.6rem; overflow-x: auto; overflow-y: hidden; border-radius: 1.3rem; flex-shrink: 0; }
+            .layout-dock .sidebar > * { flex-shrink: 0; order: 10; }
+            .layout-dock .sidebar > .sidebar-header { order: 1; }
+            .layout-dock .sidebar > .my-profile-card { order: 2; }
+            .layout-dock .sidebar > .settings-btn-container { order: 3; }
+            .layout-dock .sidebar > #btn-select-folder { order: 4; }
+            .layout-dock .sidebar-header, .layout-dock .my-profile-card { margin: 0 0.3rem 0 0; }
+            .layout-dock .sidebar-logo { width: 2.2rem; height: 2.2rem; }
+            .layout-dock .my-profile-card .avatar-circle { width: 2.6rem; height: 2.6rem; }
+            .layout-dock #btn-select-folder { margin: 0 0.2rem !important; width: 3.2rem !important; }
+            .layout-dock .sidebar > div[style*="padding: 0 0.6rem"] { width: auto; padding: 0 !important; }
+            .layout-dock .section-title { width: auto; margin: 0 0.2rem; flex-direction: row; }
+            .layout-dock .section-title::before { width: 1px; height: 1.6rem; }
+            .layout-dock .section-title span { display: none; }
+            .layout-dock .presence-list, .layout-dock .friend-list { flex-direction: row; width: auto; padding: 0; gap: 0.1rem; }
+            .layout-dock .friend-row, .layout-dock .presence-row { width: 4.4rem; flex-shrink: 0; }
+            .layout-dock .friend-row.active::before { left: 30%; right: 30%; top: auto; bottom: -0.1rem; width: auto; height: 3px; border-radius: 4px 4px 0 0; }
+            .layout-dock .settings-btn-container { margin: 0 0.3rem 0 0; padding: 0; flex-direction: row; width: auto; }
+            .layout-dock .btn-sidebar-action { width: 2.6rem; height: 2.6rem; }
+            .layout-dock .top-bar { height: auto; flex-wrap: wrap; padding: 0.6rem 1rem; row-gap: 0.5rem; }
+            .layout-dock .top-bar-left { flex: 1 1 auto; }
+            .layout-dock #gallery-search-wrap, .layout-dock #chat-actions-wrap { flex: 1 0 100%; order: 5; }
+            .layout-dock #gallery-search-wrap .search-bar-wrap { width: 100%; }
+            .layout-dock .search-input { width: 100%; flex: 1; min-width: 0; }
+            .layout-dock #clock { display: none; }
+            .layout-dock .dk-toolbar { flex-wrap: nowrap; overflow-x: auto; padding: 0.6rem 1rem 0.2rem; scrollbar-width: none; }
+            .layout-dock .dk-toolbar::-webkit-scrollbar { display: none; }
+            .layout-dock #nav-filters, .layout-dock .dk-tools > #local-tools:not([style*="none"]) { flex-wrap: nowrap; flex-shrink: 0; }
+            .layout-dock .dk-tools > .tool-grid, .layout-dock .dk-tools > #local-tools .tool-grid, .layout-dock .dk-tools > #local-tools .collapse-body { flex-wrap: nowrap; }
+            .layout-dock #peer-activity-box { margin: 0.5rem 0.8rem 0.1rem; padding: 0.5rem 0.7rem; }
+            .layout-dock #peer-activity-box > p:first-child, .layout-dock #peer-activity-box > label { display: none !important; }
+            .layout-dock #peer-activity-text { flex: 1 0 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .layout-dock .group-title { font-size: 1.05rem; }
+            .layout-dock .group-header { padding: 0.6rem 0.75rem; margin-top: 1rem; }
+            .layout-dock .composer-input { font-size: 0.85rem; }
+            .layout-dock .gallery-container { padding: 0.4rem 0.9rem 6rem; }
+            .layout-dock .media-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.7rem; }
+            .layout-dock .messages-area { padding: 1rem; }
+            .layout-dock .msg-row { max-width: 85%; }
+            .layout-dock .composer-area { padding: 0.4rem 0.8rem 0.8rem; }
+            .layout-dock .select-bar { bottom: 6.5rem; }
+            .layout-dock .modal-card { width: min(440px, 94vw); }
+        }
+        @media (prefers-reduced-motion: reduce) { .layout-dock .media-item, .layout-dock .layout-opt { transition: none; } }
     </style>
 </head>
 <body>
+    <script>try { if (localStorage.getItem('switch_hub_layout') === 'dock') document.body.classList.add('layout-dock'); } catch (e) {}</script>
 
     <aside class="sidebar">
         <div class="sidebar-header">
@@ -774,6 +1042,7 @@
                     <button id="btn-welcome-load" class="btn-save" style="padding: 0.6rem 1.25rem;">📁 Load SD Card</button>
                     <button id="btn-welcome-invite" class="btn-save" style="padding: 0.6rem 1.25rem; background: var(--switch-purple); color: white;">📋 Copy My Invite Link</button>
                     <button id="btn-welcome-tour" class="btn-save wl-tour" style="padding: 0.6rem 1.25rem;">🧭 Take the tour</button>
+                    <button id="btn-welcome-layout" class="btn-save wl-tour" style="padding: 0.6rem 1.25rem;">✨ Try the new Dock layout</button>
                 </div>
                 <div class="wl-cards" id="wl-cards" style="display:none;"></div>
                 <p class="wl-tip" id="wl-tip"></p>
@@ -949,6 +1218,15 @@
     <div id="settings-modal" class="custom-modal hidden">
         <div class="modal-card">
             <h3 class="modal-title">Settings</h3>
+
+            <div class="input-group" >
+                <label class="input-label cyan">Layout</label>
+                <div class="layout-picker" id="layout-picker">
+                    <button type="button" class="layout-opt" data-layout="classic"><span class="lo-prev lo-classic"><i></i><i></i><i></i><i></i><i></i></span><b>Classic</b><small>Sidebar on the left. The original look.</small></button>
+                    <button type="button" class="layout-opt" data-layout="dock"><span class="lo-prev lo-dock"><i></i><i></i><i></i><i></i><i></i><i></i></span><b>Dock <span style="color:var(--switch-cyan);font-size:0.62rem;">NEW</span></b><small>Friends rail, toolbar on top, a floating glass look. Works on phones too.</small></button>
+                </div>
+            </div>
+
 
             <div class="input-group">
                 <label class="input-label cyan">Display Name</label>
@@ -1567,6 +1845,7 @@
             currentSource = 'remote';
             switchView(activeView === 'chat' ? 'chat' : 'gallery');
             renderFriendList();
+            renderMySdCardRow();
             updateComposerAvailability();
 
             if (connectedFriendId !== friendId) connectToFriend(friend);
@@ -6568,7 +6847,7 @@
             if (i >= TOUR_STEPS.length) { endTour(); return; }
             tourState.i = i; const s = TOUR_STEPS[i], card = tourState.card;
             card.innerHTML = '';
-            card.appendChild(el('div', 'tour-title', s.title)); card.appendChild(el('div', 'tour-text', s.text));
+            card.appendChild(el('div', 'tour-title', s.title)); card.appendChild(el('div', 'tour-text', layoutName === 'dock' ? s.text.replace('appears in the sidebar', 'appears under the top bar') : s.text));
             const dots = el('div', 'tour-dots'); TOUR_STEPS.forEach((_, k) => dots.appendChild(el('i', k === i ? 'on' : ''))); card.appendChild(dots);
             const bar = el('div', 'tour-bar');
             const skip = el('button', 'tour-skip', i === TOUR_STEPS.length - 1 ? '' : 'Skip tour'); skip.type = 'button'; skip.addEventListener('click', endTour); if (i < TOUR_STEPS.length - 1) bar.appendChild(skip);
@@ -8410,6 +8689,89 @@
         try { renderWelcome(); } catch (e) { console.warn('welcome', e); }
         // First time on this device: start the tour. Not for people who already had Hub set up, and not while an invite link is connecting.
         if (!HAD_PROFILE && !tourSeen() && !getPeerIdFromUrl()) setTimeout(() => { if (!document.getElementById('settings-modal') || document.getElementById('settings-modal').classList.contains('hidden')) startTour(); }, 900);
+
+        // ============================================================
+        // LAYOUTS: Classic (default) and Dock (optional)
+        // Dock re-uses the very same elements (they are moved, not copied), so every feature, handler and
+        // test keeps working. Switching back puts everything exactly where it was. The choice is remembered
+        // in this browser.
+        // ============================================================
+        const LAYOUT_KEY = 'switch_hub_layout';
+        let layoutName = 'classic';
+        const dockState = { built: false, moved: [], obs: null, titled: [], font: false };
+        function layoutStored() { try { return localStorage.getItem(LAYOUT_KEY) === 'dock' ? 'dock' : 'classic'; } catch (e) { return 'classic'; } }
+        function dockMove(node, parent) {
+            if (!node || !parent) return;
+            const ph = document.createComment('dock-origin'); node.parentNode.insertBefore(ph, node); dockState.moved.push({ node, ph }); parent.appendChild(node);
+        }
+        function dockSetTitle(node, text) { if (!node || node.hasAttribute('title')) return; node.setAttribute('title', text); dockState.titled.push(node); }
+        function dockLabelRows() {
+            document.querySelectorAll('#friend-list .friend-row, #group-list .friend-row, #presence-list .presence-row').forEach(r => {
+                const n = r.querySelector('.row-name'), s = r.querySelector('.row-sub');
+                const t = (n ? n.textContent : '') + (s && s.textContent ? ' · ' + s.textContent : '');
+                if (r.getAttribute('title') !== t) { r.setAttribute('title', t); if (!dockState.titled.includes(r)) dockState.titled.push(r); }
+            });
+        }
+        function dockBuild() {
+            if (dockState.built) return;
+            if (!dockState.font) {
+                dockState.font = true;
+                try { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap'; document.head.appendChild(l); } catch (e) {}
+            }
+            const main = document.querySelector('.main-area'), top = document.getElementById('top-bar');
+            const bar = document.createElement('div'); bar.className = 'dk-toolbar'; bar.id = 'dk-toolbar';
+            const sort = document.createElement('div'); sort.className = 'dk-sort'; sort.id = 'dk-sort';
+            const tools = document.createElement('div'); tools.className = 'dk-tools'; tools.id = 'dk-tools';
+            bar.appendChild(sort); bar.appendChild(tools);
+            const peer = document.createElement('div'); peer.className = 'dk-peer'; peer.id = 'dk-peer';
+            top.insertAdjacentElement('afterend', bar); bar.insertAdjacentElement('afterend', peer);
+            dockState.created = [bar, peer];
+            dockMove(document.getElementById('nav-filters'), sort);
+            dockMove(document.getElementById('discover-buttons'), tools);
+            dockMove(document.getElementById('local-tools'), tools);
+            dockMove(document.getElementById('peer-activity-box'), peer);
+            // tooltips for the icon-only controls in the rail
+            dockSetTitle(document.getElementById('my-profile-card'), 'Your profile and settings');
+            dockSetTitle(document.getElementById('btn-select-folder'), 'Load your SD card folder');
+            dockSetTitle(document.getElementById('btn-open-settings'), 'Settings');
+            dockSetTitle(document.getElementById('btn-add-presence'), 'Add someone to watch on Switch presence');
+            dockSetTitle(document.getElementById('btn-copy-invite-link'), 'Copy my invite link');
+            dockSetTitle(document.getElementById('btn-new-group'), 'New group chat');
+            const back = document.createElement('button'); back.id = 'btn-dk-classic'; back.className = 'btn-sidebar-action'; back.type = 'button'; back.title = 'Switch back to the classic layout'; back.textContent = '↩';
+            back.addEventListener('click', () => applyLayout('classic', true));
+            document.querySelector('.settings-btn-container').insertBefore(back, document.getElementById('btn-open-settings'));
+            dockState.created.push(back);
+            dockLabelRows();
+            dockState.obs = new MutationObserver(() => dockLabelRows());
+            ['friend-list', 'group-list', 'presence-list'].forEach(id => { const e = document.getElementById(id); if (e) dockState.obs.observe(e, { childList: true, subtree: true, characterData: true }); });
+            dockState.built = true;
+        }
+        function dockTeardown() {
+            if (!dockState.built) return;
+            if (dockState.obs) { dockState.obs.disconnect(); dockState.obs = null; }
+            dockState.moved.reverse().forEach(({ node, ph }) => { if (ph.parentNode) { ph.parentNode.insertBefore(node, ph); ph.remove(); } });
+            dockState.moved = [];
+            (dockState.created || []).forEach(n => n.remove()); dockState.created = [];
+            dockState.titled.forEach(n => n.removeAttribute('title')); dockState.titled = [];
+            dockState.built = false;
+        }
+        function layoutRefreshUi() {
+            document.querySelectorAll('#layout-picker .layout-opt').forEach(b => b.classList.toggle('selected', b.dataset.layout === layoutName));
+            const wb = document.getElementById('btn-welcome-layout'); if (wb) wb.textContent = layoutName === 'dock' ? '↩ Back to the classic layout' : '✨ Try the new Dock layout';
+        }
+        function applyLayout(name, persist) {
+            name = name === 'dock' ? 'dock' : 'classic';
+            if (name === 'dock') dockBuild(); else dockTeardown();
+            document.body.classList.toggle('layout-dock', name === 'dock');
+            const changed = layoutName !== name; layoutName = name;
+            if (persist) { try { localStorage.setItem(LAYOUT_KEY, name); } catch (e) {} }
+            layoutRefreshUi();
+            try { window.dispatchEvent(new Event('resize')); } catch (e) {}
+            if (changed) { try { dhSchedule(); } catch (e) {} }
+        }
+        document.querySelectorAll('#layout-picker .layout-opt').forEach(b => b.addEventListener('click', () => applyLayout(b.dataset.layout, true)));
+        document.getElementById('btn-welcome-layout').addEventListener('click', () => applyLayout(layoutName === 'dock' ? 'classic' : 'dock', true));
+        applyLayout(layoutStored(), false);
 
     </script>
 
