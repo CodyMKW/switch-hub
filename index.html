@@ -660,7 +660,11 @@
             -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: 0 24px 60px -24px rgba(0,0,0,0.75);
             align-items: center; padding: 0.95rem 0 0.75rem; overflow: hidden;
         }
-        .layout-dock .dk-rail-scroll { flex: 1 1 auto; min-height: 0; width: 100%; display: flex; flex-direction: column; align-items: center; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.4) rgba(255,255,255,0.06); padding-bottom: 0.4rem; }
+        .layout-dock .dk-rail-scroll { flex: 1 1 auto; min-height: 0; width: 100%; display: flex; flex-direction: column; align-items: center; overflow-y: scroll; overflow-x: hidden; padding-bottom: 0.4rem; }
+        @supports not selector(::-webkit-scrollbar) { .layout-dock .dk-rail-scroll { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.4) rgba(255,255,255,0.06); } }
+        .layout-dock .dk-rail-arrow { display: none; flex-shrink: 0; width: 2.6rem; height: 1.55rem; margin: 0.15rem 0; border-radius: 9999px; background: var(--dk-soft); border: 1px solid var(--dk-line); color: var(--switch-text); font-size: 0.7rem; cursor: pointer; align-items: center; justify-content: center; transition: background 0.15s; }
+        .layout-dock .dk-rail-arrow.on { display: flex; }
+        .layout-dock .dk-rail-arrow:hover { background: var(--dk-grad); color: #fff; border-color: transparent; }
         .layout-dock .dk-rail-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
         .layout-dock .dk-rail-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,0.06); border-radius: 9999px; margin: 0.3rem 0; }
         .layout-dock .dk-rail-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.4); border-radius: 9999px; }
@@ -838,7 +842,8 @@
             .layout-dock #btn-select-folder { margin: 0 !important; width: 3rem !important; padding: 0.4rem 0; }
             .layout-dock .sidebar > div[style*="padding: 0 0.6rem"] { width: auto; padding: 0 !important; }
             .layout-dock .sidebar > div[style*="padding: 0 0.6rem"] .friend-row { width: 3.9rem; padding: 0.35rem 0.15rem 0.3rem; }
-            .layout-dock .dk-rail-scroll { flex: 1 1 0; min-width: 0; flex-direction: row; align-items: center; gap: 0.1rem; overflow-x: auto; overflow-y: hidden; padding: 0 0 0.25rem; scrollbar-width: thin; }
+            .layout-dock .dk-rail-arrow { display: none !important; }
+            .layout-dock .dk-rail-scroll { flex: 1 1 0; min-width: 0; flex-direction: row; align-items: center; gap: 0.1rem; overflow-x: auto; overflow-y: hidden; padding: 0 0 0.25rem; }
             .layout-dock .dk-rail-scroll > * { flex-shrink: 0; }
             .layout-dock .dk-rail-scroll > .section-title:has(#btn-add-presence), .layout-dock .dk-rail-scroll > #presence-list { display: none; }
             .layout-dock .section-title { width: auto; margin: 0 0.15rem; flex-direction: row; }
@@ -8745,17 +8750,26 @@
             const scroll = document.createElement('div'); scroll.className = 'dk-rail-scroll'; scroll.id = 'dk-rail-scroll';
             document.getElementById('my-sdcard-row').parentElement.insertAdjacentElement('afterend', scroll);
             dockState.created.push(scroll);
+            // up / down buttons, for anyone without a scroll wheel (shown only when the list is longer than the rail)
+            const mkArrow = (cls, label, txt, dir) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'dk-rail-arrow ' + cls; b.title = label; b.setAttribute('aria-label', label); b.textContent = txt; b.addEventListener('click', () => scroll.scrollBy({ top: dir * Math.max(120, scroll.clientHeight * 0.75), behavior: 'smooth' })); return b; };
+            const up = mkArrow('up', 'Scroll up', '▲', -1), down = mkArrow('down', 'Scroll down', '▼', 1);
+            scroll.insertAdjacentElement('beforebegin', up); scroll.insertAdjacentElement('afterend', down); dockState.created.push(up, down);
+            dockState.arrows = () => { const max = scroll.scrollHeight - scroll.clientHeight; up.classList.toggle('on', scroll.scrollTop > 2); down.classList.toggle('on', max > 2 && scroll.scrollTop < max - 2); };
+            scroll.addEventListener('scroll', dockState.arrows, { passive: true });
+            window.addEventListener('resize', dockState.arrows);
             const sec = (btnId) => document.getElementById(btnId).parentElement;
             [sec('btn-add-presence'), document.getElementById('presence-list'), sec('btn-copy-invite-link'), document.getElementById('friend-list'), document.getElementById('friends-empty-note'),
              sec('btn-new-group'), document.getElementById('group-list'), document.getElementById('groups-empty-note')].forEach(n => dockMove(n, scroll));
             dockLabelRows();
-            dockState.obs = new MutationObserver(() => dockLabelRows());
+            dockState.obs = new MutationObserver(() => { dockLabelRows(); if (dockState.arrows) dockState.arrows(); });
             ['friend-list', 'group-list', 'presence-list'].forEach(id => { const e = document.getElementById(id); if (e) dockState.obs.observe(e, { childList: true, subtree: true, characterData: true }); });
             dockState.built = true;
+            dockState.arrows(); setTimeout(() => { if (dockState.arrows) dockState.arrows(); }, 400);
         }
         function dockTeardown() {
             if (!dockState.built) return;
             if (dockState.obs) { dockState.obs.disconnect(); dockState.obs = null; }
+            if (dockState.arrows) { window.removeEventListener('resize', dockState.arrows); dockState.arrows = null; }
             dockState.moved.reverse().forEach(({ node, ph }) => { if (ph.parentNode) { ph.parentNode.insertBefore(node, ph); ph.remove(); } });
             dockState.moved = [];
             (dockState.created || []).forEach(n => n.remove()); dockState.created = [];
