@@ -2,6 +2,11 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.14.3] - 2026-11-15
+
+### Changed
+- **The "Jump to page" box now sits under "Page X of X"** instead of squeezed beside it, in both layouts. It's a bit wider too, so the placeholder reads "Jump to page".
+
 ## [1.14.2] - 2026-11-15
 
 ### Fixed
