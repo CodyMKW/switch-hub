@@ -1401,7 +1401,7 @@
         // Picture avatars live in the Avatars/ folder. A profile stores "img:<id>" (never a path),
         // so friends only ever load files from this list. To add one, drop a 256x256 PNG into
         // Avatars/ and add its id here.
-        const AVATAR_IMAGES = { mario: 'Mario', luigi: 'Luigi', peach: 'Peach', yoshi: 'Yoshi', bowser: 'Bowser', l: 'L', light: 'Light Yagami', monica: 'Monica', amelia: 'Amelia', jinshi: 'Jinshi', maomao: 'Maomao', myne: 'Myne', tanya: 'Tanya' };
+        const AVATAR_IMAGES = { mario: 'Mario', luigi: 'Luigi', peach: 'Peach', yoshi: 'Yoshi', bowser: 'Bowser', l: 'L', light: 'Light Yagami', monica: 'Monica', amelia: 'Amelia', jinshi: 'Jinshi', maomao: 'Maomao', myne: 'Myne', tanya: 'Tanya', ganon: 'Ganon', kirby: 'Kirby', link: 'Link' };
         function avatarImageId(av) { return (typeof av === 'string' && av.indexOf('img:') === 0 && Object.prototype.hasOwnProperty.call(AVATAR_IMAGES, av.slice(4))) ? av.slice(4) : null; }
         function avatarHtml(av, fallback) {
             const id = avatarImageId(av);
