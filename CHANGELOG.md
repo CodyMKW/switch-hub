@@ -2,6 +2,11 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.16.0] - 2026-11-16
+
+### Added
+- **Five more avatar pictures:** Amelia, Jinshi, Maomao, Myne and Tanya (13 in total), cropped to sit nicely in the circle and added to the offline cache.
+
 ## [1.15.1] - 2026-11-16
 
 ### Changed
