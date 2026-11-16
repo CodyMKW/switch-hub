@@ -5,7 +5,8 @@ Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 ## [1.17.0] - 2026-11-16
 
 ### Added
-- **Avatars next to chat messages.** Every message now has a small round avatar beside it: yours on the right, your friend's on the left. In group chats each person's picture shows next to their messages, and anyone you don't have a picture for gets a coloured initial. The time and ticks lines up with the bubble, and the hover buttons (react, reply, edit) now sit on the inner side of the bubble. Works in both layouts and on mobile, and changing your avatar updates the open chat.
+- **Sent photos and clips come back after a refresh.** Files you send in chat used to turn into "expired" after reloading the page. Now, when you load your SD card folder again, anything you sent that is still in your gallery reappears in the chat. It works for things sent with "Send to chat" or the multi-select send (matched by the capture itself) and for files you attached that are also on your SD card (matched by name and size). Only your own sent files are restored, and the "expired" note now tells you to load your SD card. Files sent before this update can only come back if they were attached from disk under their original name.
+- **Avatars next to chat messages.** Messages now get a small round avatar beside them: yours on the right, your friend's on the left. When someone sends several in a row, only the last one shows the avatar (the earlier ones keep the space so everything lines up). In group chats each person's picture shows next to their messages, and anyone you don't have a picture for gets a coloured initial. The time and ticks lines up with the bubble, and the hover buttons (react, reply, edit) now sit on the inner side of the bubble. Works in both layouts and on mobile, and changing your avatar updates the open chat.
 
 ## [1.16.1] - 2026-11-16
 
