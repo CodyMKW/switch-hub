@@ -114,6 +114,11 @@
         .row-name { font-size: 0.85rem; font-weight: 600; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .row-sub { font-size: 0.72rem; color: var(--switch-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .row-info { flex: 1; min-width: 0; }
+        /* Avatar with a small "now playing" game badge on its corner, so the picked avatar always stays visible. */
+        .av-wrap { position: relative; display: flex; flex-shrink: 0; }
+        .av-wrap.playing .presence-dot { display: none; }
+        .game-badge { position: absolute; right: -4px; bottom: -4px; width: 46%; height: 46%; min-width: 1.05rem; min-height: 1.05rem; border-radius: 0.3rem; object-fit: cover; background: var(--switch-light); border: 2px solid var(--switch-darker); box-sizing: border-box; z-index: 2; pointer-events: none; }
+        .game-badge.hidden { display: none; }
         .game-icon { width: 2.25rem; height: 2.25rem; border-radius: 0.35rem; object-fit: cover; flex-shrink: 0; background: var(--switch-light); }
         .unread-pill {
             background: var(--switch-red); color: white; font-size: 0.65rem; font-weight: 700; min-width: 1.15rem; height: 1.15rem;
@@ -680,6 +685,8 @@
         .layout-dock .my-profile-card .avatar-circle { width: 3.1rem; height: 3.1rem; font-size: 1.5rem; background: var(--switch-light); box-shadow: 0 0 0 2px #0e1120, 0 0 0 4px rgba(47,212,240,0.85); transition: transform 0.15s; }
         .layout-dock .my-profile-card:hover .avatar-circle { transform: scale(1.06); }
         .layout-dock .presence-dot { border-color: #131728; }
+        .layout-dock .game-badge { border-color: #131728; border-radius: 0.4rem; }
+        .layout-dock .my-profile-card .game-badge { right: -7px; bottom: -7px; }
         .layout-dock #btn-select-folder {
             width: 3.7rem !important; margin: 0.15rem 0 0.35rem !important; padding: 0.55rem 0; flex-direction: column; gap: 0.2rem; font-size: 0; line-height: 1;
             border-radius: 1rem; background: var(--dk-soft); border: 1px solid var(--dk-line); box-shadow: none;
@@ -895,7 +902,7 @@
         </div>
 
         <div class="my-profile-card" id="my-profile-card">
-            <div class="avatar-circle" id="my-avatar-circle">🐢<span class="presence-dot" id="my-presence-dot"></span></div>
+            <div class="av-wrap" id="my-av-wrap"><div class="avatar-circle" id="my-avatar-circle">🐢<span class="presence-dot" id="my-presence-dot"></span></div><img class="game-badge hidden" id="my-game-badge" alt=""></div>
             <div class="my-profile-info">
                 <div class="my-profile-name" id="my-profile-name">You</div>
                 <div class="my-profile-status" id="my-profile-status">Set your status...</div>
@@ -1679,9 +1686,13 @@
             document.getElementById('my-profile-name').textContent = myProfile.name;
             const avatarEl = document.getElementById('my-avatar-circle');
             const summary = presenceSummary(myProfile.nsaId);
-            avatarEl.innerHTML = summary.icon
-                ? `<img src="${summary.icon}"><span class="presence-dot ${summary.online ? 'online' : ''}" id="my-presence-dot"></span>`
-                : `${avatarHtml(myProfile.avatar, '🐢')}<span class="presence-dot ${summary.online ? 'online' : ''}" id="my-presence-dot"></span>`;
+            avatarEl.innerHTML = `${avatarHtml(myProfile.avatar, '🐢')}<span class="presence-dot ${summary.online ? 'online' : ''}" id="my-presence-dot"></span>`;
+            // Playing a game: keep your avatar and show the game as a small badge on its corner.
+            const badge = document.getElementById('my-game-badge');
+            if (badge) {
+                if (summary.icon) { badge.src = summary.icon; badge.title = summary.label || ''; badge.classList.remove('hidden'); } else { badge.removeAttribute('src'); badge.classList.add('hidden'); }
+                document.getElementById('my-av-wrap').classList.toggle('playing', !!summary.icon);
+            }
             document.getElementById('my-profile-status').textContent = myProfile.status ? myProfile.status : (myProfile.nsaId ? summary.label : 'Set your status...');
         }
 
@@ -1832,9 +1843,7 @@
                 const row = document.createElement('div');
                 row.className = 'friend-row' + (activeFriendId === friend.id ? ' active' : '');
                 row.innerHTML = `
-                    ${summary && summary.icon
-                        ? `<img class="game-icon" src="${summary.icon}">`
-                        : `<div class="avatar-circle" style="width:2.25rem;height:2.25rem;font-size:1rem;">${fallbackAvatar}<span class="presence-dot ${isConnected ? 'online' : ''}"></span></div>`}
+                    <div class="av-wrap${summary && summary.icon ? ' playing' : ''}"><div class="avatar-circle" style="width:2.25rem;height:2.25rem;font-size:1rem;">${fallbackAvatar}<span class="presence-dot ${isConnected ? 'online' : ''}"></span></div>${summary && summary.icon ? `<img class="game-badge" src="${summary.icon}" alt="">` : ''}</div>
                     <div class="row-info">
                         <div class="row-name">${friend.name}</div>
                         <div class="row-sub">${isConnected ? 'Connected' : (summary ? summary.label : 'Not connected')}</div>

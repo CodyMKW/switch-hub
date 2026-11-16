@@ -2,6 +2,11 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.16.1] - 2026-11-16
+
+### Changed
+- **Your avatar stays put while you play.** With an NSA ID added, the game's picture used to replace your avatar (and your friends'). Now your avatar stays and the game shows as a small badge on its corner, in both layouts and on mobile. Hover the badge to see which game it is. The green online dot hides while a game badge is showing, since playing already means online.
+
 ## [1.16.0] - 2026-11-16
 
 ### Added
