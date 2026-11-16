@@ -103,7 +103,7 @@ First time here? A short tour walks you through the sidebar. You can replay it a
 - **Install it** as an app from the sidebar if your browser offers it. The shell works offline, so you can browse a locally loaded SD card without a connection.
 - **Discord activity.** Optionally show what you're up to in Hub on your Discord profile: browsing, chatting, on a call, playing a game together, taking the tour. It never shows game names, captions or messages, and group chats are never named. It's off until you connect Discord in Settings.
 - **Two layouts.** Classic, or the optional Dock layout with a friends rail, a toolbar and a mobile-friendly bottom bar (Settings → Layout).
-- **Picture avatars.** Pick a character picture instead of an emoji (Settings → Avatar); friends see it too. The pictures live in the `Avatars/` folder, so adding more is just dropping in a 256×256 PNG and listing it in `AVATAR_IMAGES`.
+- **Picture avatars.** Pick a character picture as your avatar (Settings → Avatar); friends see it too. The pictures live in the `Avatars/` folder, so adding more is just dropping in a 256×256 PNG and listing it in `AVATAR_IMAGES`.
 - **Notifications and sound** for new messages, if you want them.
 
 ## Privacy and how it works

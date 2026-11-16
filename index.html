@@ -292,7 +292,6 @@
         .avatar-picker button.selected { border-color: var(--switch-cyan); }
         .avatar-picker button.img { width: 2.6rem; height: 2.6rem; padding: 0; overflow: hidden; background: transparent; }
         .avatar-picker button.img img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 9999px; }
-        .avatar-picker .avatar-sep { flex-basis: 100%; height: 0; }
         .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
         .toggle-row label { font-size: 0.85rem; color: var(--switch-text); }
         .toggle-row input[type="checkbox"] { width: 1.15rem; height: 1.15rem; accent-color: var(--switch-cyan); }
@@ -1384,7 +1383,6 @@
         // ============================================================
         // STATE
         // ============================================================
-        const AVATAR_OPTIONS = ['🐢','🦊','🐧','🦖','🐸','🍄','⭐','🎮','🕹️','👾','🐱','🐶'];
         // Picture avatars live in the Avatars/ folder. A profile stores "img:<id>" (never a path),
         // so friends only ever load files from this list. To add one, drop a 256x256 PNG into
         // Avatars/ and add its id here.
@@ -1503,6 +1501,8 @@
             try {
                 const p = localStorage.getItem('switch_hub_profile');
                 if (p) myProfile = { ...myProfile, ...JSON.parse(p) };
+                // Emoji avatars were retired: move anyone still on one to a random picture.
+                if (!avatarImageId(myProfile.avatar)) { const ids = Object.keys(AVATAR_IMAGES); myProfile.avatar = 'img:' + ids[Math.floor(Math.random() * ids.length)]; try { localStorage.setItem('switch_hub_profile', JSON.stringify(myProfile)); } catch (e) {} }
 
                 const pe = localStorage.getItem('switch_hub_presence_entries');
                 if (pe) presenceEntries = JSON.parse(pe);
@@ -8255,12 +8255,7 @@
                 btn.innerHTML = avatarHtml('img:' + id);
                 addOption('img:' + id, btn);
             });
-            const sep = document.createElement('div'); sep.className = 'avatar-sep'; picker.appendChild(sep);
-            AVATAR_OPTIONS.forEach(emoji => {
-                const btn = document.createElement('button');
-                btn.textContent = emoji;
-                addOption(emoji, btn);
-            });
+
         }
 
         function renderSettingsSpoilerList() {
