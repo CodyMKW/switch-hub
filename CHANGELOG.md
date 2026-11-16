@@ -2,6 +2,11 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.17.0] - 2026-11-16
+
+### Added
+- **Avatars next to chat messages.** Every message now has a small round avatar beside it: yours on the right, your friend's on the left. In group chats each person's picture shows next to their messages, and anyone you don't have a picture for gets a coloured initial. The time and ticks lines up with the bubble, and the hover buttons (react, reply, edit) now sit on the inner side of the bubble. Works in both layouts and on mobile, and changing your avatar updates the open chat.
+
 ## [1.16.1] - 2026-11-16
 
 ### Changed

@@ -574,6 +574,12 @@
         .gs-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .gs-thumb[data-owner="them"] { border-color: var(--game-accent, var(--switch-cyan)); }
         .gs-sep { flex: 0 0 auto; font-size: 0.68rem; color: var(--switch-muted); padding: 0 0.3rem; border-left: 1px solid rgba(77,77,77,0.6); }
+        /* Little avatar beside each message (picture, or an initial for group members we have no picture for). */
+        .chat-av { --chat-av: 1.7rem; width: var(--chat-av); height: var(--chat-av); border-radius: 9999px; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; background: var(--switch-light); font-size: 0.8rem; font-weight: 800; color: #0b1220; user-select: none; }
+        .chat-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .msg-bubble-wrap > .chat-av { order: 0; } .msg-bubble-wrap > .msg-bubble { order: 1; } .msg-bubble-wrap > .msg-actions { order: 2; }
+        .msg-row.has-av.theirs .msg-sender, .msg-row.has-av.theirs .msg-meta, .msg-row.has-av.theirs .msg-reactions { margin-left: 2.2rem; }
+        .msg-row.has-av.mine .msg-meta, .msg-row.has-av.mine .msg-reactions { margin-right: 2.2rem; }
         .msg-sender { font-size: 0.68rem; font-weight: 700; margin: 0 0 0.15rem 0.3rem; }
         .msg-meta { display: flex; align-items: center; gap: 0.35rem; font-size: 0.65rem; color: var(--switch-muted); margin-top: 0.2rem; padding: 0 0.2rem; }
         .msg-meta .edited-tag { font-style: italic; }
@@ -2294,6 +2300,7 @@
                 if (data.profile) {
                     if (data.profile.name) friend.name = data.profile.name;
                     friend.avatar = data.profile.avatar || friend.avatar;
+                    if (activeFriendId === friend.id) renderMessagesSoon();
                     friend.status = data.profile.status || '';
                     const theirBrowser = cleanBrowserName(data.profile.browser); if (theirBrowser) peerBrowsers.set(friend.id, theirBrowser); else peerBrowsers.delete(friend.id);
                     if (data.profile.nsaId && data.profile.nsaId !== friend.presenceNsaId) {
@@ -4804,12 +4811,31 @@
             renderPinnedBar();
         });
 
+        // Who a message's little avatar should show: me, the friend I'm chatting with, or a group member.
+        function chatAvatarEl(m) {
+            const el = document.createElement('div');
+            el.className = 'chat-av';
+            let av = null, name = '';
+            if (m.mine) { av = myProfile.avatar; name = myProfile.name; }
+            else if (m.g) { const f = friends.find(x => x.peerId && x.peerId === m.from); av = f ? f.avatar : null; name = m.senderName || (f && f.name) || ''; }
+            else { const f = getActiveFriend(); av = f ? f.avatar : null; name = f ? f.name : ''; }
+            if (avatarImageId(av)) { el.innerHTML = avatarHtml(av); }
+            else {
+                el.textContent = (Array.from(String(name).trim())[0] || '?').toUpperCase();
+                el.style.background = m.g ? senderColor(m.from || name) : 'var(--switch-light)';
+                if (!m.g) el.style.color = 'white';
+            }
+            el.title = name;
+            return el;
+        }
+
         function buildMessageRow(m) {
             const row = document.createElement('div');
-            row.className = 'msg-row ' + (m.mine ? 'mine' : 'theirs');
+            row.className = 'msg-row has-av ' + (m.mine ? 'mine' : 'theirs');
             row.dataset.id = m.id;
             const bubbleWrap = document.createElement('div');
             bubbleWrap.className = 'msg-bubble-wrap';
+            bubbleWrap.appendChild(chatAvatarEl(m));
             if (m.g && !m.mine) { const s = document.createElement('div'); s.className = 'msg-sender'; s.textContent = m.senderName || 'Someone'; s.style.color = senderColor(m.from || ''); row.appendChild(s); }
             const bubble = document.createElement('div');
             bubble.className = 'msg-bubble' + (m.deleted ? ' deleted' : '');
@@ -8323,6 +8349,7 @@
             myProfile.sound = document.getElementById('setting-sound').checked;
             [['npBanner', 'setting-np-banner'], ['npTheme', 'setting-np-theme'], ['npSame', 'setting-np-same'], ['npShots', 'setting-np-shots']].forEach(([k, id]) => { myProfile[k] = document.getElementById(id).checked; });
             np.shotsSig = '';
+            renderMessagesSoon();
             const wantsNotifications = document.getElementById('setting-notifications').checked;
 
             applyGridSize(myProfile.gridSize);
