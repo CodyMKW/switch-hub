@@ -2,6 +2,11 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.15.1] - 2026-11-16
+
+### Changed
+- **The emoji avatars are gone.** Settings → Avatar now only offers the pictures. If you were still using an emoji, you're moved to a random picture (you can change it any time). Friends on an older version who still send an emoji keep showing as that emoji until they update. Adding more pictures later is just a new image in `Avatars/` plus one line in `AVATAR_IMAGES`.
+
 ## [1.15.0] - 2026-11-16
 
 ### Added
