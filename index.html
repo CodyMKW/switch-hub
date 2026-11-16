@@ -290,6 +290,9 @@
         .avatar-picker { display: flex; flex-wrap: wrap; gap: 0.4rem; }
         .avatar-picker button { width: 2.4rem; height: 2.4rem; border-radius: 9999px; background: var(--switch-dark); border: 2px solid transparent; font-size: 1.15rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .avatar-picker button.selected { border-color: var(--switch-cyan); }
+        .avatar-picker button.img { width: 2.6rem; height: 2.6rem; padding: 0; overflow: hidden; background: transparent; }
+        .avatar-picker button.img img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 9999px; }
+        .avatar-picker .avatar-sep { flex-basis: 100%; height: 0; }
         .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
         .toggle-row label { font-size: 0.85rem; color: var(--switch-text); }
         .toggle-row input[type="checkbox"] { width: 1.15rem; height: 1.15rem; accent-color: var(--switch-cyan); }
@@ -1382,12 +1385,23 @@
         // STATE
         // ============================================================
         const AVATAR_OPTIONS = ['🐢','🦊','🐧','🦖','🐸','🍄','⭐','🎮','🕹️','👾','🐱','🐶'];
+        // Picture avatars live in the Avatars/ folder. A profile stores "img:<id>" (never a path),
+        // so friends only ever load files from this list. To add one, drop a 256x256 PNG into
+        // Avatars/ and add its id here.
+        const AVATAR_IMAGES = { mario: 'Mario', luigi: 'Luigi', peach: 'Peach', yoshi: 'Yoshi', bowser: 'Bowser', l: 'L', light: 'Light Yagami', monica: 'Monica' };
+        function avatarImageId(av) { return (typeof av === 'string' && av.indexOf('img:') === 0 && Object.prototype.hasOwnProperty.call(AVATAR_IMAGES, av.slice(4))) ? av.slice(4) : null; }
+        function avatarHtml(av, fallback) {
+            const id = avatarImageId(av);
+            if (id) return `<img src="Avatars/${id}.png" alt="" draggable="false">`;
+            if (typeof av === 'string' && av.indexOf('img:') === 0) return escapeHtml(fallback || '💬');
+            return escapeHtml(av || fallback || '💬');
+        }
         const REACTION_EMOJIS = ['❤️','😂','😮','😢','👍','🔥'];
 
         let myProfile = {
             name: 'Player' + Math.floor(Math.random() * 9000 + 1000),
             status: '',
-            avatar: AVATAR_OPTIONS[Math.floor(Math.random() * AVATAR_OPTIONS.length)],
+            avatar: 'img:' + Object.keys(AVATAR_IMAGES)[Math.floor(Math.random() * Object.keys(AVATAR_IMAGES).length)],
             nsaId: '',
             requestHiRes: true,
             gridSize: 'comfortable',
@@ -1667,7 +1681,7 @@
             const summary = presenceSummary(myProfile.nsaId);
             avatarEl.innerHTML = summary.icon
                 ? `<img src="${summary.icon}"><span class="presence-dot ${summary.online ? 'online' : ''}" id="my-presence-dot"></span>`
-                : `${myProfile.avatar}<span class="presence-dot ${summary.online ? 'online' : ''}" id="my-presence-dot"></span>`;
+                : `${avatarHtml(myProfile.avatar, '🐢')}<span class="presence-dot ${summary.online ? 'online' : ''}" id="my-presence-dot"></span>`;
             document.getElementById('my-profile-status').textContent = myProfile.status ? myProfile.status : (myProfile.nsaId ? summary.label : 'Set your status...');
         }
 
@@ -1813,7 +1827,7 @@
                 const summary = friend.presenceNsaId ? presenceSummary(friend.presenceNsaId) : null;
                 const isConnected = connectedFriendId === friend.id && activeConnection && activeConnection.open;
                 const unread = unreadCount(friend.id);
-                const fallbackAvatar = friend.avatar || '💬';
+                const fallbackAvatar = avatarHtml(friend.avatar, '💬');
 
                 const row = document.createElement('div');
                 row.className = 'friend-row' + (activeFriendId === friend.id ? ' active' : '');
@@ -8225,16 +8239,27 @@
         function populateAvatarPicker() {
             const picker = document.getElementById('avatar-picker');
             picker.innerHTML = '';
-            AVATAR_OPTIONS.forEach(emoji => {
-                const btn = document.createElement('button');
-                btn.textContent = emoji;
-                btn.className = emoji === myProfile.avatar ? 'selected' : '';
+            const addOption = (value, btn) => {
+                btn.type = 'button';
+                if (value === myProfile.avatar) btn.classList.add('selected');
                 btn.addEventListener('click', () => {
-                    myProfile.avatar = emoji;
+                    myProfile.avatar = value;
                     picker.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
                     btn.classList.add('selected');
                 });
                 picker.appendChild(btn);
+            };
+            Object.keys(AVATAR_IMAGES).forEach(id => {
+                const btn = document.createElement('button');
+                btn.className = 'img'; btn.title = AVATAR_IMAGES[id];
+                btn.innerHTML = avatarHtml('img:' + id);
+                addOption('img:' + id, btn);
+            });
+            const sep = document.createElement('div'); sep.className = 'avatar-sep'; picker.appendChild(sep);
+            AVATAR_OPTIONS.forEach(emoji => {
+                const btn = document.createElement('button');
+                btn.textContent = emoji;
+                addOption(emoji, btn);
             });
         }
 

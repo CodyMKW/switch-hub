@@ -2,6 +2,15 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.15.0] - 2026-11-16
+
+### Added
+- **Picture avatars.** Settings → Avatar now starts with character pictures (Mario, Luigi, Peach, Yoshi, Bowser, L, Light Yagami and Monica), with the emoji still there below. Friends see your picture in their list, and new profiles get a random picture to start. The images are in a new `Avatars/` folder (256×256, cropped to sit nicely in a circle), and the app only ever loads files from its own list, so nothing a friend sends can point it somewhere else.
+
+### Changed
+- Avatar text coming from friends is now escaped before it's drawn.
+- The offline cache now includes the avatar pictures.
+
 ## [1.14.3] - 2026-11-15
 
 ### Changed
