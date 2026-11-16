@@ -3,8 +3,8 @@
 // still browse a locally loaded SD card without a connection). Strategy is
 // network-first with a cache fallback, so you always get the newest version
 // when online and never get stuck on a stale copy.
-const CACHE = 'switch-hub-v4';
-const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'logo.png', 'favicon.svg', 'game_ids.json'].concat(['mario', 'luigi', 'peach', 'yoshi', 'bowser', 'l', 'light', 'monica', 'amelia', 'jinshi', 'maomao', 'myne', 'tanya'].map((id) => 'Avatars/' + id + '.png'));
+const CACHE = 'switch-hub-v5';
+const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'logo.png', 'favicon.svg', 'game_ids.json'].concat(['mario', 'luigi', 'peach', 'yoshi', 'bowser', 'l', 'light', 'monica', 'amelia', 'jinshi', 'maomao', 'myne', 'tanya', 'ganon', 'kirby', 'link'].map((id) => 'Avatars/' + id + '.png'));
 // The one cross-origin script the app needs to start (PeerJS).
 const CDN_ALLOW = ['https://unpkg.com/peerjs@'];
 

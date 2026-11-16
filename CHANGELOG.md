@@ -2,6 +2,11 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.18.0] - 2026-11-17
+
+### Added
+- **Three more avatar pictures:** Ganon, Kirby and Link (16 in total), cropped for the circle and added to the offline cache.
+
 ## [1.17.0] - 2026-11-16
 
 ### Added
