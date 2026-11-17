@@ -1592,6 +1592,9 @@
         function saveAlbums() { localStorage.setItem('switch_hub_albums', JSON.stringify(albums)); }
         function saveCaptions() { localStorage.setItem('switch_hub_captions', JSON.stringify(captions)); }
         function saveMediaReactions() { localStorage.setItem('switch_hub_media_reactions', JSON.stringify(mediaReactions)); }
+        // Exact identity of a capture on disk: the original file name + size. (mediaKey above is only
+        // game + time, and files copied in one batch can share a time, so it can't tell them apart.)
+        function captureFileId(m) { return m && m.file ? `${m.file.name}|${m.file.size}` : null; }
         function mediaKey(m) { return `${m.hash}|${m.timestamp}`; }
 
         // ---- Group chat state (declared early: the sidebar is drawn during start-up) ----
@@ -4223,7 +4226,7 @@
             const gid = activeFriendId.slice(2), g = groups[gid]; if (!g) return;
             if (file.size > GROUP_FILE_MAX) { showToast('Files in groups can be up to 50 MB (it is sent to everyone).', 'yellow'); return; }
             const thread = ensureThread(activeFriendId), id = uid();
-            const msg = { id, mine: true, from: myPeerId(), senderName: myProfile.name, g: true, text: caption || '', ts: Date.now(), status: 'sent', reactions: { mine: [], theirs: [] }, greact: {}, acks: { delivered: [], seen: [] }, edited: false, deleted: false, replyTo: null, pinned: false, attachment: { name: file.name, mime: file.type || 'application/octet-stream', url: URL.createObjectURL(file), pending: false, progress: 100, size: file.size, key: (meta && meta.key) || null } };
+            const msg = { id, mine: true, from: myPeerId(), senderName: myProfile.name, g: true, text: caption || '', ts: Date.now(), status: 'sent', reactions: { mine: [], theirs: [] }, greact: {}, acks: { delivered: [], seen: [] }, edited: false, deleted: false, replyTo: null, pinned: false, attachment: { name: file.name, mime: file.type || 'application/octet-stream', url: URL.createObjectURL(file), pending: false, progress: 100, size: file.size, key: (meta && meta.key) || null, fid: (meta && meta.fid) || null } };
             thread.push(msg); renderMessagesSoon(); renderFriendList();
             const buffer = await file.arrayBuffer(); const total = buffer.byteLength, n = Math.max(1, Math.ceil(total / FILE_CHUNK_SIZE));
             const targets = groupOthers(g).map(m => groupConns.get(m.peerId)).filter(c => c && c.conn.open);
@@ -4421,7 +4424,7 @@
             const thread = ensureThread(friendId || activeFriendId);
             const id = uid();
             const localUrl = URL.createObjectURL(file);
-            const msg = { id, mine: true, text: caption, ts: Date.now(), status: 'sent', reactions: { mine: [], theirs: [] }, edited: false, deleted: false, attachment: { name: file.name, mime: file.type || 'application/octet-stream', url: localUrl, pending: false, progress: 100, size: file.size, key: (meta && meta.key) || null } };
+            const msg = { id, mine: true, text: caption, ts: Date.now(), status: 'sent', reactions: { mine: [], theirs: [] }, edited: false, deleted: false, attachment: { name: file.name, mime: file.type || 'application/octet-stream', url: localUrl, pending: false, progress: 100, size: file.size, key: (meta && meta.key) || null, fid: (meta && meta.fid) || null } };
             thread.push(msg);
             renderMessagesSoon();
             renderFriendList();
@@ -4450,7 +4453,7 @@
         function stageAttachment(file, sourceLabel, srcKey) {
             if (pendingAttachment && pendingAttachment.previewUrl) URL.revokeObjectURL(pendingAttachment.previewUrl);
             const isImage = (file.type || '').startsWith('image/');
-            pendingAttachment = { file, previewUrl: URL.createObjectURL(file), isImage, sourceLabel: sourceLabel || null, srcKey: srcKey || null };
+            pendingAttachment = { file, previewUrl: URL.createObjectURL(file), isImage, sourceLabel: sourceLabel || null, srcMeta: srcKey || null };
             renderPendingAttachmentPreview();
             updateSendButtonState();
             composerInput.focus();
@@ -4528,7 +4531,7 @@
             }
             const text = composerInput.value.trim();
             if (pendingAttachment) {
-                const file = pendingAttachment.file, meta = { key: pendingAttachment.srcKey };
+                const file = pendingAttachment.file, meta = pendingAttachment.srcMeta;
                 clearPendingAttachment();
                 if (isGroupId(activeFriendId)) groupSendFile(file, text, meta); else sendFile(file, text, undefined, meta);
                 composerInput.value = '';
@@ -4635,7 +4638,7 @@
                 const safeName = `${game.replace(/[^a-z0-9]+/gi, '_')}_${media.dateStr}.${ext}`;
                 const file = new File([blob], safeName, { type: media.type === 'video' ? 'video/mp4' : 'image/jpeg' });
                 closeLightbox();
-                stageAttachment(file, `From Gallery — ${game} · ${media.dateStr}`, mediaKey(media));
+                stageAttachment(file, `From Gallery — ${game} · ${media.dateStr}`, { key: mediaKey(media), fid: captureFileId(media) });
                 switchView('chat');
                 showToast('📷 Screenshot ready — add a note and hit send!', 'purple');
             };
@@ -5281,20 +5284,26 @@
         // capture is in the SD card you just loaded, we can hook the chat message back up to it.
         // Matches by the capture's own id (gallery sends) or by file name + size (files you attached).
         function relinkChatAttachments() {
-            const byKey = new Map(), byName = new Map();
+            const byFid = new Map(), byKeyAll = new Map(), byName = new Map();
             allMediaFiles.forEach(md => {
                 if (md.isRemote || !md.file) return;
-                byKey.set(mediaKey(md), md);
-                if (!byName.has(md.file.name)) byName.set(md.file.name, md);
+                byFid.set(captureFileId(md), md);
+                const k = mediaKey(md); (byKeyAll.get(k) || byKeyAll.set(k, []).get(k)).push(md);
+                const nm = md.file.name; (byName.get(nm) || byName.set(nm, []).get(nm)).push(md);
             });
-            if (!byKey.size) return 0;
+            if (!byFid.size) return 0;
             let n = 0;
             for (const fid in messagesByContact) {
                 for (const m of messagesByContact[fid]) {
                     const a = m.attachment;
                     if (!m.mine || m.deleted || !a || a.url || a.pending) continue;
-                    let md = a.key ? byKey.get(a.key) : null;
-                    if (!md) { const c = byName.get(a.name); if (c && a.size != null && a.size === c.file.size) md = c; }
+                    let md = null;
+                    // 1) exact: original file name + size recorded when it was sent
+                    if (a.fid) md = byFid.get(a.fid) || null;
+                    // 2) older messages only have game+time: use it only if exactly one file matches (never guess)
+                    if (!md && !a.fid && a.key) { const c = byKeyAll.get(a.key); if (c && c.length === 1) md = c[0]; }
+                    // 3) a file attached from disk: same name and same size
+                    if (!md && !a.fid && a.size != null) { const c = (byName.get(a.name) || []).filter(x => x.file.size === a.size); if (c.length === 1) md = c[0]; }
                     if (!md) continue;
                     a.url = URL.createObjectURL(md.file.slice(0, md.file.size, a.mime || md.file.type));
                     n++;
@@ -7459,7 +7468,7 @@
                     const { name } = safeMediaFileName(m);
                     const file = new File([blob], `${i + 1}_${name}`, { type: m.type === 'video' ? 'video/mp4' : 'image/jpeg' });
                     showToast(`Sending ${i + 1} of ${items.length} to ${friend.name}...`, 'purple', 2500);
-                    await sendFile(file, captions[mediaKey(m)] || `${gameKey(m.hash)} · ${m.dateStr}`, friend.id, { key: mediaKey(m) });
+                    await sendFile(file, captions[mediaKey(m)] || `${gameKey(m.hash)} · ${m.dateStr}`, friend.id, { key: mediaKey(m), fid: captureFileId(m) });
                     sent++;
                 }
                 showToast(`Sent ${sent} to ${friend.name} ✓`, 'purple');
