@@ -2321,6 +2321,8 @@
                 renderBrowserInfo();
                 // The other side may have said hello before we were listening (it happens), so answer once. `reply` stops this from ping-ponging.
                 if (!data.reply) sendToConn({ ...myHelloPayload(), reply: true });
+                // If I re-linked files I sent them from my SD card, offer to hand them back to them (only used if their copy expired).
+                setTimeout(() => offerRestoresTo(friend), 1200);
             }
             else if (data.type === 'gallery_sync') {
                 const incoming = data.files.map(f => ({ ...f, isRemote: true }));
@@ -2424,6 +2426,11 @@
             else if (data.type === 'file_start') { handleChatFileStart(data, friend); }
             else if (data.type === 'file_chunk') { handleChatFileChunk(data, friend); }
             else if (data.type === 'file_end') { handleChatFileEnd(data, friend); }
+            else if (data.type === 'file_restore_offer') { handleRestoreOffer(data, friend); }
+            else if (data.type === 'file_restore_want') { handleRestoreWant(data, friend); }
+            else if (data.type === 'file_restore_start') { handleRestoreStart(data, friend); }
+            else if (data.type === 'file_restore_chunk') { handleRestoreChunk(data, friend); }
+            else if (data.type === 'file_restore_end') { handleRestoreEnd(data, friend); }
         }
 
         function handleChatMsg(data, friend) {
@@ -4419,6 +4426,75 @@
             renderFriendList();
         }
 
+        // ---- Restoring a file for the person you sent it to ----
+        // After you reload your SD card, files you sent come back for you (see relinkChatAttachments).
+        // If your friend's copy expired too (they refreshed), you can hand it back to them. The offer is
+        // tiny; the file only travels if their copy of that exact message is currently expired.
+        const relinkedFiles = new Map();     // my message id -> the File it was re-linked to
+        const restoreSending = new Set();    // message ids being sent back right now
+        const incomingRestores = new Map();  // message id -> { chunks, received, size, mime, name }
+        function offerRestoresTo(friend) {
+            if (!friend || isGroupId(friend.id) || !(activeConnection && activeConnection.open && connectedFriendId === friend.id)) return;
+            (messagesByContact[friend.id] || []).forEach(m => {
+                if (!m.mine || m.deleted || !m.attachment || !relinkedFiles.has(m.id)) return;
+                sendToConn({ type: 'file_restore_offer', id: m.id, name: m.attachment.name, mime: m.attachment.mime, size: relinkedFiles.get(m.id).size });
+            });
+        }
+        function handleRestoreOffer(data, friend) {
+            if (!data || typeof data.id !== 'string' || incomingRestores.has(data.id)) return;
+            const m = (messagesByContact[friend.id] || []).find(x => x.id === data.id);
+            // Only fill a slot that is mine to fill: a message from this friend, with an expired attachment of the same name and type.
+            if (!m || m.mine || m.deleted || !m.attachment || m.attachment.url) return;
+            if (m.attachment.name !== data.name || m.attachment.mime !== data.mime) return;
+            if (!(data.size > 0) || data.size > 2 * 1024 * 1024 * 1024) return;
+            sendToConn({ type: 'file_restore_want', id: data.id });
+        }
+        async function handleRestoreWant(data, friend) {
+            const file = data && relinkedFiles.get(data.id);
+            const m = file && (messagesByContact[friend.id] || []).find(x => x.id === data.id && x.mine);
+            if (!m || restoreSending.has(data.id)) return;
+            restoreSending.add(data.id);
+            try {
+                const conn = activeConnection;
+                const buffer = await file.arrayBuffer();
+                const total = buffer.byteLength, n = Math.max(1, Math.ceil(total / FILE_CHUNK_SIZE));
+                sendToConn({ type: 'file_restore_start', id: data.id, size: total, totalChunks: n, mime: m.attachment.mime, name: m.attachment.name });
+                for (let i = 0; i < n; i++) {
+                    if (!conn.open) return;
+                    await waitForBufferedAmountLow(conn);
+                    sendToConn({ type: 'file_restore_chunk', id: data.id, chunkIndex: i, data: buffer.slice(i * FILE_CHUNK_SIZE, Math.min((i + 1) * FILE_CHUNK_SIZE, total)) });
+                }
+                sendToConn({ type: 'file_restore_end', id: data.id });
+            } finally { restoreSending.delete(data.id); }
+        }
+        function restoreSlot(id, friend) {
+            const m = (messagesByContact[friend.id] || []).find(x => x.id === id);
+            return m && !m.mine && m.attachment && !m.attachment.url ? m : null;
+        }
+        function handleRestoreStart(data, friend) {
+            const m = data && restoreSlot(data.id, friend);
+            if (!m || m.attachment.name !== data.name || m.attachment.mime !== data.mime || !(data.size > 0) || !(data.totalChunks >= 1) || data.totalChunks > Math.ceil(data.size / 1024) + 1) return;
+            incomingRestores.set(data.id, { chunks: new Array(data.totalChunks), received: 0, size: data.size, mime: m.attachment.mime, name: m.attachment.name });
+            m.attachment.pending = true; m.attachment.progress = 0;
+            if (activeFriendId === friend.id && activeView === 'chat') renderMessagesSoon();
+        }
+        function handleRestoreChunk(data, friend) {
+            const t = data && incomingRestores.get(data.id), m = t && restoreSlot(data.id, friend);
+            if (!t || !m || !(data.data && data.data.byteLength) || !(data.chunkIndex >= 0 && data.chunkIndex < t.chunks.length) || t.chunks[data.chunkIndex]) return;
+            t.chunks[data.chunkIndex] = data.data; t.received += data.data.byteLength;
+            m.attachment.progress = Math.min(100, Math.round((t.received / t.size) * 100));
+            if (activeFriendId === friend.id && activeView === 'chat') updateAttachmentProgressUI(data.id, m.attachment.progress);
+        }
+        function handleRestoreEnd(data, friend) {
+            const t = data && incomingRestores.get(data.id), m = t && restoreSlot(data.id, friend);
+            incomingRestores.delete(data && data.id);
+            if (!t || !m) return;
+            if (t.chunks.some(c => !c) || t.received !== t.size) { m.attachment.pending = false; return; } // incomplete: leave it expired
+            m.attachment = { name: t.name, mime: t.mime, url: URL.createObjectURL(new Blob(t.chunks, { type: t.mime })), pending: false, progress: 100 };
+            saveMessages();
+            if (activeFriendId === friend.id && activeView === 'chat') renderMessages();
+        }
+
         async function sendFile(file, caption, friendId, meta) {
             caption = caption || '';
             const thread = ensureThread(friendId || activeFriendId);
@@ -5306,10 +5382,11 @@
                     if (!md && !a.fid && a.size != null) { const c = (byName.get(a.name) || []).filter(x => x.file.size === a.size); if (c.length === 1) md = c[0]; }
                     if (!md) continue;
                     a.url = URL.createObjectURL(md.file.slice(0, md.file.size, a.mime || md.file.type));
+                    relinkedFiles.set(m.id, md.file);
                     n++;
                 }
             }
-            if (n) { renderMessagesSoon(); showToast(`Restored ${n} sent file${n === 1 ? '' : 's'} in your chats from your SD card.`, 'purple'); }
+            if (n) { renderMessagesSoon(); showToast(`Restored ${n} sent file${n === 1 ? '' : 's'} in your chats from your SD card.`, 'purple'); const f = friends.find(x => x.id === connectedFriendId); if (f) offerRestoresTo(f); }
             return n;
         }
 

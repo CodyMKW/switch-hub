@@ -2,6 +2,11 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.19.0] - 2026-11-17
+
+### Added
+- **Your friend gets the restored file back too.** When you load your SD card and a file you sent comes back for you, your app now offers it to the person you sent it to. If their copy has expired (they refreshed), it is sent to them again automatically as soon as you're both connected, and it shows up in their chat as a normal picture or clip again. If they still have it, nothing is sent. It only ever fills in that exact expired message from you, never anything else, and it works in one-on-one chats (group chats aren't covered yet).
+
 ## [1.18.1] - 2026-11-17
 
 ### Fixed
