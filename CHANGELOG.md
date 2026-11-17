@@ -2,6 +2,11 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.18.1] - 2026-11-17
+
+### Fixed
+- **Restored chat files could be the wrong picture.** After a refresh, a photo you sent could come back as a different screenshot from the same game, because captures copied in one batch can share the same timestamp and I was matching on game + time. Sent files now remember the capture's exact file name and size and are matched on that. If an older message can't be matched with certainty (several files fit), it's left as "expired" rather than guessing.
+
 ## [1.18.0] - 2026-11-17
 
 ### Added
