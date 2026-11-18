@@ -2,6 +2,14 @@
 
 Patch notes for Switch Hub. Nothing fancy, just what changed and why.
 
+## [1.20.0] - 2026-11-18
+
+### Added
+- **Remove friends in the Dock layout.** Right-click a friend (or a Switch presence entry) in the rail, or press and hold on a touch screen, to get a small menu with **Remove friend**. On a computer a small × also appears on the tile when you hover it; it opens the same menu so nothing is removed by accident. Hovering a tile also reminds you in its tooltip.
+
+### Changed
+- **Dock polish.** The background aurora now drifts slowly (and stays still if your system asks for reduced motion). The rail and main panel are glassier, with a soft sheen, an inner highlight and a thin glowing top edge, and fade in when the layout loads. Friends who are online get a green ring, the open chat glows cyan, tiles lift when you hover them, and unread badges use the Dock gradient. The top bar, sort pills, tool chips, page buttons, date dividers and chat bubbles got the same finish, and the gallery's group headers have an accent bar. Keyboard focus is now clearly visible.
+
 ## [1.19.0] - 2026-11-17
 
 ### Added
